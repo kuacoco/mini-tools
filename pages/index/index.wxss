@@ -1,0 +1,66 @@
+/**index.wxss 工具列表**/
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f5f5f5 0%, #fff 100%);
+  padding: 32rpx;
+  box-sizing: border-box;
+}
+
+.header {
+  padding: 24rpx 0 40rpx;
+}
+
+.title {
+  display: block;
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.tool-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.tool-item {
+  position: relative;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 32rpx 80rpx 32rpx 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  transition: opacity 0.2s;
+}
+
+.tool-item:active {
+  opacity: 0.9;
+}
+
+.tool-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.tool-desc {
+  font-size: 26rpx;
+  color: #999;
+  line-height: 1.5;
+}
+
+.tool-arrow {
+  position: absolute;
+  right: 32rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 40rpx;
+  color: #c95b51;
+  font-weight: 300;
+}
