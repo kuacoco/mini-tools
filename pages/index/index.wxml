@@ -1,20 +1,15 @@
 <!--index.wxml 工具列表-->
+<navigation-bar title="小工具" back="{{false}}" />
 <view class="page">
-  <view class="header">
-    <text class="title">小工具</text>
-    <text class="subtitle">选择下方工具使用</text>
-  </view>
-  <view class="tool-list">
-    <view
-      wx:for="{{ toolList }}"
-      wx:key="id"
-      class="tool-item"
-      data-path="{{ item.path }}"
-      bindtap="onToolTap"
-    >
-      <view class="tool-title">{{ item.title }}</view>
-      <view class="tool-desc">{{ item.desc }}</view>
-      <text class="tool-arrow">›</text>
-    </view>
-  </view>
+	<view class="header">
+		<text class="title">小工具</text>
+		<text class="subtitle">选择下方工具使用</text>
+	</view>
+	<view class="tool-list">
+		<view wx:for="{{ toolList }}" wx:key="id" class="tool-item" data-path="{{ item.path }}" bindtap="onToolTap">
+			<view class="tool-title">{{ item.title }}</view>
+			<view class="tool-desc">{{ item.desc }}</view>
+			<text class="tool-arrow">›</text>
+		</view>
+	</view>
 </view>

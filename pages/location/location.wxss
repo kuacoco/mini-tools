@@ -1,5 +1,12 @@
+page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .location-page {
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
   background: linear-gradient(180deg, #f5f5f5 0%, #fff 100%);
   padding: 32rpx;
   box-sizing: border-box;
@@ -40,7 +47,10 @@
 
 .btn-row {
   display: flex;
-  gap: 24rpx;
+}
+
+.btn + .btn {
+  margin-left: 24rpx;
 }
 
 .btn {

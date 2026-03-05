@@ -1,5 +1,9 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index",
+    "amount-keyboard": "/components/amount-keyboard/index"
+  },
   "navigationBarTitleText": "预算看板",
-  "disableScroll": true
+  "disableScroll": true,
+  "renderer": "skyline"
 }

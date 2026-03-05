@@ -18,7 +18,7 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "compileWorklet": false,
+    "compileWorklet": true,
     "uglifyFileName": false,
     "uploadWithSourceMap": true,
     "packNpmManually": false,

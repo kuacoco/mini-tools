@@ -7,6 +7,7 @@ const {
   deleteBudgetItem,
   getBudgetItem,
 } = require('../../utils/budget-storage')
+const { formatAmount } = require('../../utils/amount-expression')
 
 const COLOR_PALETTE = [
   { main: '#f4a7b9', light: '#fde7ed' },
@@ -16,12 +17,6 @@ const COLOR_PALETTE = [
   { main: '#bba3f2', light: '#f1ecfe' },
   { main: '#7fcad1', light: '#e3f6f7' },
 ]
-
-function formatAmount(value) {
-  const num = Number(value || 0)
-  if (Number.isNaN(num)) return '0'
-  return num.toFixed(2).replace(/\.00$/, '')
-}
 
 function getMonthLabel(monthKey) {
   const [year, month] = monthKey.split('-')
@@ -34,32 +29,10 @@ function getOffsetMonthKey(monthKey, offset) {
   return getCurrentMonthKey(date)
 }
 
-const KEYBOARD_ROWS = [
-  ['1', '2', '3'],
-  ['4', '5', '6'],
-  ['7', '8', '9'],
-  ['.', '0', '00'],
-]
-
 const SWIPE_EDIT_WIDTH = 82
 const SWIPE_DELETE_WIDTH = 82
 const SWIPE_OPEN_THRESHOLD = 38
 const POPUP_ANIMATION_MS = 240
-
-function sanitizeInput(text) {
-  if (!text) return '0'
-  let next = text
-  if (next.startsWith('.')) next = `0${next}`
-  const parts = next.split('.')
-  if (parts.length > 2) {
-    next = `${parts[0]}.${parts.slice(1).join('')}`
-  }
-  const [intPart, decimalPart] = next.split('.')
-  const safeInt = (intPart || '0').replace(/^0+(?=\d)/, '')
-  if (!decimalPart && next.includes('.')) return `${safeInt}.`
-  const safeDecimal = decimalPart ? decimalPart.slice(0, 2) : ''
-  return safeDecimal ? `${safeInt}.${safeDecimal}` : safeInt
-}
 
 function vibrateLight() {
   if (typeof wx === 'undefined' || !wx.vibrateShort) return
@@ -80,6 +53,9 @@ Page({
     addPopupTitle: '新增预算项',
     addName: '',
     addTotalAmount: '',
+    addAmountFormula: '',
+    addKeyboardReset: 0,
+    addInitialExpression: '0',
     editingBudgetId: '',
     showUsedPopup: false,
     usedPopupClosing: false,
@@ -87,7 +63,9 @@ Page({
     usedItemName: '',
     usedItemTotalText: '0',
     usedInput: '0',
-    keyboardRows: KEYBOARD_ROWS,
+    usedAmountFormula: '',
+    usedKeyboardReset: 0,
+    usedInitialExpression: '0',
   },
 
   onLoad() {
@@ -153,6 +131,9 @@ Page({
       addPopupTitle: '新增预算项',
       addName: '',
       addTotalAmount: '0',
+      addAmountFormula: '',
+      addKeyboardReset: Date.now(),
+      addInitialExpression: '0',
       editingBudgetId: '',
     })
   },
@@ -172,13 +153,17 @@ Page({
       return
     }
     if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
+    const usedInitial = formatAmount(item.usedAmount)
     this.setData({
       showUsedPopup: true,
       usedPopupClosing: false,
       usedItemId: id,
       usedItemName: item.name,
       usedItemTotalText: formatAmount(item.totalAmount),
-      usedInput: formatAmount(item.usedAmount),
+      usedInput: usedInitial,
+      usedAmountFormula: '',
+      usedKeyboardReset: Date.now(),
+      usedInitialExpression: usedInitial,
     })
   },
 
@@ -230,66 +215,20 @@ Page({
     })
   },
 
-  onKeyTap(e) {
-    vibrateLight()
-    const key = e.currentTarget.dataset.key
-    let current = this.data.usedInput || '0'
-    if (current === '0' && key !== '.') {
-      current = ''
-    }
-    if (key === '.') {
-      if (current.includes('.')) return
-      this.setData({ usedInput: `${current || '0'}.` })
-      return
-    }
-    this.setData({ usedInput: sanitizeInput(`${current}${key}`) })
+  onAddKeyboardChange(e) {
+    const { valueText, formulaText } = e.detail
+    this.setData({
+      addTotalAmount: valueText,
+      addAmountFormula: formulaText,
+    })
   },
 
-  onAddAmountKeyTap(e) {
-    vibrateLight()
-    const key = e.currentTarget.dataset.key
-    let current = this.data.addTotalAmount || '0'
-    if (current === '0' && key !== '.') {
-      current = ''
-    }
-    if (key === '.') {
-      if (current.includes('.')) return
-      this.setData({ addTotalAmount: `${current || '0'}.` })
-      return
-    }
-    this.setData({ addTotalAmount: sanitizeInput(`${current}${key}`) })
-  },
-
-  onDeleteAddAmountInput() {
-    vibrateLight()
-    const current = this.data.addTotalAmount || '0'
-    if (current.length <= 1) {
-      this.setData({ addTotalAmount: '0' })
-      return
-    }
-    const next = sanitizeInput(current.slice(0, -1))
-    this.setData({ addTotalAmount: next || '0' })
-  },
-
-  onClearAddAmountInput() {
-    vibrateLight()
-    this.setData({ addTotalAmount: '0' })
-  },
-
-  onDeleteUsedInput() {
-    vibrateLight()
-    const current = this.data.usedInput || '0'
-    if (current.length <= 1) {
-      this.setData({ usedInput: '0' })
-      return
-    }
-    const next = sanitizeInput(current.slice(0, -1))
-    this.setData({ usedInput: next || '0' })
-  },
-
-  onClearUsedInput() {
-    vibrateLight()
-    this.setData({ usedInput: '0' })
+  onUsedKeyboardChange(e) {
+    const { valueText, formulaText } = e.detail
+    this.setData({
+      usedInput: valueText,
+      usedAmountFormula: formulaText,
+    })
   },
 
   onSaveUsedAmount() {
@@ -357,13 +296,17 @@ Page({
       return
     }
     if (this.addPopupTimer) clearTimeout(this.addPopupTimer)
+    const addInitial = formatAmount(item.totalAmount)
     this.setData({
       showAddPopup: true,
       addPopupClosing: false,
       addPopupMode: 'edit',
       addPopupTitle: '编辑预算项',
       addName: item.name,
-      addTotalAmount: formatAmount(item.totalAmount),
+      addTotalAmount: addInitial,
+      addAmountFormula: '',
+      addKeyboardReset: Date.now(),
+      addInitialExpression: addInitial,
       editingBudgetId: id,
     })
     this.resetAllOffsets()
@@ -399,6 +342,7 @@ Page({
         nextData.addPopupTitle = '新增预算项'
         nextData.addName = ''
         nextData.addTotalAmount = '0'
+        nextData.addAmountFormula = ''
         nextData.editingBudgetId = ''
       }
       this.setData(nextData)
@@ -420,6 +364,7 @@ Page({
         nextData.usedItemName = ''
         nextData.usedItemTotalText = '0'
         nextData.usedInput = '0'
+        nextData.usedAmountFormula = ''
       }
       this.setData(nextData)
     }, POPUP_ANIMATION_MS)
@@ -449,7 +394,7 @@ Page({
     this.setData({ budgetList: nextList })
   },
 
-  noop() {},
+  noop() { },
 
   onPrevMonth() {
     this.resetAllOffsets()

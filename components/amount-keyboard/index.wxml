@@ -1,0 +1,20 @@
+<view class="amount-keyboard">
+  <view class="kb-body">
+    <view class="kb-num-area">
+      <view wx:for="{{ keyboardRows }}" wx:key="index" class="kb-row">
+        <view wx:for="{{ item }}" wx:key="*this" class="kb-key" data-key="{{ item }}" bindtap="onKeyTap" hover-class="kb-key-hover" hover-stay-time="70">
+          {{ item }}
+        </view>
+      </view>
+    </view>
+    <view class="kb-op-column">
+      <view class="kb-key" data-key="+" bindtap="onKeyTap" hover-class="kb-key-hover" hover-stay-time="70">+</view>
+      <view class="kb-key" data-key="-" bindtap="onKeyTap" hover-class="kb-key-hover" hover-stay-time="70">-</view>
+    </view>
+  </view>
+  <view class="action-row">
+    <view class="action-key ghost" bindtap="onBackspace" hover-class="action-key-hover" hover-stay-time="70">退格</view>
+    <view class="action-key ghost" bindtap="onClear" hover-class="action-key-hover" hover-stay-time="70">清空</view>
+    <view class="action-key primary" bindtap="onPrimary" hover-class="action-key-hover" hover-stay-time="70">{{ primaryButtonText }}</view>
+  </view>
+</view>

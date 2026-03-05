@@ -1,17 +1,18 @@
+<navigation-bar title="定位" />
 <view class="location-page">
-  <view class="content-card">
-    <view class="label">经度</view>
-    <view class="value">{{ longitudeText }}</view>
-    <view class="label">纬度</view>
-    <view class="value value-last">{{ latitudeText }}</view>
-  </view>
-  <view wx:if="{{ errorMsg }}" class="error-msg">{{ errorMsg }}</view>
-  <view class="btn-row">
-    <button class="btn btn-copy" disabled="{{ !hasLocation }}" bindtap="onCopy">
-      复制经纬度
-    </button>
-    <button class="btn btn-refresh" loading="{{ loading }}" bindtap="onRefresh">
-      刷新定位
-    </button>
-  </view>
+	<view class="content-card">
+		<view class="label">经度</view>
+		<view class="value">{{ longitudeText }}</view>
+		<view class="label">纬度</view>
+		<view class="value value-last">{{ latitudeText }}</view>
+	</view>
+	<view wx:if="{{ errorMsg }}" class="error-msg">{{ errorMsg }}</view>
+	<view class="btn-row">
+		<button class="btn btn-copy" disabled="{{ !hasLocation }}" bindtap="onCopy">
+			复制经纬度
+		</button>
+		<button class="btn btn-refresh" loading="{{ loading }}" bindtap="onRefresh">
+			刷新定位
+		</button>
+	</view>
 </view>

@@ -1,5 +1,8 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index"
+  },
   "navigationBarTitleText": "定位",
-  "disableScroll": true
+  "disableScroll": true,
+  "renderer": "skyline"
 }

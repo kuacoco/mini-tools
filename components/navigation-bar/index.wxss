@@ -1,0 +1,72 @@
+.navigation-bar {
+  flex-shrink: 0;
+  background-color: #fff;
+}
+.navigation-bar .android {
+  height: 96rpx;
+}
+.navigation-bar__inner {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+.navigation-bar__inner .navigation-bar__left {
+  padding-left: 24rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+.navigation-bar__inner .navigation-bar__left .navigation-bar__buttons {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 32rpx;
+}
+.navigation-bar__inner .navigation-bar__left .navigation-bar__btn {
+  display: block;
+}
+.navigation-bar__inner .navigation-bar__left .navigation-bar__btn_goback {
+  width: 16rpx;
+  height: 28rpx;
+}
+.navigation-bar__inner .navigation-bar__left .navigation-bar__buttons--active {
+  background: rgba(0, 0, 0, 0.06);
+}
+.navigation-bar__inner .navigation-bar__center {
+  height: 100%;
+  font-size: 34rpx;
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.navigation-bar__inner .navigation-bar__center.title {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0 16rpx;
+  box-sizing: border-box;
+}
+.navigation-bar__inner .navigation-bar__loading {
+  margin-right: 8rpx;
+  display: inline-flex;
+  align-items: center;
+}
+.navigation-bar__inner .navigation-bar__loading .loading {
+  margin-left: 0;
+}
+.navigation-bar__inner .navigation-bar__right {
+  padding-right: 24rpx;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-sizing: border-box;
+}

@@ -1,0 +1,104 @@
+.amount-keyboard .kb-body {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  margin-bottom: 12rpx;
+}
+
+.amount-keyboard .kb-num-area {
+  flex: 1;
+  min-width: 0;
+}
+
+.amount-keyboard .kb-op-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-left: 12rpx;
+  width: 112rpx;
+}
+
+.amount-keyboard .kb-op-column .kb-key {
+  flex: 1;
+  min-height: 82rpx;
+  margin-bottom: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.amount-keyboard .kb-op-column .kb-key:last-child {
+  margin-bottom: 0;
+}
+
+.amount-keyboard .kb-row {
+  display: flex;
+  margin-bottom: 12rpx;
+}
+
+.amount-keyboard .kb-row:last-child {
+  margin-bottom: 0;
+}
+
+.amount-keyboard .kb-row .kb-key + .kb-key {
+  margin-left: 12rpx;
+}
+
+.amount-keyboard .kb-key {
+  flex: 1;
+  height: 82rpx;
+  line-height: 82rpx;
+  border-radius: 12rpx;
+  text-align: center;
+  background: #f6f7ff;
+  color: #3a3d5e;
+  font-size: 32rpx;
+  transition:
+    transform 0.12s ease,
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.amount-keyboard .action-row {
+  display: flex;
+}
+
+.amount-keyboard .action-row .action-key + .action-key {
+  margin-left: 12rpx;
+}
+
+.amount-keyboard .action-key {
+  flex: 1;
+  height: 82rpx;
+  line-height: 82rpx;
+  text-align: center;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.amount-keyboard .action-key.ghost {
+  background: #f1f2fa;
+  color: #606383;
+}
+
+.amount-keyboard .action-key.primary {
+  background: linear-gradient(135deg, #f4a7b9 0%, #b6a3f3 100%);
+  color: #fff;
+}
+
+.amount-keyboard .kb-key-hover {
+  transform: scale(0.97);
+  background: #eaecfb;
+  box-shadow: inset 0 2rpx 8rpx rgba(89, 94, 130, 0.12);
+}
+
+.amount-keyboard .action-key-hover {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+  box-shadow: inset 0 2rpx 8rpx rgba(89, 94, 130, 0.12);
+}

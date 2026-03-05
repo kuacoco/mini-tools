@@ -1,4 +1,7 @@
 {
-  "usingComponents": {},
-  "navigationBarTitleText": "小工具"
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index"
+  },
+  "navigationBarTitleText": "小工具",
+  "renderer": "skyline"
 }

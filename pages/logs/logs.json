@@ -1,4 +1,6 @@
 {
   "usingComponents": {
-  }
+    "navigation-bar": "/components/navigation-bar/index"
+  },
+  "renderer": "skyline"
 }
