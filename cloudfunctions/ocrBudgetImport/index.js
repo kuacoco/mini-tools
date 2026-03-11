@@ -176,6 +176,12 @@ exports.main = async (event) => {
     const fileID = event.fileID
     const lines = await requestOcrLines(fileID)
     const records = dedupeRecords(parseRecordsFromLines(lines))
+
+    // 识别完成后删除云存储中的该图片，避免长期占用空间
+    if (fileID) {
+      cloud.deleteFile({ fileList: [fileID] }).catch(() => { })
+    }
+
     return {
       success: true,
       data: {
