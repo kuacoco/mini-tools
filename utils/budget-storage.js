@@ -1,83 +1,76 @@
-const STORAGE_KEY = 'budget_items_v1'
-
 function getCurrentMonthKey(date = new Date()) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   return `${year}-${month}`
 }
 
-function readAllBudgetData() {
-  const data = wx.getStorageSync(STORAGE_KEY)
-  if (!data || typeof data !== 'object') return {}
-  return data
+function ensureCloudReady() {
+  if (!wx.cloud || !wx.cloud.callFunction) {
+    throw new Error('云开发未初始化')
+  }
 }
 
-function writeAllBudgetData(data) {
-  wx.setStorageSync(STORAGE_KEY, data)
+async function callBudgetCrud(action, payload = {}) {
+  ensureCloudReady()
+  const res = await wx.cloud.callFunction({
+    name: 'budgetCrud',
+    data: {
+      action,
+      payload,
+    },
+  })
+  const result = res && res.result ? res.result : {}
+  if (!result.success) {
+    throw new Error(result.message || '预算服务异常')
+  }
+  return result.data
 }
 
-function getMonthBudgetList(monthKey) {
-  const allData = readAllBudgetData()
-  const list = allData[monthKey]
-  if (!Array.isArray(list)) return []
-  return list
+async function getMonthBudgetList(monthKey) {
+  const data = await callBudgetCrud('listByMonth', { monthKey })
+  return Array.isArray(data && data.list) ? data.list : []
 }
 
-function addBudgetItem(monthKey, payload) {
-  const allData = readAllBudgetData()
-  const list = Array.isArray(allData[monthKey]) ? allData[monthKey] : []
-  const newItem = {
-    id: `b_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+async function addBudgetItem(monthKey, payload) {
+  const data = await callBudgetCrud('upsertItem', {
+    monthKey,
     name: payload.name,
     totalAmount: Number(payload.totalAmount),
-    usedAmount: 0,
-    createdAt: Date.now(),
-  }
-  allData[monthKey] = [newItem, ...list]
-  writeAllBudgetData(allData)
-  return newItem
-}
-
-function updateUsedAmount(monthKey, id, usedAmount) {
-  const allData = readAllBudgetData()
-  const list = Array.isArray(allData[monthKey]) ? allData[monthKey] : []
-  const nextList = list.map((item) => {
-    if (item.id !== id) return item
-    return {
-      ...item,
-      usedAmount: Number(usedAmount),
-    }
+    usedAmount: Number(payload.usedAmount || 0),
   })
-  allData[monthKey] = nextList
-  writeAllBudgetData(allData)
+  return data ? data.item : null
 }
 
-function updateBudgetItem(monthKey, id, payload) {
-  const allData = readAllBudgetData()
-  const list = Array.isArray(allData[monthKey]) ? allData[monthKey] : []
-  const nextList = list.map((item) => {
-    if (item.id !== id) return item
-    return {
-      ...item,
-      name: payload.name,
-      totalAmount: Number(payload.totalAmount),
-    }
+async function updateUsedAmount(monthKey, id, usedAmount) {
+  await callBudgetCrud('updateUsedAmount', {
+    monthKey,
+    id,
+    usedAmount: Number(usedAmount),
   })
-  allData[monthKey] = nextList
-  writeAllBudgetData(allData)
 }
 
-function deleteBudgetItem(monthKey, id) {
-  const allData = readAllBudgetData()
-  const list = Array.isArray(allData[monthKey]) ? allData[monthKey] : []
-  const nextList = list.filter((item) => item.id !== id)
-  allData[monthKey] = nextList
-  writeAllBudgetData(allData)
+async function updateBudgetItem(monthKey, id, payload) {
+  await callBudgetCrud('upsertItem', {
+    monthKey,
+    id,
+    name: payload.name,
+    totalAmount: Number(payload.totalAmount),
+  })
 }
 
-function getBudgetItem(monthKey, id) {
-  const list = getMonthBudgetList(monthKey)
-  return list.find((item) => item.id === id) || null
+async function deleteBudgetItem(monthKey, id) {
+  await callBudgetCrud('deleteItem', {
+    monthKey,
+    id,
+  })
+}
+
+async function mergeBudgetItemsFromOcr(monthKey, records) {
+  const data = await callBudgetCrud('mergeFromOcr', {
+    monthKey,
+    records,
+  })
+  return data || { created: 0, updated: 0, skipped: 0 }
 }
 
 module.exports = {
@@ -87,5 +80,5 @@ module.exports = {
   updateUsedAmount,
   updateBudgetItem,
   deleteBudgetItem,
-  getBudgetItem,
+  mergeBudgetItemsFromOcr,
 }

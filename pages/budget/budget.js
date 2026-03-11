@@ -5,7 +5,7 @@ const {
   updateUsedAmount,
   updateBudgetItem,
   deleteBudgetItem,
-  getBudgetItem,
+  mergeBudgetItemsFromOcr,
 } = require('../../utils/budget-storage')
 const { formatAmount } = require('../../utils/amount-expression')
 
@@ -33,10 +33,47 @@ const SWIPE_EDIT_WIDTH = 82
 const SWIPE_DELETE_WIDTH = 82
 const SWIPE_OPEN_THRESHOLD = 38
 const POPUP_ANIMATION_MS = 240
+const FAB_MENU_ANIMATION_MS = 180
 
 function vibrateLight() {
   if (typeof wx === 'undefined' || !wx.vibrateShort) return
   wx.vibrateShort()
+}
+
+function chooseOneImage() {
+  return new Promise((resolve, reject) => {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const file =
+          res &&
+          Array.isArray(res.tempFiles) &&
+          res.tempFiles.length > 0
+            ? res.tempFiles[0]
+            : null
+        if (!file || !file.tempFilePath) {
+          reject(new Error('未选择图片'))
+          return
+        }
+        resolve(file.tempFilePath)
+      },
+      fail: (err) => reject(err),
+    })
+  })
+}
+
+function uploadImageToCloud(tempFilePath) {
+  const extMatch = tempFilePath.match(/\.[a-zA-Z0-9]+$/)
+  const ext = extMatch ? extMatch[0] : '.jpg'
+  const cloudPath = `budget-import/${Date.now()}_${Math.floor(
+    Math.random() * 10000
+  )}${ext}`
+  return wx.cloud.uploadFile({
+    cloudPath,
+    filePath: tempFilePath,
+  })
 }
 
 Page({
@@ -47,6 +84,8 @@ Page({
     totalBudgetText: '0',
     totalUsedText: '0',
     remainText: '0',
+    showFabMenu: false,
+    fabMenuClosing: false,
     showAddPopup: false,
     addPopupClosing: false,
     addPopupMode: 'add',
@@ -79,15 +118,22 @@ Page({
   onUnload() {
     if (this.addPopupTimer) clearTimeout(this.addPopupTimer)
     if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
+    if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
   },
 
-  onShow() {
-    this.refreshBudgetList()
+  async onShow() {
+    await this.refreshBudgetList()
   },
 
-  refreshBudgetList() {
+  async refreshBudgetList() {
     const { monthKey } = this.data
-    const list = getMonthBudgetList(monthKey)
+    let list = []
+    try {
+      list = await getMonthBudgetList(monthKey)
+    } catch (err) {
+      wx.showToast({ title: '预算数据加载失败', icon: 'none' })
+      return
+    }
     let totalBudget = 0
     let totalUsed = 0
     const decorated = list.map((item, index) => {
@@ -122,7 +168,42 @@ Page({
     })
   },
 
-  onAddBudget() {
+  onToggleFabMenu() {
+    if (this.data.showFabMenu && !this.data.fabMenuClosing) {
+      this.closeFabMenu()
+      return
+    }
+    if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
+    this.setData({
+      showFabMenu: true,
+      fabMenuClosing: false,
+    })
+  },
+
+  closeFabMenu(options = {}) {
+    const { afterClose } = options
+    if (!this.data.showFabMenu) {
+      if (typeof afterClose === 'function') afterClose()
+      return
+    }
+    if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
+    this.setData({ fabMenuClosing: true })
+    this.fabMenuTimer = setTimeout(() => {
+      this.setData({
+        showFabMenu: false,
+        fabMenuClosing: false,
+      })
+      if (typeof afterClose === 'function') afterClose()
+    }, FAB_MENU_ANIMATION_MS)
+  },
+
+  onOpenAddPopup() {
+    this.closeFabMenu({
+      afterClose: () => this.openAddPopup(),
+    })
+  },
+
+  openAddPopup() {
     if (this.addPopupTimer) clearTimeout(this.addPopupTimer)
     this.setData({
       showAddPopup: true,
@@ -146,8 +227,7 @@ Page({
       this.resetAllOffsets()
       return
     }
-    const { monthKey } = this.data
-    const item = getBudgetItem(monthKey, id)
+    const item = target || null
     if (!item) {
       wx.showToast({ title: '预算项不存在', icon: 'none' })
       return
@@ -168,6 +248,10 @@ Page({
   },
 
   onClosePopup() {
+    if (this.data.showFabMenu) {
+      this.closeFabMenu()
+      return
+    }
     if (this.data.showUsedPopup) {
       this.closeUsedPopup()
       return
@@ -181,7 +265,7 @@ Page({
     this.setData({ addName: e.detail.value })
   },
 
-  onSaveBudgetItem() {
+  async onSaveBudgetItem() {
     vibrateLight()
     const mode = this.data.addPopupMode
     const name = (this.data.addName || '').trim()
@@ -194,21 +278,26 @@ Page({
       wx.showToast({ title: '请输入有效预算金额', icon: 'none' })
       return
     }
-    if (mode === 'edit' && this.data.editingBudgetId) {
-      updateBudgetItem(this.data.monthKey, this.data.editingBudgetId, {
-        name,
-        totalAmount: Number(total.toFixed(2)),
-      })
-    } else {
-      addBudgetItem(this.data.monthKey, {
-        name,
-        totalAmount: Number(total.toFixed(2)),
-      })
+    try {
+      if (mode === 'edit' && this.data.editingBudgetId) {
+        await updateBudgetItem(this.data.monthKey, this.data.editingBudgetId, {
+          name,
+          totalAmount: Number(total.toFixed(2)),
+        })
+      } else {
+        await addBudgetItem(this.data.monthKey, {
+          name,
+          totalAmount: Number(total.toFixed(2)),
+        })
+      }
+    } catch (err) {
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      return
     }
     this.closeAddPopup({
       resetForm: true,
     })
-    this.refreshBudgetList()
+    await this.refreshBudgetList()
     wx.showToast({
       title: mode === 'edit' ? '已更新' : '已新增',
       icon: 'success',
@@ -231,20 +320,25 @@ Page({
     })
   },
 
-  onSaveUsedAmount() {
+  async onSaveUsedAmount() {
     vibrateLight()
     const value = Number(this.data.usedInput)
     if (Number.isNaN(value) || value < 0) {
       wx.showToast({ title: '金额格式不正确', icon: 'none' })
       return
     }
-    updateUsedAmount(
-      this.data.monthKey,
-      this.data.usedItemId,
-      Number(value.toFixed(2))
-    )
+    try {
+      await updateUsedAmount(
+        this.data.monthKey,
+        this.data.usedItemId,
+        Number(value.toFixed(2))
+      )
+    } catch (err) {
+      wx.showToast({ title: '更新失败，请重试', icon: 'none' })
+      return
+    }
     this.closeUsedPopup({ resetForm: true })
-    this.refreshBudgetList()
+    await this.refreshBudgetList()
     wx.showToast({ title: '已更新', icon: 'success' })
   },
 
@@ -290,7 +384,7 @@ Page({
 
   onEditBudgetAction(e) {
     const { id } = e.currentTarget.dataset
-    const item = getBudgetItem(this.data.monthKey, id)
+    const item = this.data.budgetList.find((budget) => budget.id === id) || null
     if (!item) {
       wx.showToast({ title: '预算项不存在', icon: 'none' })
       return
@@ -318,13 +412,75 @@ Page({
       title: '删除预算项',
       content: '删除后不可恢复，确认删除吗？',
       confirmColor: '#d06d7f',
-      success: (res) => {
+      success: async (res) => {
         if (!res.confirm) return
-        deleteBudgetItem(this.data.monthKey, id)
-        this.refreshBudgetList()
+        try {
+          await deleteBudgetItem(this.data.monthKey, id)
+        } catch (err) {
+          wx.showToast({ title: '删除失败，请重试', icon: 'none' })
+          return
+        }
+        await this.refreshBudgetList()
         wx.showToast({ title: '已删除', icon: 'success' })
       },
     })
+  },
+
+  onImportBudgetByImage() {
+    this.closeFabMenu({
+      afterClose: () => this.startImageImport(),
+    })
+  },
+
+  async startImageImport() {
+    if (!wx.cloud || !wx.cloud.uploadFile || !wx.cloud.callFunction) {
+      wx.showToast({ title: '请先启用云开发', icon: 'none' })
+      return
+    }
+    let hideLoading = false
+    try {
+      const tempFilePath = await chooseOneImage()
+      wx.showLoading({ title: '识别中...', mask: true })
+      hideLoading = true
+      const uploadRes = await uploadImageToCloud(tempFilePath)
+      const fileID = uploadRes && uploadRes.fileID
+      if (!fileID) {
+        throw new Error('图片上传失败')
+      }
+      const ocrRes = await wx.cloud.callFunction({
+        name: 'ocrBudgetImport',
+        data: { fileID },
+      })
+      const ocrResult = ocrRes && ocrRes.result ? ocrRes.result : {}
+      if (!ocrResult.success) {
+        throw new Error(ocrResult.message || '图片识别失败')
+      }
+      const records =
+        ocrResult.data && Array.isArray(ocrResult.data.records)
+          ? ocrResult.data.records
+          : []
+      if (!records.length) {
+        throw new Error('未识别到分类金额')
+      }
+      const stats = await mergeBudgetItemsFromOcr(this.data.monthKey, records)
+      await this.refreshBudgetList()
+      wx.showToast({
+        title: `更新${stats.updated || 0}项 新增${stats.created || 0}项`,
+        icon: 'none',
+      })
+    } catch (err) {
+      const message =
+        err && err.errMsg && err.errMsg.includes('cancel')
+          ? ''
+          : err && err.message
+            ? err.message
+            : '导入失败，请重试'
+      if (message) {
+        wx.showToast({ title: message, icon: 'none' })
+      }
+    } finally {
+      if (hideLoading) wx.hideLoading()
+    }
   },
 
   closeAddPopup(options = {}) {
@@ -396,23 +552,23 @@ Page({
 
   noop() { },
 
-  onPrevMonth() {
+  async onPrevMonth() {
     this.resetAllOffsets()
     const monthKey = getOffsetMonthKey(this.data.monthKey, -1)
     this.setData({
       monthKey,
       monthLabel: getMonthLabel(monthKey),
     })
-    this.refreshBudgetList()
+    await this.refreshBudgetList()
   },
 
-  onNextMonth() {
+  async onNextMonth() {
     this.resetAllOffsets()
     const monthKey = getOffsetMonthKey(this.data.monthKey, 1)
     this.setData({
       monthKey,
       monthLabel: getMonthLabel(monthKey),
     })
-    this.refreshBudgetList()
+    await this.refreshBudgetList()
   },
 })

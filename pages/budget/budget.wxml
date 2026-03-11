@@ -70,8 +70,15 @@
 		</sticky-section>
 	</scroll-view>
 
-	<view class="add-btn" bindtap="onAddBudget">
-		<image class="add-btn-icon" src="/pages/statics/plus.svg" mode="aspectFit" />
+	<view wx:if="{{ showFabMenu }}" class="fab-mask {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup"></view>
+	<view class="fab-wrap">
+		<view wx:if="{{ showFabMenu }}" class="fab-menu {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}">
+			<view class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view>
+			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算项</view>
+		</view>
+		<view class="add-btn {{ showFabMenu && !fabMenuClosing ? 'is-active' : '' }}" bindtap="onToggleFabMenu">
+			<image class="add-btn-icon" src="/pages/statics/plus.svg" mode="aspectFit" />
+		</view>
 	</view>
 
 	<view wx:if="{{ showAddPopup }}" class="popup-mask {{ addPopupClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup">

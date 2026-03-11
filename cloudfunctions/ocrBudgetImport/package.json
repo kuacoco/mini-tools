@@ -1,0 +1,10 @@
+{
+  "name": "ocr-budget-import",
+  "version": "1.0.0",
+  "description": "OCR import for budget records",
+  "main": "index.js",
+  "dependencies": {
+    "tencentcloud-sdk-nodejs": "^4.1.192",
+    "wx-server-sdk": "^3.0.4"
+  }
+}
