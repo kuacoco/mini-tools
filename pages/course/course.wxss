@@ -69,9 +69,6 @@ page {
 }
 
 .today-btn {
-  position: absolute;
-  right: 160rpx;
-  top: 9rpx;
   font-size: 24rpx;
   color: #0d9488;
   background: #ccfbf1;
@@ -84,12 +81,26 @@ page {
   position: relative;
   text-align: center;
   padding: 12rpx 0 24rpx;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: 40rpx;
+}
+
+.selected-date-bar::before {
+  content: "";
+  width: 6rpx;
+  height: 28rpx;
+  background: #0d9488;
+  border-radius: 4rpx;
+  margin: 10rpx;
 }
 
 .selected-date-value {
   font-size: 32rpx;
   font-weight: 500;
   color: #6b7280;
+  margin-right: 10rpx;
 }
 
 .calendar-card {
@@ -184,7 +195,7 @@ page {
   flex-shrink: 0;
   box-shadow: 0 2rpx 6rpx rgba(244, 114, 182, 0.35);
   position: absolute;
-  transform: translateY(12px);
+  transform: translateY(30rpx);
 }
 
 .course-list-content {
@@ -255,7 +266,7 @@ page {
 }
 
 /* 当日已打卡的卡片：纯色置灰，不透明 */
-.course-item--checked {
+/* .course-item--checked {
   background: #f7f7f8;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
 }
@@ -264,7 +275,7 @@ page {
 }
 .course-item--checked .item-subtitle {
   color: #b8bcc4;
-}
+} */
 
 .item-row {
   display: flex;
