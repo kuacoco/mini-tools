@@ -47,7 +47,7 @@
 					<view class="swipe-action delete" data-id="{{ item.id }}" catchtap="onDeleteCourseAction">删除</view>
 				</block>
 				<view
-					class="course-item"
+					class="course-item {{ item.checkedToday ? 'course-item--checked' : '' }}"
 					style="transform: translateX({{ item.offsetX }}px);"
 					data-id="{{ item.id }}"
 					catchtap="onCourseTap"

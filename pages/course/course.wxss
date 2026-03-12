@@ -254,6 +254,18 @@ page {
   transition: transform 0.18s ease;
 }
 
+/* 当日已打卡的卡片：纯色置灰，不透明 */
+.course-item--checked {
+  background: #f7f7f8;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+}
+.course-item--checked .item-name {
+  color: #a8a8b0;
+}
+.course-item--checked .item-subtitle {
+  color: #b8bcc4;
+}
+
 .item-row {
   display: flex;
   align-items: center;
@@ -273,8 +285,8 @@ page {
 }
 
 .course-avatar.checked {
-  background: linear-gradient(145deg, #5eead4 0%, #2dd4bf 100%) !important;
-  box-shadow: 0 4rpx 12rpx rgba(45, 212, 191, 0.4);
+  /* background: linear-gradient(145deg, #f9a8d4 0%, #f472b6 100%) !important;
+  box-shadow: 0 2rpx 6rpx rgba(244, 114, 182, 0.35); */
 }
 
 .avatar-char {
