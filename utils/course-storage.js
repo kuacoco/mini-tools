@@ -85,6 +85,21 @@ async function getMonthCheckins(monthKey) {
   return data && data.checkins ? data.checkins : {}
 }
 
+async function createShareToken() {
+  const data = await callCourseCrud('createShareToken')
+  return data && data.token ? data.token : ''
+}
+
+async function listCoursesForShare(token) {
+  const data = await callCourseCrud('listCoursesForShare', { token })
+  return Array.isArray(data && data.list) ? data.list : []
+}
+
+async function getMonthCheckinsForShare(token, monthKey) {
+  const data = await callCourseCrud('getMonthCheckinsForShare', { token, monthKey })
+  return data && data.checkins ? data.checkins : {}
+}
+
 module.exports = {
   getCurrentMonthKey,
   getCurrentDateString,
@@ -96,4 +111,7 @@ module.exports = {
   removeCheckin,
   getCheckinLogs,
   getMonthCheckins,
+  createShareToken,
+  listCoursesForShare,
+  getMonthCheckinsForShare,
 }

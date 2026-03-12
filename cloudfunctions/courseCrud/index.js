@@ -5,6 +5,8 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const COURSES_COLLECTION = 'course_records'
 const CHECKINS_COLLECTION = 'checkin_logs'
+// 分享只读：集合 course_share 字段 ownerOpenid(string), token(string 唯一), createdAt(number)。请在云开发控制台为该集合 token 建唯一索引。
+const SHARE_COLLECTION = 'course_share'
 
 function normalizeName(name) {
   return String(name || '').trim()
@@ -291,10 +293,8 @@ async function getCheckinLogs(payload, openid) {
   return { list }
 }
 
-async function getMonthCheckins(payload, openid) {
-  const monthKey = payload.monthKey
+async function getMonthCheckinsByOpenid(monthKey, openid) {
   ensureMonthKey(monthKey)
-
   const res = await db
     .collection(CHECKINS_COLLECTION)
     .where({
@@ -306,7 +306,6 @@ async function getMonthCheckins(payload, openid) {
     })
     .get()
 
-  // 按课程ID分组
   const checkinsMap = {}
   for (const item of (res.data || [])) {
     const courseId = item.courseId
@@ -320,8 +319,68 @@ async function getMonthCheckins(payload, openid) {
       note: item.note || '',
     })
   }
-
   return { checkins: checkinsMap }
+}
+
+async function getMonthCheckins(payload, openid) {
+  const monthKey = payload.monthKey
+  return getMonthCheckinsByOpenid(monthKey, openid)
+}
+
+function generateShareToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let token = ''
+  for (let i = 0; i < 12; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return token
+}
+
+async function createShareToken(openid) {
+  const existing = await db
+    .collection(SHARE_COLLECTION)
+    .where({ ownerOpenid: openid })
+    .limit(1)
+    .get()
+  const list = existing.data || []
+  if (list.length > 0) {
+    return { token: list[0].token }
+  }
+  const token = generateShareToken()
+  const now = Date.now()
+  await db.collection(SHARE_COLLECTION).add({
+    data: {
+      ownerOpenid: openid,
+      token,
+      createdAt: now,
+    },
+  })
+  return { token }
+}
+
+async function getOwnerOpenidByToken(token) {
+  if (!token || typeof token !== 'string') throw new Error('分享链接无效')
+  const res = await db
+    .collection(SHARE_COLLECTION)
+    .where({ token: token.trim() })
+    .limit(1)
+    .get()
+  const list = res.data || []
+  if (list.length === 0) throw new Error('分享链接无效或已失效')
+  return list[0].ownerOpenid
+}
+
+async function listCoursesForShare(payload) {
+  const ownerOpenid = await getOwnerOpenidByToken(payload.token)
+  return listCourses(ownerOpenid)
+}
+
+async function getMonthCheckinsForShare(payload) {
+  const token = payload.token
+  const monthKey = payload.monthKey
+  if (!monthKey) throw new Error('monthKey 不能为空')
+  const ownerOpenid = await getOwnerOpenidByToken(token)
+  return getMonthCheckinsByOpenid(monthKey, ownerOpenid)
 }
 
 exports.main = async (event) => {
@@ -356,6 +415,15 @@ exports.main = async (event) => {
         break
       case 'getMonthCheckins':
         data = await getMonthCheckins(payload, OPENID)
+        break
+      case 'createShareToken':
+        data = await createShareToken(OPENID)
+        break
+      case 'listCoursesForShare':
+        data = await listCoursesForShare(payload)
+        break
+      case 'getMonthCheckinsForShare':
+        data = await getMonthCheckinsForShare(payload)
         break
       default:
         throw new Error('不支持的 action')

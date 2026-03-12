@@ -8,6 +8,9 @@ const {
   checkin,
   removeCheckin,
   getMonthCheckins,
+  listCoursesForShare,
+  getMonthCheckinsForShare,
+  createShareToken,
 } = require('../../utils/course-storage')
 
 const COLOR_PALETTE = [
@@ -148,14 +151,21 @@ Page({
     addCourseName: '',
     addTotalClasses: 1,
     editingCourseId: '',
+    isViewerMode: false,
+    shareToken: '',
+    thisShareToken: '',
+    navTitle: '消课记录',
   },
 
-  async onLoad() {
+  async onLoad(options) {
     const monthKey = getCurrentMonthKey()
     const today = getCurrentDateString()
     const todayDisplay = formatDateDisplay(today)
     const monthPickerItems = generateMonthPickerItems(monthKey)
     const currentPickerIndex = findMonthPickerIndex(monthPickerItems, monthKey)
+
+    const shareToken = (options && options.shareToken) ? String(options.shareToken).trim() : ''
+    const isViewerMode = !!shareToken
 
     this.setData({
       selectedDate: today,
@@ -165,6 +175,9 @@ Page({
       currentMonthLabel: getMonthLabel(monthKey),
       monthPickerItems,
       currentPickerIndex: currentPickerIndex >= 0 ? currentPickerIndex : 0,
+      isViewerMode,
+      shareToken,
+      navTitle: isViewerMode ? 'TA的消课记录' : '消课记录',
     })
 
     await this.loadMonthData(monthKey)
@@ -181,13 +194,34 @@ Page({
 
   async loadMonthData(monthKey) {
     const [year, month] = monthKey.split('-')
+    const { selectedDate, isViewerMode, shareToken } = this.data
 
-    // 获取当月所有打卡记录
     let checkinsMap = {}
-    try {
-      checkinsMap = await getMonthCheckins(monthKey)
-    } catch (err) {
-      // ignore
+    let list = []
+    if (isViewerMode && shareToken) {
+      try {
+        checkinsMap = await getMonthCheckinsForShare(shareToken, monthKey)
+      } catch (err) {
+        wx.showToast({ title: '分享链接无效或已失效', icon: 'none' })
+        return
+      }
+      try {
+        list = await listCoursesForShare(shareToken)
+      } catch (err) {
+        wx.showToast({ title: '分享链接无效或已失效', icon: 'none' })
+        return
+      }
+    } else {
+      try {
+        checkinsMap = await getMonthCheckins(monthKey)
+      } catch (err) {
+        // ignore
+      }
+      try {
+        list = await listCourses()
+      } catch (err) {
+        // ignore
+      }
     }
 
     // 收集所有打卡日期
@@ -200,22 +234,12 @@ Page({
       }
     }
 
-    const { selectedDate } = this.data
-
     const calendarDays = generateCalendarDays(
       Number(year),
       Number(month),
       allCheckinDates,
       selectedDate
     )
-
-    // 获取课程列表
-    let list = []
-    try {
-      list = await listCourses()
-    } catch (err) {
-      // ignore
-    }
 
     // 统计每个课程在当月的打卡次数
     const checkinCountMap = {}
@@ -425,6 +449,7 @@ Page({
   },
 
   async onToggleCheckin(e) {
+    if (this.data.isViewerMode) return
     const { id } = e.currentTarget.dataset
     const { currentMonthKey, selectedDate } = this.data
 
@@ -477,6 +502,7 @@ Page({
   },
 
   onItemTouchStart(e) {
+    if (this.data.isViewerMode) return
     const { id } = e.currentTarget.dataset
     const touch = e.touches && e.touches[0]
     if (!touch) return
@@ -584,6 +610,27 @@ Page({
   },
 
   noop() { },
+
+  // 直接使用小程序自带转发（右上角···转发），在分享时按需生成 token
+  async onShareAppMessage() {
+    if (this.data.isViewerMode) {
+      return { title: '消课记录' }
+    }
+    let token = this.data.thisShareToken
+    if (!token) {
+      try {
+        token = await createShareToken()
+        if (token) this.setData({ thisShareToken: token })
+      } catch (err) {
+        wx.showToast({ title: '分享生成失败', icon: 'none' })
+        return { title: '我的消课记录', path: '/pages/course/course' }
+      }
+    }
+    return {
+      title: '我的消课记录',
+      path: token ? `/pages/course/course?shareToken=${encodeURIComponent(token)}` : '/pages/course/course',
+    }
+  },
 
   // 回今天
   goToToday() {

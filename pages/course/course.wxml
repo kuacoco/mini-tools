@@ -1,4 +1,4 @@
-<navigation-bar title="消课记录" />
+<navigation-bar title="{{ navTitle }}" />
 <view class="course-page">
 	<view class="month-content">
 		<view class="calendar-card">
@@ -37,13 +37,15 @@
 
 		<view class="course-list-content">
 			<view wx:if="{{ !courseList.length }}" class="empty-card">
-				<text class="empty-title">还没有添加课程</text>
-				<text class="empty-desc">点击下方 + 添加第一个课程</text>
+				<text class="empty-title">{{ isViewerMode ? '对方暂无课程' : '还没有添加课程' }}</text>
+				<text class="empty-desc" wx:if="{{ !isViewerMode }}">点击下方 + 添加第一个课程</text>
 			</view>
 
 			<view wx:for="{{ courseList }}" wx:key="id" class="swipe-row">
-				<view class="swipe-action edit" data-id="{{ item.id }}" catchtap="onEditCourseAction">编辑</view>
-				<view class="swipe-action delete" data-id="{{ item.id }}" catchtap="onDeleteCourseAction">删除</view>
+				<block wx:if="{{ !isViewerMode }}">
+					<view class="swipe-action edit" data-id="{{ item.id }}" catchtap="onEditCourseAction">编辑</view>
+					<view class="swipe-action delete" data-id="{{ item.id }}" catchtap="onDeleteCourseAction">删除</view>
+				</block>
 				<view
 					class="course-item"
 					style="transform: translateX({{ item.offsetX }}px);"
@@ -55,19 +57,30 @@
 					bindtouchcancel="onItemTouchEnd"
 				>
 					<view class="item-row">
-						<view
-							class="course-avatar {{ item.checkedToday ? 'checked' : '' }}"
-							style="background: {{ item.avatarColor }}"
-							data-id="{{ item.id }}"
-							catchtap="onToggleCheckin"
-						>
-							<text wx:if="{{ !item.checkedToday }}" class="avatar-char">{{ item.firstChar }}</text>
-							<text wx:else class="avatar-check">✓</text>
-						</view>
+						<block wx:if="{{ isViewerMode }}">
+							<view
+								class="course-avatar {{ item.checkedToday ? 'checked' : '' }}"
+								style="background: {{ item.avatarColor }}"
+							>
+								<text wx:if="{{ !item.checkedToday }}" class="avatar-char">{{ item.firstChar }}</text>
+								<text wx:else class="avatar-check">✓</text>
+							</view>
+						</block>
+						<block wx:else>
+							<view
+								class="course-avatar {{ item.checkedToday ? 'checked' : '' }}"
+								style="background: {{ item.avatarColor }}"
+								data-id="{{ item.id }}"
+								catchtap="onToggleCheckin"
+							>
+								<text wx:if="{{ !item.checkedToday }}" class="avatar-char">{{ item.firstChar }}</text>
+								<text wx:else class="avatar-check">✓</text>
+							</view>
+						</block>
 						<view class="item-info">
 							<view class="item-header">
 								<text class="item-name">{{ item.courseName }}</text>
-								<text class="item-subtitle">剩余 {{ item.remainClasses }} / 总计 {{ item.totalClasses }} 课时</text>
+								<text class="item-subtitle">剩余 {{ item.remainClasses }} 课时 / 总计 {{ item.totalClasses }} 课时</text>
 							</view>
 						</view>
 					</view>
@@ -79,7 +92,7 @@
 		</view>
 	</view>
 
-	<view class="fab-wrap">
+	<view wx:if="{{ !isViewerMode }}" class="fab-wrap">
 		<view class="add-btn" bindtap="onOpenAddPopup">
 			<image class="add-btn-icon" src="/pages/statics/plus.svg" mode="aspectFit" />
 		</view>
