@@ -85,7 +85,7 @@
 		<view class="popup-sheet" catchtap="noop">
 			<view class="popup-head">
 				<text class="popup-title">{{ addPopupTitle }}</text>
-				<text class="popup-close" bindtap="onClosePopup">×</text>
+				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" /></view>
 			</view>
 			<view class="popup-content">
 				<view class="popup-item">
@@ -112,7 +112,7 @@
 		<view class="popup-sheet" catchtap="noop">
 			<view class="popup-head">
 				<text class="popup-title">设置已使用额度</text>
-				<text class="popup-close" bindtap="onClosePopup">×</text>
+				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" /></view>
 			</view>
 			<view class="used-meta">
 				<text class="used-name">{{ usedItemName }}</text>

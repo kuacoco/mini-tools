@@ -9,6 +9,12 @@ Page({
         path: '/pages/budget/budget',
       },
       {
+        id: 'course',
+        title: '消课记录',
+        desc: '记录兴趣班上课打卡，查看剩余课时',
+        path: '/pages/course/course',
+      },
+      {
         id: 'location',
         title: '定位拾取(gcj02)',
         desc: '获取当前所在位置的经纬度并支持复制',

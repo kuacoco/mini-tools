@@ -1,0 +1,116 @@
+<navigation-bar title="消课记录" />
+<view class="course-page">
+	<view class="month-content">
+		<view class="calendar-card">
+			<view class="month-row">
+				<view class="month-switch" bindtap="onPrevMonth">
+					<image class="month-switch-icon" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
+				</view>
+				<picker mode="selector" range="{{ monthPickerItems }}" range-key="label" value="{{ currentPickerIndex }}" bindchange="onSelectMonth">
+					<text class="month-title">{{ currentMonthLabel }}</text>
+				</picker>
+				<view class="month-switch" bindtap="onNextMonth">
+					<image class="month-switch-icon" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
+				</view>
+			</view>
+			<view class="calendar-header">
+				<text class="calendar-weekday" wx:for="{{ weekDays }}" wx:key="*this">{{ item }}</text>
+			</view>
+			<view class="calendar-grid">
+				<view
+					wx:for="{{ calendarDays }}"
+					wx:key="date"
+					class="calendar-day {{ item.isToday ? 'is-today' : '' }} {{ item.isSelected ? 'is-selected' : '' }} {{ !item.isCurrentMonth ? 'other-month' : '' }}"
+					data-date="{{ item.date }}"
+					bindtap="onSelectDate"
+				>
+					<text class="day-number">{{ item.day }}</text>
+					<view wx:if="{{ item.hasCheckin }}" class="checkin-dot"></view>
+				</view>
+			</view>
+		</view>
+
+		<view class="selected-date-bar">
+			<text class="selected-date-value">{{ selectedDateDisplay }}</text>
+			<text wx:if="{{ selectedDate !== todayDateString }}" class="today-btn" bindtap="goToToday">回今天</text>
+		</view>
+
+		<view class="course-list-content">
+			<view wx:if="{{ !courseList.length }}" class="empty-card">
+				<text class="empty-title">还没有添加课程</text>
+				<text class="empty-desc">点击下方 + 添加第一个课程</text>
+			</view>
+
+			<view wx:for="{{ courseList }}" wx:key="id" class="swipe-row">
+				<view class="swipe-action edit" data-id="{{ item.id }}" catchtap="onEditCourseAction">编辑</view>
+				<view class="swipe-action delete" data-id="{{ item.id }}" catchtap="onDeleteCourseAction">删除</view>
+				<view
+					class="course-item"
+					style="transform: translateX({{ item.offsetX }}px);"
+					data-id="{{ item.id }}"
+					catchtap="onCourseTap"
+					bindtouchstart="onItemTouchStart"
+					bindtouchmove="onItemTouchMove"
+					bindtouchend="onItemTouchEnd"
+					bindtouchcancel="onItemTouchEnd"
+				>
+					<view class="item-row">
+						<view
+							class="course-avatar {{ item.checkedToday ? 'checked' : '' }}"
+							style="background: {{ item.avatarColor }}"
+							data-id="{{ item.id }}"
+							catchtap="onToggleCheckin"
+						>
+							<text wx:if="{{ !item.checkedToday }}" class="avatar-char">{{ item.firstChar }}</text>
+							<text wx:else class="avatar-check">✓</text>
+						</view>
+						<view class="item-info">
+							<view class="item-header">
+								<text class="item-name">{{ item.courseName }}</text>
+								<text class="item-subtitle">剩余 {{ item.remainClasses }} / 总计 {{ item.totalClasses }} 课时</text>
+							</view>
+						</view>
+					</view>
+					<view class="progress-track" style="background: {{ item.trackColor }}">
+						<view class="progress-fill" style="width: {{ item.barWidth }}; background: {{ item.barColor }}"></view>
+					</view>
+				</view>
+			</view>
+		</view>
+	</view>
+
+	<view class="fab-wrap">
+		<view class="add-btn" bindtap="onOpenAddPopup">
+			<image class="add-btn-icon" src="/pages/statics/plus.svg" mode="aspectFit" />
+		</view>
+	</view>
+
+	<view wx:if="{{ showAddPopup }}" class="popup-mask {{ addPopupClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup">
+		<view class="popup-sheet" catchtap="noop">
+			<view class="popup-handle"></view>
+			<view class="popup-head">
+				<text class="popup-title">{{ addPopupTitle }}</text>
+				<view class="popup-close" bindtap="onClosePopup">
+					<image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" />
+				</view>
+			</view>
+			<view class="popup-body">
+				<view class="popup-field">
+					<text class="popup-label">课程名称</text>
+					<input class="popup-input" placeholder="例如：舞蹈课、钢琴课" maxlength="20" value="{{ addCourseName }}" bindinput="onCourseNameInput" />
+				</view>
+				<view class="popup-field">
+					<text class="popup-label">课时总数</text>
+					<view class="stepper-row">
+						<view class="stepper-btn minus {{ addTotalClasses <= 1 ? 'disabled' : '' }}" bindtap="onStepperMinus">－</view>
+						<input class="stepper-input" type="number" maxlength="3" value="{{ addTotalClasses }}" bindinput="onTotalClassesInput" />
+						<view class="stepper-btn plus {{ addTotalClasses >= 999 ? 'disabled' : '' }}" bindtap="onStepperPlus">＋</view>
+					</view>
+				</view>
+			</view>
+			<view class="popup-footer">
+				<view class="popup-btn primary" bindtap="onSaveCourse">{{ addPopupMode === 'edit' ? '保存' : '添加课程' }}</view>
+			</view>
+		</view>
+	</view>
+</view>

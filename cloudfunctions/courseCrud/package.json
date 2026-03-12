@@ -1,0 +1,9 @@
+{
+  "name": "course-crud",
+  "version": "1.0.0",
+  "description": "Course CRUD cloud function for class attendance tracking",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "^3.0.4"
+  }
+}
