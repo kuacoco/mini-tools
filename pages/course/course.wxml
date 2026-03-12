@@ -58,10 +58,7 @@
 				>
 					<view class="item-row">
 						<block wx:if="{{ isViewerMode }}">
-							<view
-								class="course-avatar {{ item.checkedToday ? 'checked' : '' }}"
-								style="background: {{ item.avatarColor }}"
-							>
+							<view class="course-avatar {{ item.checkedToday ? 'checked' : '' }}" style="background: {{ item.avatarColor }}">
 								<text wx:if="{{ !item.checkedToday }}" class="avatar-char">{{ item.firstChar }}</text>
 								<text wx:else class="avatar-check">✓</text>
 							</view>
@@ -79,13 +76,16 @@
 						</block>
 						<view class="item-info">
 							<view class="item-header">
-								<text class="item-name">{{ item.courseName }}</text>
-								<text class="item-subtitle">剩余 {{ item.remainClasses }} 课时 / 总计 {{ item.totalClasses }} 课时</text>
+								<view class="item-used-row">
+									<text class="item-name">{{ item.courseName }}</text>
+									<text class="item-used">{{ item.usedClasses }}/{{ item.totalClasses }}</text>
+								</view>
+								<text class="item-subtitle">剩余 {{ item.remainClasses }} 课时</text>
+							</view>
+							<view class="progress-track" style="background: {{ item.trackColor }}">
+								<view class="progress-fill" style="width: {{ item.barWidth }}; background: {{ item.barColor }}"></view>
 							</view>
 						</view>
-					</view>
-					<view class="progress-track" style="background: {{ item.trackColor }}">
-						<view class="progress-fill" style="width: {{ item.barWidth }}; background: {{ item.barColor }}"></view>
 					</view>
 				</view>
 			</view>
