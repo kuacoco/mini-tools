@@ -14,5 +14,12 @@ Page({
         }
       })
     })
-  }
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '使用日志',
+      path: '/pages/logs/logs',
+    }
+  },
 })

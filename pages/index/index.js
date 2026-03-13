@@ -29,4 +29,11 @@ Page({
       wx.navigateTo({ url: path })
     }
   },
+
+  onShareAppMessage() {
+    return {
+      title: '实用小工具',
+      path: '/pages/index/index',
+    }
+  },
 })

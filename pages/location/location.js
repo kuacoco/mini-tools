@@ -61,4 +61,11 @@ Page({
   onRefresh() {
     this.fetchLocation();
   },
+
+  onShareAppMessage() {
+    return {
+      title: '定位拾取',
+      path: '/pages/location/location',
+    };
+  },
 });

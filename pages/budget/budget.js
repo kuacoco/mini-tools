@@ -571,4 +571,11 @@ Page({
     })
     await this.refreshBudgetList()
   },
+
+  onShareAppMessage() {
+    return {
+      title: '预算看板',
+      path: '/pages/budget/budget',
+    }
+  },
 })

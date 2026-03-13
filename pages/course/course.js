@@ -612,23 +612,33 @@ Page({
   noop() { },
 
   // 直接使用小程序自带转发（右上角···转发），在分享时按需生成 token
-  async onShareAppMessage() {
+  // 注意：不能使用 async，否则框架拿到的是 Promise 不会当分享配置用，需用 promise 字段做异步
+  onShareAppMessage() {
     if (this.data.isViewerMode) {
-      return { title: '消课记录' }
+      return { title: '消课记录', path: '/pages/course/course' }
     }
-    let token = this.data.thisShareToken
-    if (!token) {
-      try {
-        token = await createShareToken()
-        if (token) this.setData({ thisShareToken: token })
-      } catch (err) {
-        wx.showToast({ title: '分享生成失败', icon: 'none' })
-        return { title: '我的消课记录', path: '/pages/course/course' }
+    const that = this
+    const getPath = (token) => token
+      ? `/pages/course/course?shareToken=${encodeURIComponent(token)}`
+      : '/pages/course/course'
+    const promise = (async () => {
+      let token = that.data.thisShareToken
+      if (!token) {
+        try {
+          token = await createShareToken()
+          if (token) that.setData({ thisShareToken: token })
+          return { title: '我的消课记录', path: getPath(token) }
+        } catch (err) {
+          wx.showToast({ title: '分享生成失败', icon: 'none' })
+          return { title: '我的消课记录', path: '/pages/course/course' }
+        }
       }
-    }
+      return { title: '我的消课记录', path: getPath(token) }
+    })()
     return {
       title: '我的消课记录',
-      path: token ? `/pages/course/course?shareToken=${encodeURIComponent(token)}` : '/pages/course/course',
+      path: '/pages/course/course',
+      promise,
     }
   },
 
