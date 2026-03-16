@@ -18,7 +18,7 @@ App({
       return
     }
     wx.cloud.init({
-      env: 'cloud1-3gfzmsmq655e791e',
+      env: 'cloud2-1gytehldd551cd77',
       traceUser: true,
     })
   },
