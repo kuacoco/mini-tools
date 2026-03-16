@@ -3,6 +3,25 @@ const tencentcloud = require('tencentcloud-sdk-nodejs')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
+function getAllowedOwnerOpenids() {
+  const raw = process.env.OCR_OWNER_OPENID || process.env.OWNER_OPENID || ''
+  return String(raw)
+    .split(',')
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+}
+
+function ensureOcrPermission() {
+  const { OPENID } = cloud.getWXContext()
+  const owners = getAllowedOwnerOpenids()
+  if (!owners.length) {
+    throw new Error('OCR 功能未配置所有者，请先设置 OCR_OWNER_OPENID')
+  }
+  if (!OPENID || !owners.includes(OPENID)) {
+    throw new Error('该功能仅限小程序所有者使用')
+  }
+}
+
 function parseAmountText(input) {
   if (!input) return null
   const value = Number(String(input).replace(/,/g, ''))
@@ -21,10 +40,22 @@ function shouldSkipLine(line) {
     '账单',
     '系列图',
     '饼图',
+    '条形图',
+    '柱形图',
     '总计',
     '本月',
   ]
   return keywords.some((keyword) => text.includes(keyword))
+}
+
+function extractCategoryFromText(input) {
+  const text = String(input || '')
+    .replace(/[\d,]+(?:\.\d{1,2})?%?/g, ' ')
+    .replace(/[~\-—_/]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!text) return ''
+  return text
 }
 
 function isLikelyBudgetCategory(input) {
@@ -88,7 +119,9 @@ function parseRecordsFromLines(lines) {
       .find((token) => !token.isPercent)
     if (amountToken) {
       const amount = parseAmountText(amountToken.raw)
-      const leftText = line.slice(0, amountToken.index).replace(/\d[\d,.%]*\s*$/, '').trim()
+      const leftText = extractCategoryFromText(
+        line.slice(0, amountToken.index).replace(/\d[\d,.%]*\s*$/, ''),
+      )
       const category = leftText || pendingCategory
       if (category && amount !== null) {
         if (isLikelyBudgetCategory(category)) {
@@ -101,10 +134,9 @@ function parseRecordsFromLines(lines) {
 
     if (
       /[\u4e00-\u9fa5A-Za-z]/.test(line) &&
-      !line.includes('%') &&
-      isLikelyBudgetCategory(line)
+      isLikelyBudgetCategory(extractCategoryFromText(line))
     ) {
-      pendingCategory = line
+      pendingCategory = extractCategoryFromText(line)
     }
   }
   return records
@@ -160,19 +192,44 @@ async function requestOcrLines(fileID) {
     },
   })
 
-  const resp = await client.GeneralAccurateOCR({
+  const resp = await client.GeneralBasicOCR({
     ImageUrl: fileInfo.tempFileURL,
   })
   const detections = Array.isArray(resp.TextDetections)
     ? resp.TextDetections
     : []
-  return detections
-    .map((item) => String(item.DetectedText || '').trim())
+
+  const withPos = detections
+    .map((item) => {
+      const text = String(item.DetectedText || '').trim()
+      if (!text) return null
+      const polygon = Array.isArray(item.Polygon)
+        ? item.Polygon
+        : []
+      const points = polygon.filter(
+        (p) => p && typeof p.X === 'number' && typeof p.Y === 'number',
+      )
+      const minX =
+        points.length > 0 ? Math.min(...points.map((p) => p.X)) : Number.MAX_SAFE_INTEGER
+      const minY =
+        points.length > 0 ? Math.min(...points.map((p) => p.Y)) : Number.MAX_SAFE_INTEGER
+      return { text, minX, minY }
+    })
     .filter(Boolean)
+    .sort((a, b) => {
+      const rowThreshold = 18
+      if (Math.abs(a.minY - b.minY) > rowThreshold) {
+        return a.minY - b.minY
+      }
+      return a.minX - b.minX
+    })
+
+  return withPos.map((item) => item.text)
 }
 
 exports.main = async (event) => {
   try {
+    ensureOcrPermission()
     const fileID = event.fileID
     const lines = await requestOcrLines(fileID)
     const records = dedupeRecords(parseRecordsFromLines(lines))

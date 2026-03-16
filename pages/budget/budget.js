@@ -49,8 +49,8 @@ function chooseOneImage() {
       success: (res) => {
         const file =
           res &&
-          Array.isArray(res.tempFiles) &&
-          res.tempFiles.length > 0
+            Array.isArray(res.tempFiles) &&
+            res.tempFiles.length > 0
             ? res.tempFiles[0]
             : null
         if (!file || !file.tempFilePath) {
@@ -438,6 +438,11 @@ Page({
       return
     }
     let hideLoading = false
+    const closeLoading = () => {
+      if (!hideLoading) return
+      wx.hideLoading()
+      hideLoading = false
+    }
     try {
       const tempFilePath = await chooseOneImage()
       wx.showLoading({ title: '识别中...', mask: true })
@@ -464,6 +469,7 @@ Page({
       }
       const stats = await mergeBudgetItemsFromOcr(this.data.monthKey, records)
       await this.refreshBudgetList()
+      closeLoading()
       wx.showToast({
         title: `更新${stats.updated || 0}项 新增${stats.created || 0}项`,
         icon: 'none',
@@ -476,11 +482,12 @@ Page({
             ? err.message
             : '导入失败，请重试'
       if (message) {
+        closeLoading()
         wx.showToast({ title: message, icon: 'none' })
       }
-    } finally {
-      if (hideLoading) wx.hideLoading()
+      return
     }
+    closeLoading()
   },
 
   closeAddPopup(options = {}) {
