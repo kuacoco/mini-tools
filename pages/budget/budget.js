@@ -6,6 +6,11 @@ const {
   updateBudgetItem,
   deleteBudgetItem,
   mergeBudgetItemsFromOcr,
+  syncBudgetFromFeidee,
+  checkWhitelist,
+  isAdmin,
+  incrementSubscribe,
+  getSubscribeCount,
 } = require('../../utils/budget-storage')
 const { formatAmount } = require('../../utils/amount-expression')
 
@@ -105,6 +110,9 @@ Page({
     usedAmountFormula: '',
     usedKeyboardReset: 0,
     usedInitialExpression: '0',
+    isWhitelisted: false,
+    isAdminUser: false,
+    subscribeCount: 0,
   },
 
   onLoad() {
@@ -122,7 +130,42 @@ Page({
   },
 
   async onShow() {
+    await this.checkWhitelistPermission()
+    await this.checkAdminPermission()
+
+    // 获取订阅次数
+    if (this.data.isWhitelisted) {
+      await this.fetchSubscribeCount()
+    }
+
     await this.refreshBudgetList()
+  },
+
+  async fetchSubscribeCount() {
+    try {
+      const { count } = await getSubscribeCount()
+      this.setData({ subscribeCount: count })
+    } catch (err) {
+      console.error('获取订阅次数失败:', err)
+    }
+  },
+
+  async checkWhitelistPermission() {
+    try {
+      const isWhitelisted = await checkWhitelist()
+      this.setData({ isWhitelisted })
+    } catch (err) {
+      this.setData({ isWhitelisted: false })
+    }
+  },
+
+  async checkAdminPermission() {
+    try {
+      const isAdminUser = await isAdmin()
+      this.setData({ isAdminUser })
+    } catch (err) {
+      this.setData({ isAdminUser: false })
+    }
   },
 
   async refreshBudgetList() {
@@ -430,6 +473,76 @@ Page({
     this.closeFabMenu({
       afterClose: () => this.startImageImport(),
     })
+  },
+
+  onSyncFromFeidee() {
+    this.closeFabMenu({
+      afterClose: () => this.startFeideeSync(),
+    })
+  },
+
+  onGoToAdmin() {
+    this.closeFabMenu({
+      afterClose: () => {
+        wx.navigateTo({ url: '/pages/admin/admin' })
+      },
+    })
+  },
+
+  onSubscribeNotification() {
+    // 先关闭菜单状态（不等待动画），然后立即请求订阅
+    // requestSubscribeMessage 必须在用户点击事件的同步调用栈中执行
+    this.setData({
+      showFabMenu: false,
+      fabMenuClosing: false,
+    })
+    if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
+
+    wx.requestSubscribeMessage({
+      tmplIds: ['4y6KFyJZRdinp_2g6qrNK3bdKWwrGs9VFrrUHbRJNb0'],
+      success: async (res) => {
+        const accepted = res['4y6KFyJZRdinp_2g6qrNK3bdKWwrGs9VFrrUHbRJNb0'] === 'accept'
+        if (accepted) {
+          // 增加订阅次数
+          try {
+            await incrementSubscribe()
+            const newCount = this.data.subscribeCount + 1
+            this.setData({ subscribeCount: newCount })
+          } catch (err) {
+            console.error('增加订阅次数失败:', err)
+          }
+        }
+        wx.showToast({
+          title: accepted ? '订阅成功' : '已取消订阅',
+          icon: 'none'
+        })
+      },
+      fail: (err) => {
+        console.error('订阅消息授权失败:', err)
+        wx.showToast({ title: '订阅失败', icon: 'none' })
+      }
+    })
+  },
+
+  async startFeideeSync() {
+    if (!wx.cloud || !wx.cloud.callFunction) {
+      wx.showToast({ title: '请先启用云开发', icon: 'none' })
+      return
+    }
+    wx.showLoading({ title: '同步中...', mask: true })
+    try {
+      const stats = await syncBudgetFromFeidee(this.data.monthKey)
+      await this.refreshBudgetList()
+      wx.hideLoading()
+      wx.showToast({
+        title: `更新${stats.updated || 0}项 新增${stats.created || 0}项`,
+        icon: 'none',
+      })
+    } catch (err) {
+      wx.hideLoading()
+      const message = err && err.message ? err.message : '同步失败，请重试'
+      wx.showToast({ title: message, icon: 'none' })
+    }
   },
 
   async startImageImport() {

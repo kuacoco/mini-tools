@@ -3,22 +3,18 @@ const tencentcloud = require('tencentcloud-sdk-nodejs')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-function getAllowedOwnerOpenids() {
-  const raw = process.env.OCR_OWNER_OPENID || process.env.OWNER_OPENID || ''
-  return String(raw)
-    .split(',')
-    .map((item) => String(item || '').trim())
-    .filter(Boolean)
-}
+const db = cloud.database()
+const WHITELIST_COLLECTION = 'budget_whitelist'
 
-function ensureOcrPermission() {
+async function checkWhitelistPermission() {
   const { OPENID } = cloud.getWXContext()
-  const owners = getAllowedOwnerOpenids()
-  if (!owners.length) {
-    throw new Error('OCR 功能未配置所有者，请先设置 OCR_OWNER_OPENID')
-  }
-  if (!OPENID || !owners.includes(OPENID)) {
-    throw new Error('该功能仅限小程序所有者使用')
+  const res = await db
+    .collection(WHITELIST_COLLECTION)
+    .where({ openid: OPENID })
+    .limit(1)
+    .get()
+  if (!res.data || res.data.length === 0) {
+    throw new Error('该功能仅限白名单用户使用')
   }
 }
 
@@ -228,16 +224,11 @@ async function requestOcrLines(fileID) {
 }
 
 exports.main = async (event) => {
+  const fileID = event.fileID
   try {
-    ensureOcrPermission()
-    const fileID = event.fileID
+    await checkWhitelistPermission()
     const lines = await requestOcrLines(fileID)
     const records = dedupeRecords(parseRecordsFromLines(lines))
-
-    // 识别完成后删除云存储中的该图片，避免长期占用空间
-    if (fileID) {
-      cloud.deleteFile({ fileList: [fileID] }).catch(() => { })
-    }
 
     return {
       success: true,
@@ -250,6 +241,11 @@ exports.main = async (event) => {
     return {
       success: false,
       message: err && err.message ? err.message : 'OCR识别失败',
+    }
+  } finally {
+    // 无论成功或报错都删除云存储中的该图片，避免长期占用空间
+    if (fileID) {
+      cloud.deleteFile({ fileList: [fileID] }).catch(() => { })
     }
   }
 }

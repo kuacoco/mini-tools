@@ -63,6 +63,18 @@ page {
   height: 36rpx;
 }
 
+.budget-footer {
+  display: flex;
+  justify-content: center;
+  padding: 18rpx 0 8rpx;
+}
+
+.budget-footer-text {
+  font-size: 22rpx;
+  color: rgba(138, 141, 167, 0.9);
+  letter-spacing: 0.5rpx;
+}
+
 .summary-grid {
   display: flex;
   justify-content: space-between;

@@ -66,6 +66,10 @@
 						</view>
 					</view>
 				</view>
+
+				<view wx:if="{{ isWhitelisted && subscribeCount > 0 }}" class="budget-footer">
+					<text class="budget-footer-text">订阅 × {{ subscribeCount }}</text>
+				</view>
 			</view>
 		</sticky-section>
 	</scroll-view>
@@ -73,7 +77,10 @@
 	<view wx:if="{{ showFabMenu }}" class="fab-mask {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup"></view>
 	<view class="fab-wrap">
 		<view wx:if="{{ showFabMenu }}" class="fab-menu {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}">
-			<view class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view>
+			<view wx:if="{{ isAdminUser }}" class="fab-menu-item" bindtap="onGoToAdmin">配置管理</view>
+			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view>
+			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSyncFromFeidee">同步数据</view>
+			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSubscribeNotification">订阅通知</view>
 			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算项</view>
 		</view>
 		<view class="add-btn {{ showFabMenu && !fabMenuClosing ? 'is-active' : '' }}" bindtap="onToggleFabMenu">
@@ -85,7 +92,7 @@
 		<view class="popup-sheet" catchtap="noop">
 			<view class="popup-head">
 				<text class="popup-title">{{ addPopupTitle }}</text>
-				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" /></view>
+				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit"/></view>
 			</view>
 			<view class="popup-content">
 				<view class="popup-item">
@@ -112,7 +119,7 @@
 		<view class="popup-sheet" catchtap="noop">
 			<view class="popup-head">
 				<text class="popup-title">设置已使用额度</text>
-				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" /></view>
+				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit"/></view>
 			</view>
 			<view class="used-meta">
 				<text class="used-name">{{ usedItemName }}</text>

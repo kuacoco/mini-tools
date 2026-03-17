@@ -4,6 +4,8 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const COLLECTION = 'budget_items'
+const WHITELIST_COLLECTION = 'budget_whitelist'
+const _ = db.command
 
 function normalizeName(name) {
   return String(name || '')
@@ -223,6 +225,79 @@ async function mergeFromOcr(payload, openid) {
   return { created, updated, skipped }
 }
 
+async function checkWhitelist(openid) {
+  const res = await db
+    .collection(WHITELIST_COLLECTION)
+    .where({ openid })
+    .limit(1)
+    .get()
+  return { isWhitelisted: res.data && res.data.length > 0 }
+}
+
+/**
+ * 增加订阅次数（用户同意订阅后调用）
+ */
+async function incrementSubscribe(openid) {
+  const res = await db
+    .collection(WHITELIST_COLLECTION)
+    .where({ openid })
+    .limit(1)
+    .get()
+  if (!res.data || res.data.length === 0) {
+    throw new Error('用户不在白名单中')
+  }
+  const doc = res.data[0]
+  await db.collection(WHITELIST_COLLECTION).doc(doc._id).update({
+    data: {
+      subscribeCount: _.inc(1),
+      updatedAt: Date.now(),
+    },
+  })
+  return { ok: true }
+}
+
+/**
+ * 消费订阅次数（发送通知成功后调用）
+ * 返回剩余次数
+ */
+async function consumeSubscribe(openid) {
+  const res = await db
+    .collection(WHITELIST_COLLECTION)
+    .where({ openid })
+    .limit(1)
+    .get()
+  if (!res.data || res.data.length === 0) {
+    return { count: 0, consumed: false }
+  }
+  const doc = res.data[0]
+  const currentCount = Number(doc.subscribeCount || 0)
+  if (currentCount <= 0) {
+    return { count: 0, consumed: false }
+  }
+  await db.collection(WHITELIST_COLLECTION).doc(doc._id).update({
+    data: {
+      subscribeCount: _.inc(-1),
+      updatedAt: Date.now(),
+    },
+  })
+  return { count: currentCount - 1, consumed: true }
+}
+
+/**
+ * 获取订阅次数
+ */
+async function getSubscribeCount(openid) {
+  const res = await db
+    .collection(WHITELIST_COLLECTION)
+    .where({ openid })
+    .limit(1)
+    .get()
+  if (!res.data || res.data.length === 0) {
+    return { count: 0 }
+  }
+  return { count: Number(res.data[0].subscribeCount || 0) }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   try {
@@ -246,6 +321,18 @@ exports.main = async (event) => {
         break
       case 'mergeFromOcr':
         data = await mergeFromOcr(payload, OPENID)
+        break
+      case 'checkWhitelist':
+        data = await checkWhitelist(OPENID)
+        break
+      case 'incrementSubscribe':
+        data = await incrementSubscribe(OPENID)
+        break
+      case 'consumeSubscribe':
+        data = await consumeSubscribe(OPENID)
+        break
+      case 'getSubscribeCount':
+        data = await getSubscribeCount(OPENID)
         break
       default:
         throw new Error('不支持的 action')

@@ -1,0 +1,9 @@
+{
+  "triggers": [
+    {
+      "name": "syncBudgetTimer",
+      "type": "timer",
+      "config": "0 0 23 * * *"
+    }
+  ]
+}

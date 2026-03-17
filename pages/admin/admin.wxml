@@ -1,0 +1,151 @@
+<navigation-bar title="管理后台" />
+<view class="admin-page">
+  <view wx:if="{{ loading }}" class="loading-wrap">
+    <text>加载中...</text>
+  </view>
+
+  <view wx:else class="admin-content">
+    <!-- 飞笛配置卡片 -->
+    <view class="config-card">
+      <view class="card-header">
+        <view class="card-title">飞笛配置</view>
+        <view class="add-btn" bindtap="onOpenFeideePopup">+ 添加</view>
+      </view>
+
+      <view wx:if="{{ !feideeConfigs.length }}" class="empty-tip">
+        <text>暂无飞笛配置</text>
+      </view>
+
+      <view wx:else class="config-list">
+        <view wx:for="{{ feideeConfigs }}" wx:key="id" class="config-row">
+          <view class="config-info" data-id="{{ item.id }}" bindtap="onOpenFeideePopup">
+            <text class="config-userId">{{ item.userId }}</text>
+            <text class="config-preview">{{ item.authorization ? '已配置 Token' : '未配置 Token' }}</text>
+          </view>
+          <view class="config-action" data-id="{{ item.id }}" bindtap="onDeleteFeideeConfig">
+            <text>删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 白名单管理卡片 -->
+    <view class="config-card">
+      <view class="card-header">
+        <view class="card-title">白名单用户</view>
+        <view class="add-btn" bindtap="onOpenAddPopup">+ 添加</view>
+      </view>
+
+      <view wx:if="{{ !whitelist.length }}" class="empty-tip">
+        <text>暂无白名单用户</text>
+      </view>
+
+      <view wx:else class="whitelist-list">
+        <view wx:for="{{ whitelist }}" wx:key="id" class="whitelist-item">
+          <view class="whitelist-info">
+            <text class="whitelist-name">{{ item.nickname || '未命名' }}</text>
+            <text class="whitelist-openid">{{ item.openid }}</text>
+          </view>
+          <view class="whitelist-action" data-id="{{ item.id }}" bindtap="onRemoveWhitelist">
+            <text>删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 同步操作卡片 -->
+    <view class="config-card">
+      <view class="card-header">
+        <view class="card-title">同步操作</view>
+      </view>
+      <view class="sync-section">
+        <view class="sync-btn {{ syncing ? 'is-disabled' : '' }}" bindtap="onSyncAllUsers">
+          {{ syncing ? '同步中...' : '手动同步全部用户' }}
+        </view>
+        <text class="sync-hint">将同步所有白名单用户的飞笛数据，并发送订阅消息通知</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加/编辑飞笛配置弹窗 -->
+  <view wx:if="{{ showFeideePopup }}" class="popup-mask" bindtap="onCloseFeideePopup">
+    <view class="popup-content" catchtap="noop">
+      <view class="popup-title">{{ editingFeideeId ? '编辑飞笛配置' : '添加飞笛配置' }}</view>
+      <view class="popup-item">
+        <text class="popup-label">用户标识</text>
+        <input
+          class="popup-input"
+          placeholder="用于区分不同用户"
+          value="{{ feideeUserId }}"
+          bindinput="onFeideeUserIdInput"
+        />
+      </view>
+      <view class="popup-item">
+        <text class="popup-label">Authorization Token</text>
+        <textarea
+          class="popup-textarea"
+          placeholder="请输入 Authorization Token"
+          value="{{ feideeAuthorization }}"
+          bindinput="onFeideeAuthorizationInput"
+          auto-height
+          maxlength="2000"
+        />
+      </view>
+      <view class="popup-item">
+        <text class="popup-label">Account IDs</text>
+        <textarea
+          class="popup-textarea"
+          placeholder="多个用逗号分隔"
+          value="{{ feideeAccountIds }}"
+          bindinput="onFeideeAccountIdsInput"
+          auto-height
+          maxlength="2000"
+        />
+      </view>
+      <view class="popup-item">
+        <text class="popup-label">Trading Entity</text>
+        <input
+          class="popup-input"
+          placeholder="请输入 Trading Entity ID"
+          value="{{ feideeTradingEntity }}"
+          bindinput="onFeideeTradingEntityInput"
+        />
+      </view>
+      <view class="popup-actions">
+        <view class="popup-btn cancel" bindtap="onCloseFeideePopup">取消</view>
+        <view class="popup-btn confirm {{ saving ? 'is-disabled' : '' }}" bindtap="onSaveFeideeConfig">
+          {{ saving ? '保存中...' : '保存' }}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加白名单弹窗 -->
+  <view wx:if="{{ showAddPopup }}" class="popup-mask" bindtap="onCloseAddPopup">
+    <view class="popup-content" catchtap="noop">
+      <view class="popup-title">添加白名单用户</view>
+      <view class="popup-item">
+        <text class="popup-label">OpenID</text>
+        <input
+          class="popup-input"
+          placeholder="请输入用户 OpenID"
+          value="{{ newOpenid }}"
+          bindinput="onNewOpenidInput"
+        />
+      </view>
+      <view class="popup-item">
+        <text class="popup-label">昵称（可选）</text>
+        <input
+          class="popup-input"
+          placeholder="便于识别的名称"
+          value="{{ newNickname }}"
+          bindinput="onNewNicknameInput"
+        />
+      </view>
+      <view class="popup-actions">
+        <view class="popup-btn cancel" bindtap="onCloseAddPopup">取消</view>
+        <view class="popup-btn confirm" bindtap="onConfirmAdd">确定</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -4,7 +4,8 @@
     "pages/budget/budget",
     "pages/course/course",
     "pages/logs/logs",
-    "pages/location/location"
+    "pages/location/location",
+    "pages/admin/admin"
   ],
   "permission": {
     "scope.userLocation": {

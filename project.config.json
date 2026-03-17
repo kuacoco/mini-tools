@@ -38,5 +38,6 @@
   },
   "appid": "wxe4a08baedb2fcf9d",
   "cloudfunctionRoot": "cloudfunctions",
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
 }
