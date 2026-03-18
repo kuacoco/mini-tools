@@ -3,7 +3,7 @@
     {
       "name": "syncBudgetTimer",
       "type": "timer",
-      "config": "0 0 23 * * *"
+      "config": "0 50 21 * * *"
     }
   ]
 }

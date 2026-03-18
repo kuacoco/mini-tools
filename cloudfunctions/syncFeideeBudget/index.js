@@ -391,11 +391,18 @@ async function handleUserTrigger(openid, monthKey) {
 }
 
 exports.main = async (event) => {
-  const { OPENID } = cloud.getWXContext()
+  const ctx = cloud.getWXContext()
+  const { OPENID, SOURCE } = ctx
+
+  console.log('syncFeideeBudget invoke info:', JSON.stringify({
+    source: SOURCE,
+    openidSuffix: OPENID ? OPENID.slice(-8) : '',
+    event,
+  }))
 
   try {
-    // 判断是否为定时触发
-    if (event.Type === 'Timer') {
+    if (SOURCE === 'wx_trigger') {
+      console.log('syncFeideeBudget timer trigger detected')
       const results = await handleTimerTrigger()
       return { success: true, data: results }
     }
