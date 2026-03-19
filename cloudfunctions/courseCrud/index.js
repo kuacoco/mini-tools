@@ -66,6 +66,17 @@ async function addCourse(payload, openid) {
     throw new Error('课时数应为正整数')
   }
 
+  // 限制最多添加10种课程，避免无限增长
+  const existingRes = await db
+    .collection(COURSES_COLLECTION)
+    .where({ openid })
+    .limit(10)
+    .get()
+  const existingList = existingRes.data || []
+  if (existingList.length >= 10) {
+    throw new Error('最多只能添加10种课程')
+  }
+
   const now = Date.now()
   const createData = {
     openid,

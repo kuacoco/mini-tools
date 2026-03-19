@@ -13,13 +13,18 @@ const {
   createShareToken,
 } = require('../../utils/course-storage')
 
+// 课程头像/进度条颜色（最多支持10种课程时保持区分度）
 const COLOR_PALETTE = [
-  { main: '#2dd4bf', light: '#ccfbf1' },
-  { main: '#a78bfa', light: '#ede9fe' },
-  { main: '#f472b6', light: '#fce7f3' },
-  { main: '#67e8f9', light: '#cffafe' },
-  { main: '#c084fc', light: '#f5f3ff' },
-  { main: '#fb923c', light: '#ffedd5' },
+  { main: '#2dd4bf', light: '#ccfbf1' }, // 青绿
+  { main: '#a78bfa', light: '#ede9fe' }, // 紫
+  { main: '#f472b6', light: '#fce7f3' }, // 粉
+  { main: '#67e8f9', light: '#cffafe' }, // 青蓝
+  { main: '#c084fc', light: '#f5f3ff' }, // 淡紫
+  { main: '#fb923c', light: '#ffedd5' }, // 橙
+  { main: '#34d399', light: '#dcfce7' }, // 绿
+  { main: '#60a5fa', light: '#dbeafe' }, // 蓝
+  { main: '#f43f5e', light: '#ffe4e6' }, // 玫红
+  { main: '#f59e0b', light: '#fff7ed' }, // 金橙
 ]
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
@@ -241,6 +246,9 @@ Page({
       selectedDate
     )
 
+    // 按创建时间升序排序（旧课在前，便于颜色稳定）
+    list.sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+
     // 统计每个课程在当月的打卡次数
     const checkinCountMap = {}
     for (const courseId of Object.keys(checkinsMap)) {
@@ -330,6 +338,11 @@ Page({
   },
 
   onOpenAddPopup() {
+    // 最多添加10种课程（后端也会做兜底校验）
+    if (!this.data.isViewerMode && Array.isArray(this.data.courseList) && this.data.courseList.length >= 10) {
+      wx.showToast({ title: '最多只能添加10种课程', icon: 'none' })
+      return
+    }
     this.openAddPopup()
   },
 
@@ -409,13 +422,18 @@ Page({
           totalClasses: total,
         })
       } else {
+        // 添加新课程：数量上限校验
+        if (Array.isArray(this.data.courseList) && this.data.courseList.length >= 10) {
+          wx.showToast({ title: '最多只能添加10种课程', icon: 'none' })
+          return
+        }
         await addCourse({
           courseName: name,
           totalClasses: total,
         })
       }
     } catch (err) {
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      wx.showToast({ title: (err && err.message) ? err.message : '保存失败，请重试', icon: 'none' })
       return
     }
 

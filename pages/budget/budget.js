@@ -127,18 +127,30 @@ Page({
     if (this.addPopupTimer) clearTimeout(this.addPopupTimer)
     if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
     if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
+    this.autoSyncedMonthKey = ''
   },
 
   async onShow() {
     await this.checkWhitelistPermission()
     await this.checkAdminPermission()
 
-    // 获取订阅次数
-    if (this.data.isWhitelisted) {
-      await this.fetchSubscribeCount()
-    }
+    // // 获取订阅次数
+    // if (this.data.isWhitelisted) {
+    //   await this.fetchSubscribeCount()
+    // }
 
     await this.refreshBudgetList()
+
+    // 页面加载完成后（onShow）自动同步一次
+    // 避免用户反复进页面时对同一月份重复触发同步
+    if (
+      this.data.isWhitelisted &&
+      this.data.monthKey &&
+      this.autoSyncedMonthKey !== this.data.monthKey
+    ) {
+      const ok = await this.startFeideeSync({ auto: true })
+      if (ok) this.autoSyncedMonthKey = this.data.monthKey
+    }
   },
 
   async fetchSubscribeCount() {
@@ -524,12 +536,13 @@ Page({
     })
   },
 
-  async startFeideeSync() {
+  async startFeideeSync(options = {}) {
+    const { auto = false } = options
     if (!wx.cloud || !wx.cloud.callFunction) {
       wx.showToast({ title: '请先启用云开发', icon: 'none' })
-      return
+      return false
     }
-    wx.showLoading({ title: '同步中...', mask: true })
+    wx.showLoading({ title: '同步中...', mask: !auto })
     try {
       const stats = await syncBudgetFromFeidee(this.data.monthKey)
       await this.refreshBudgetList()
@@ -538,10 +551,12 @@ Page({
         title: `更新${stats.updated || 0}项 新增${stats.created || 0}项`,
         icon: 'none',
       })
+      return true
     } catch (err) {
       wx.hideLoading()
       const message = err && err.message ? err.message : '同步失败，请重试'
       wx.showToast({ title: message, icon: 'none' })
+      return false
     }
   },
 

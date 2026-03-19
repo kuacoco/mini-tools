@@ -1,6 +1,7 @@
 <navigation-bar title="{{ navTitle }}" />
 <view class="course-page">
-	<view class="month-content">
+	<scroll-view class="month-content" scroll-y="true" enhanced show-scrollbar="{{ false }}">
+		<view class="top-placeholder"></view>
 		<view class="calendar-card">
 			<view class="month-row">
 				<view class="month-switch" bindtap="onPrevMonth">
@@ -90,9 +91,10 @@
 				</view>
 			</view>
 		</view>
-	</view>
+		<view class="bottom-placeholder"></view>
+	</scroll-view>
 
-	<view wx:if="{{ !isViewerMode }}" class="fab-wrap">
+	<view wx:if="{{ !isViewerMode && courseList.length < 10 }}" class="fab-wrap">
 		<view class="add-btn" bindtap="onOpenAddPopup">
 			<image class="add-btn-icon" src="/pages/statics/plus.svg" mode="aspectFit" />
 		</view>

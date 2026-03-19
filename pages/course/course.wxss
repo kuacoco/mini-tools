@@ -7,6 +7,8 @@ page {
 
 .course-page {
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   background: linear-gradient(
@@ -25,10 +27,20 @@ page {
 }
 
 .month-content {
-  height: 100%;
-  overflow-y: auto;
-  padding: 28rpx 28rpx 140rpx;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 28rpx;
   box-sizing: border-box;
+}
+
+.top-placeholder {
+  height: 28rpx;
+}
+
+.bottom-placeholder {
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
 }
 
 .month-header {
@@ -198,10 +210,6 @@ page {
   transform: translateY(30rpx);
 }
 
-.course-list-content {
-  padding-bottom: 40rpx;
-}
-
 .empty-card {
   background: rgba(255, 255, 255, 0.92);
   border-radius: 28rpx;
@@ -292,11 +300,6 @@ page {
   flex-shrink: 0;
   margin-right: 24rpx;
   transition: all 0.3s ease;
-}
-
-.course-avatar.checked {
-  /* background: linear-gradient(145deg, #f9a8d4 0%, #f472b6 100%) !important;
-  box-shadow: 0 2rpx 6rpx rgba(244, 114, 182, 0.35); */
 }
 
 .avatar-char {
