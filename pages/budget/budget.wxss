@@ -39,13 +39,39 @@ page {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  /* 与加 swiper 前一致：月份行与下方汇总区间距 */
   margin-bottom: 24rpx;
+}
+
+.month-row picker {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.month-title-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8rpx 12rpx;
 }
 
 .month-title {
   font-size: 34rpx;
   font-weight: 600;
   color: #2f3152;
+}
+
+.summary-swiper-mount {
+  width: 100%;
+}
+
+.summary-swiper {
+  width: 100%;
+  /* 与原先无滑动时 .summary-grid 内容同高：见 .summary-label / .summary-value 行高之和 */
+  height: calc(32rpx + 8rpx + 40rpx);
 }
 
 .month-switch {
@@ -78,6 +104,8 @@ page {
 .summary-grid {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  box-sizing: border-box;
 }
 
 .summary-item {
@@ -87,12 +115,14 @@ page {
 
 .summary-label {
   font-size: 24rpx;
+  line-height: 32rpx;
   color: #9697a8;
   margin-bottom: 8rpx;
 }
 
 .summary-value {
   font-size: 30rpx;
+  line-height: 40rpx;
   color: #2f3152;
   font-weight: 600;
 }

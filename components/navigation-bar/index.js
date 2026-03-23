@@ -35,6 +35,11 @@ Component({
       type: Number,
       value: 0,
     },
+    /** 页面栈仅一层时（如分享直达），无法 navigateBack，则 reLaunch 到此路径（一般为首页） */
+    homeUrl: {
+      type: String,
+      value: '',
+    },
   },
 
   attached() {
@@ -59,10 +64,19 @@ Component({
   methods: {
     back() {
       const { data } = this;
+      const homeUrl = data.homeUrl || '';
       if (data.delta) {
-        wx.navigateBack({
-          delta: data.delta,
-        });
+        const pages = getCurrentPages();
+        if (pages.length <= 1 && homeUrl) {
+          wx.reLaunch({ url: homeUrl });
+        } else {
+          wx.navigateBack({
+            delta: data.delta,
+            fail: () => {
+              if (homeUrl) wx.reLaunch({ url: homeUrl });
+            },
+          });
+        }
       }
       this.triggerEvent('back', { delta: data.delta }, {});
     },

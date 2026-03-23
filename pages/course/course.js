@@ -11,6 +11,9 @@ const {
   listCoursesForShare,
   getMonthCheckinsForShare,
   createShareToken,
+  listViewedShares,
+  upsertViewedShare,
+  removeViewedShare,
 } = require('../../utils/course-storage')
 const { COLOR_PALETTE } = require('../../utils/course-palette')
 const {
@@ -26,6 +29,32 @@ const SWIPE_EDIT_WIDTH = 82
 const SWIPE_DELETE_WIDTH = 82
 const SWIPE_OPEN_THRESHOLD = 38
 const POPUP_ANIMATION_MS = 240
+const MAX_RECENT_SHARE_RECORDS = 8
+/** 仅本地：是否已设置过「分享展示名称」（含留空确认） */
+const SHARE_DISPLAY_STORAGE_KEY = 'course_share_display_v1'
+
+function readShareDisplayFromStorage() {
+  try {
+    const raw = wx.getStorageSync(SHARE_DISPLAY_STORAGE_KEY)
+    if (raw && typeof raw === 'object' && raw.configured === true) {
+      return { configured: true, nick: String(raw.nick || '').trim() }
+    }
+  } catch (err) {
+    // ignore
+  }
+  return { configured: false, nick: '' }
+}
+
+function writeShareDisplayToStorage(nick) {
+  try {
+    wx.setStorageSync(SHARE_DISPLAY_STORAGE_KEY, {
+      configured: true,
+      nick: String(nick || '').trim(),
+    })
+  } catch (err) {
+    // ignore
+  }
+}
 
 function vibrateLight() {
   if (typeof wx === 'undefined' || !wx.vibrateShort) return
@@ -36,6 +65,29 @@ function formatDateDisplay(dateStr) {
   if (!dateStr) return ''
   const [, month, day] = dateStr.split('-')
   return `${Number(month)}月${Number(day)}日`
+}
+
+function formatViewerTitle(nickName) {
+  const clean = String(nickName || '').trim()
+  if (!clean) return 'TA的消课记录'
+  return `${clean}的消课记录`
+}
+
+function normalizeRecentShareRecords(input) {
+  if (!Array.isArray(input)) return []
+  return input
+    .map((item) => {
+      const token = item && item.token ? String(item.token).trim() : ''
+      if (!token) return null
+      const nickName = item && item.nickName ? String(item.nickName).trim() : ''
+      const updatedAt = Number(item && item.updatedAt) || Date.now()
+      const short = token.length > 8 ? `${token.slice(0, 4)}...${token.slice(-2)}` : token
+      const displayTitle = nickName ? formatViewerTitle(nickName) : `访客记录 ${short} 的消课记录`
+      return { token, nickName, displayTitle, updatedAt }
+    })
+    .filter(Boolean)
+    .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))
+    .slice(0, MAX_RECENT_SHARE_RECORDS)
 }
 
 Page({
@@ -63,7 +115,13 @@ Page({
     isViewerMode: false,
     shareToken: '',
     thisShareToken: '',
+    thisShareNickName: '',
     navTitle: '消课记录',
+    showRecordDropdown: false,
+    recentShareRecords: [],
+    /** 进入页时未配置过分享展示名则弹窗；已写入 SHARE_DISPLAY_STORAGE_KEY 则不再弹 */
+    showShareNickPopup: false,
+    shareNickInputValue: '',
   },
 
   async onLoad(options) {
@@ -74,6 +132,7 @@ Page({
     const currentPickerIndex = findMonthPickerIndex(monthPickerItems, monthKey)
 
     const shareToken = (options && options.shareToken) ? String(options.shareToken).trim() : ''
+    const shareNickName = (options && options.nickName) ? decodeURIComponent(String(options.nickName)).trim() : ''
     const isViewerMode = !!shareToken
 
     this.setData({
@@ -86,10 +145,30 @@ Page({
       currentPickerIndex: currentPickerIndex >= 0 ? currentPickerIndex : 0,
       isViewerMode,
       shareToken,
-      navTitle: isViewerMode ? 'TA的消课记录' : '消课记录',
+      navTitle: isViewerMode ? formatViewerTitle(shareNickName) : '消课记录',
     })
 
+    const records = await this.bootstrapRecentShareRecords(shareToken, shareNickName)
+    if (isViewerMode && !shareNickName) {
+      const hit = (records || []).find(item => item.token === shareToken)
+      if (hit && hit.nickName) {
+        this.setData({ navTitle: formatViewerTitle(hit.nickName) })
+      }
+    }
+
     await this.loadMonthData(monthKey)
+
+    if (!isViewerMode) {
+      const saved = readShareDisplayFromStorage()
+      if (saved.configured) {
+        this.setData({ thisShareNickName: saved.nick })
+      } else {
+        this.setData({
+          showShareNickPopup: true,
+          shareNickInputValue: '',
+        })
+      }
+    }
   },
 
   onUnload() {
@@ -120,12 +199,26 @@ Page({
         ])
       } catch (err) {
         wx.showToast({ title: '分享链接无效或已失效', icon: 'none' })
+        await this.removeRecentShareRecord(shareToken)
+        this.setData({
+          isViewerMode: false,
+          shareToken: '',
+          navTitle: '消课记录',
+        })
+        await this.loadMonthData(monthKey)
         return
       }
       try {
         list = await listCoursesForShare(shareToken)
       } catch (err) {
         wx.showToast({ title: '分享链接无效或已失效', icon: 'none' })
+        await this.removeRecentShareRecord(shareToken)
+        this.setData({
+          isViewerMode: false,
+          shareToken: '',
+          navTitle: '消课记录',
+        })
+        await this.loadMonthData(monthKey)
         return
       }
     } else {
@@ -225,6 +318,114 @@ Page({
       currentMonthLabel: getMonthLabel(item.monthKey),
     })
     this.loadMonthData(item.monthKey)
+  },
+
+  async bootstrapRecentShareRecords(initialShareToken = '', initialNickName = '') {
+    let records = []
+    try {
+      records = normalizeRecentShareRecords(await listViewedShares())
+    } catch (err) {
+      records = []
+    }
+    if (initialShareToken) {
+      records = await this.upsertRecentShareRecord(records, initialShareToken, initialNickName)
+    }
+    this.setData({ recentShareRecords: records })
+    return records
+  },
+
+  async upsertRecentShareRecord(records, token, nickName = '') {
+    const clean = String(token || '').trim()
+    if (!clean) return normalizeRecentShareRecords(records)
+    const now = Date.now()
+    const next = normalizeRecentShareRecords(records).filter(item => item.token !== clean)
+    next.unshift({ token: clean, nickName: String(nickName || '').trim(), updatedAt: now })
+    const normalized = next.slice(0, MAX_RECENT_SHARE_RECORDS)
+    try {
+      await upsertViewedShare(clean, nickName)
+    } catch (err) {
+      // ignore
+    }
+    return normalizeRecentShareRecords(normalized)
+  },
+
+  async persistRecentShareRecords(records) {
+    const normalized = normalizeRecentShareRecords(records)
+    this.setData({ recentShareRecords: normalized })
+  },
+
+  async removeRecentShareRecord(token) {
+    const clean = String(token || '').trim()
+    if (!clean) return
+    const next = (this.data.recentShareRecords || []).filter(item => item.token !== clean)
+    await this.persistRecentShareRecords(next)
+    try {
+      await removeViewedShare(clean)
+    } catch (err) {
+      // ignore
+    }
+  },
+
+  onToggleRecordDropdown() {
+    vibrateLight()
+    this.setData({ showRecordDropdown: !this.data.showRecordDropdown })
+  },
+
+  onCloseRecordDropdown() {
+    if (!this.data.showRecordDropdown) return
+    this.setData({ showRecordDropdown: false })
+  },
+
+  async onSelectRecordOption(e) {
+    const { type, token } = e.currentTarget.dataset
+    if (type === 'self') {
+      if (!this.data.isViewerMode) {
+        this.setData({ showRecordDropdown: false })
+        return
+      }
+      this.setData({
+        isViewerMode: false,
+        shareToken: '',
+        navTitle: '消课记录',
+        showRecordDropdown: false,
+      })
+      await this.loadMonthData(this.data.currentMonthKey)
+      return
+    }
+
+    const clean = String(token || '').trim()
+    if (!clean) return
+    if (this.data.isViewerMode && this.data.shareToken === clean) {
+      this.setData({ showRecordDropdown: false })
+      return
+    }
+
+    const target = (this.data.recentShareRecords || []).find(item => item.token === clean) || null
+    const nickName = target && target.nickName ? target.nickName : ''
+    const nextRecords = await this.upsertRecentShareRecord(this.data.recentShareRecords || [], clean, nickName)
+    await this.persistRecentShareRecords(nextRecords)
+    this.setData({
+      isViewerMode: true,
+      shareToken: clean,
+      navTitle: formatViewerTitle(nickName),
+      showRecordDropdown: false,
+    })
+    await this.loadMonthData(this.data.currentMonthKey)
+  },
+
+  async onDeleteRecordOption(e) {
+    const { token } = e.currentTarget.dataset
+    const clean = String(token || '').trim()
+    if (!clean) return
+    await this.removeRecentShareRecord(clean)
+    if (this.data.isViewerMode && this.data.shareToken === clean) {
+      this.setData({
+        isViewerMode: false,
+        shareToken: '',
+        navTitle: '消课记录',
+      })
+      await this.loadMonthData(this.data.currentMonthKey)
+    }
   },
 
   onSelectDate(e) {
@@ -437,6 +638,10 @@ Page({
     const parts = [`id=${encodeURIComponent(id)}`]
     if (this.data.isViewerMode && this.data.shareToken) {
       parts.push(`shareToken=${encodeURIComponent(this.data.shareToken)}`)
+      const nick = String(this.data.navTitle || '').replace(/的消课记录$/, '')
+      if (nick && nick !== 'TA') {
+        parts.push(`nickName=${encodeURIComponent(nick)}`)
+      }
     }
     wx.navigateTo({
       url: `/pages/course-detail/course-detail?${parts.join('&')}`,
@@ -553,29 +758,52 @@ Page({
 
   noop() { },
 
-  // 直接使用小程序自带转发（右上角···转发），在分享时按需生成 token
-  // 注意：不能使用 async，否则框架拿到的是 Promise 不会当分享配置用，需用 promise 字段做异步
+  onShareNickInput(e) {
+    this.setData({ shareNickInputValue: e.detail.value })
+  },
+
+  /** 仅写入本地，供分享链接使用；取消则下次进入仍会弹窗 */
+  onConfirmShareNick() {
+    const v = String(this.data.shareNickInputValue || '').trim()
+    writeShareDisplayToStorage(v)
+    this.setData({
+      thisShareNickName: v,
+      showShareNickPopup: false,
+    })
+  },
+
+  onCancelShareNick() {
+    this.setData({ showShareNickPopup: false })
+  },
+
+  // 分享展示名已在进入页时配置；此处仅用 data 拼路径，promise 仅用于异步 createShareToken（勿再弹窗）
   onShareAppMessage() {
     if (this.data.isViewerMode) {
       return { title: '消课记录', path: '/pages/course/course' }
     }
     const that = this
-    const getPath = (token) => token
-      ? `/pages/course/course?shareToken=${encodeURIComponent(token)}`
-      : '/pages/course/course'
+    const getPath = (token, nick) => {
+      if (!token) return '/pages/course/course'
+      const n = String(nick || '').trim()
+      const q = n
+        ? `shareToken=${encodeURIComponent(token)}&nickName=${encodeURIComponent(n)}`
+        : `shareToken=${encodeURIComponent(token)}`
+      return `/pages/course/course?${q}`
+    }
+    const myNickName = String(that.data.thisShareNickName || '').trim()
     const promise = (async () => {
       let token = that.data.thisShareToken
       if (!token) {
         try {
-          token = await createShareToken()
+          token = await createShareToken(myNickName)
           if (token) that.setData({ thisShareToken: token })
-          return { title: '我的消课记录', path: getPath(token) }
+          return { title: '我的消课记录', path: getPath(token, myNickName) }
         } catch (err) {
           wx.showToast({ title: '分享生成失败', icon: 'none' })
           return { title: '我的消课记录', path: '/pages/course/course' }
         }
       }
-      return { title: '我的消课记录', path: getPath(token) }
+      return { title: '我的消课记录', path: getPath(token, myNickName) }
     })()
     return {
       title: '我的消课记录',

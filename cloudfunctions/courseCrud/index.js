@@ -7,6 +7,8 @@ const COURSES_COLLECTION = 'course_records'
 const CHECKINS_COLLECTION = 'checkin_logs'
 // 分享只读：集合 course_share 字段 ownerOpenid(string), token(string 唯一), createdAt(number)。请在云开发控制台为该集合 token 建唯一索引。
 const SHARE_COLLECTION = 'course_share'
+// 最近查看的分享记录：viewerOpenid, token, nickName, createdAt, updatedAt
+const VIEWED_SHARE_COLLECTION = 'course_viewed_share'
 
 function normalizeName(name) {
   return String(name || '').trim()
@@ -348,6 +350,11 @@ function generateShareToken() {
 }
 
 async function createShareToken(openid) {
+  return createShareTokenWithNickname({}, openid)
+}
+
+async function createShareTokenWithNickname(payload, openid) {
+  const nickName = normalizeName(payload.nickName)
   const existing = await db
     .collection(SHARE_COLLECTION)
     .where({ ownerOpenid: openid })
@@ -355,6 +362,15 @@ async function createShareToken(openid) {
     .get()
   const list = existing.data || []
   if (list.length > 0) {
+    const now = Date.now()
+    if (nickName) {
+      await db.collection(SHARE_COLLECTION).doc(list[0]._id).update({
+        data: {
+          nickName,
+          updatedAt: now,
+        },
+      })
+    }
     return { token: list[0].token }
   }
   const token = generateShareToken()
@@ -363,13 +379,15 @@ async function createShareToken(openid) {
     data: {
       ownerOpenid: openid,
       token,
+      nickName: nickName || '',
       createdAt: now,
+      updatedAt: now,
     },
   })
   return { token }
 }
 
-async function getOwnerOpenidByToken(token) {
+async function getShareDocByToken(token) {
   if (!token || typeof token !== 'string') throw new Error('分享链接无效')
   const res = await db
     .collection(SHARE_COLLECTION)
@@ -378,7 +396,12 @@ async function getOwnerOpenidByToken(token) {
     .get()
   const list = res.data || []
   if (list.length === 0) throw new Error('分享链接无效或已失效')
-  return list[0].ownerOpenid
+  return list[0]
+}
+
+async function getOwnerOpenidByToken(token) {
+  const shareDoc = await getShareDocByToken(token)
+  return shareDoc.ownerOpenid
 }
 
 async function listCoursesForShare(payload) {
@@ -431,6 +454,66 @@ async function getCheckinLogsForShare(payload) {
   return { list }
 }
 
+async function listViewedShares(openid) {
+  const res = await db
+    .collection(VIEWED_SHARE_COLLECTION)
+    .where({ viewerOpenid: openid })
+    .orderBy('updatedAt', 'desc')
+    .limit(20)
+    .get()
+  const list = (res.data || []).map((item) => ({
+    token: item.token,
+    nickName: item.nickName || '',
+    updatedAt: item.updatedAt || 0,
+  }))
+  return { list }
+}
+
+async function upsertViewedShare(payload, openid) {
+  const token = String(payload.token || '').trim()
+  const nickName = normalizeName(payload.nickName)
+  if (!token) throw new Error('token 不能为空')
+  const now = Date.now()
+  const res = await db
+    .collection(VIEWED_SHARE_COLLECTION)
+    .where({ viewerOpenid: openid, token })
+    .limit(1)
+    .get()
+  const list = res.data || []
+  if (list.length > 0) {
+    await db.collection(VIEWED_SHARE_COLLECTION).doc(list[0]._id).update({
+      data: {
+        nickName: nickName || list[0].nickName || '',
+        updatedAt: now,
+      },
+    })
+  } else {
+    await db.collection(VIEWED_SHARE_COLLECTION).add({
+      data: {
+        viewerOpenid: openid,
+        token,
+        nickName: nickName || '',
+        createdAt: now,
+        updatedAt: now,
+      },
+    })
+  }
+  return { ok: true }
+}
+
+async function removeViewedShare(payload, openid) {
+  const token = String(payload.token || '').trim()
+  if (!token) throw new Error('token 不能为空')
+  const res = await db
+    .collection(VIEWED_SHARE_COLLECTION)
+    .where({ viewerOpenid: openid, token })
+    .get()
+  for (const item of (res.data || [])) {
+    await db.collection(VIEWED_SHARE_COLLECTION).doc(item._id).remove()
+  }
+  return { ok: true }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   try {
@@ -465,7 +548,7 @@ exports.main = async (event) => {
         data = await getMonthCheckins(payload, OPENID)
         break
       case 'createShareToken':
-        data = await createShareToken(OPENID)
+        data = await createShareTokenWithNickname(payload, OPENID)
         break
       case 'listCoursesForShare':
         data = await listCoursesForShare(payload)
@@ -475,6 +558,15 @@ exports.main = async (event) => {
         break
       case 'getCheckinLogsForShare':
         data = await getCheckinLogsForShare(payload)
+        break
+      case 'listViewedShares':
+        data = await listViewedShares(OPENID)
+        break
+      case 'upsertViewedShare':
+        data = await upsertViewedShare(payload, OPENID)
+        break
+      case 'removeViewedShare':
+        data = await removeViewedShare(payload, OPENID)
         break
       default:
         throw new Error('不支持的 action')

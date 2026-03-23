@@ -13,6 +13,12 @@ const {
   getSubscribeCount,
 } = require('../../utils/budget-storage')
 const { formatAmount } = require('../../utils/amount-expression')
+const {
+  getMonthLabel,
+  getOffsetMonthKey,
+  generateMonthPickerItems,
+  findMonthPickerIndex,
+} = require('../../utils/course-calendar')
 
 const COLOR_PALETTE = [
   { main: '#f4a7b9', light: '#fde7ed' },
@@ -23,15 +29,21 @@ const COLOR_PALETTE = [
   { main: '#7fcad1', light: '#e3f6f7' },
 ]
 
-function getMonthLabel(monthKey) {
-  const [year, month] = monthKey.split('-')
-  return `${year}年${Number(month)}月`
-}
-
-function getOffsetMonthKey(monthKey, offset) {
-  const [year, month] = monthKey.split('-')
-  const date = new Date(Number(year), Number(month) - 1 + offset, 1)
-  return getCurrentMonthKey(date)
+function summarizeBudgetList(list, monthKey) {
+  let totalBudget = 0
+  let totalUsed = 0
+  ;(list || []).forEach((item) => {
+    totalBudget += Number(item.totalAmount || 0)
+    totalUsed += Number(item.usedAmount || 0)
+  })
+  const remain = totalBudget - totalUsed
+  return {
+    monthKey,
+    monthLabel: getMonthLabel(monthKey),
+    totalBudgetText: formatAmount(totalBudget),
+    totalUsedText: formatAmount(totalUsed),
+    remainText: formatAmount(remain),
+  }
 }
 
 const SWIPE_EDIT_WIDTH = 82
@@ -85,10 +97,14 @@ Page({
   data: {
     monthKey: '',
     monthLabel: '',
+    monthPickerItems: [],
+    currentPickerIndex: 0,
     budgetList: [],
-    totalBudgetText: '0',
-    totalUsedText: '0',
-    remainText: '0',
+    /** 上月 / 当月 / 下月 汇总，供 summary-card 内 swiper 滑动 */
+    summarySwipe: [],
+    swiperSummaryIndex: 1,
+    /** 月份切换时递增，用于重建 swiper，避免回弹二次动画 */
+    summarySwiperKey: 0,
     showFabMenu: false,
     fabMenuClosing: false,
     showAddPopup: false,
@@ -117,10 +133,22 @@ Page({
 
   onLoad() {
     const monthKey = getCurrentMonthKey()
+    const monthPickerItems = generateMonthPickerItems(monthKey)
+    let currentPickerIndex = findMonthPickerIndex(monthPickerItems, monthKey)
+    if (currentPickerIndex < 0) currentPickerIndex = 0
+    const prevKey = getOffsetMonthKey(monthKey, -1)
+    const nextKey = getOffsetMonthKey(monthKey, 1)
+    const placeholder = (k) => summarizeBudgetList([], k)
     this.setData({
       monthKey,
       monthLabel: getMonthLabel(monthKey),
+      monthPickerItems,
+      currentPickerIndex,
+      summarySwipe: [placeholder(prevKey), placeholder(monthKey), placeholder(nextKey)],
+      swiperSummaryIndex: 1,
+      summarySwiperKey: 0,
     })
+    this._lastSummaryCenterMonthKey = monthKey
   },
 
   onUnload() {
@@ -182,16 +210,31 @@ Page({
 
   async refreshBudgetList() {
     const { monthKey } = this.data
-    let list = []
+    const prevKey = getOffsetMonthKey(monthKey, -1)
+    const nextKey = getOffsetMonthKey(monthKey, 1)
+    let listPrev = []
+    let listCurr = []
+    let listNext = []
     try {
-      list = await getMonthBudgetList(monthKey)
+      ;[listPrev, listCurr, listNext] = await Promise.all([
+        getMonthBudgetList(prevKey),
+        getMonthBudgetList(monthKey),
+        getMonthBudgetList(nextKey),
+      ])
     } catch (err) {
       wx.showToast({ title: '预算数据加载失败', icon: 'none' })
       return
     }
+
+    const summarySwipe = [
+      summarizeBudgetList(listPrev, prevKey),
+      summarizeBudgetList(listCurr, monthKey),
+      summarizeBudgetList(listNext, nextKey),
+    ]
+
     let totalBudget = 0
     let totalUsed = 0
-    const decorated = list.map((item, index) => {
+    const decorated = listCurr.map((item, index) => {
       const total = Number(item.totalAmount || 0)
       const used = Number(item.usedAmount || 0)
       const rawPercent = total <= 0 ? 0 : (used / total) * 100
@@ -214,13 +257,20 @@ Page({
       }
     })
 
-    const remain = totalBudget - totalUsed
-    this.setData({
+    const prevCenter = this._lastSummaryCenterMonthKey
+    const monthChanged = prevCenter !== monthKey
+    this._lastSummaryCenterMonthKey = monthKey
+
+    const patch = {
       budgetList: decorated,
-      totalBudgetText: formatAmount(totalBudget),
-      totalUsedText: formatAmount(totalUsed),
-      remainText: formatAmount(remain),
-    })
+      monthLabel: getMonthLabel(monthKey),
+      summarySwipe,
+      swiperSummaryIndex: 1,
+    }
+    if (monthChanged) {
+      patch.summarySwiperKey = (this.data.summarySwiperKey || 0) + 1
+    }
+    this.setData(patch)
   },
 
   onToggleFabMenu() {
@@ -687,22 +737,58 @@ Page({
 
   noop() { },
 
-  async onPrevMonth() {
+  onSummarySwipePrev() {
+    if (this.data.swiperSummaryIndex !== 1) return
+    vibrateLight()
+    this.setData({ swiperSummaryIndex: 0 })
+  },
+
+  onSummarySwipeNext() {
+    if (this.data.swiperSummaryIndex !== 1) return
+    vibrateLight()
+    this.setData({ swiperSummaryIndex: 2 })
+  },
+
+  async onSummarySwiperChange(e) {
+    const cur = e.detail.current
+    this.setData({ swiperSummaryIndex: cur })
+    if (cur === 1) return
+    if (cur === 0) {
+      await this.shiftSummaryMonth(-1)
+    } else if (cur === 2) {
+      await this.shiftSummaryMonth(1)
+    }
+  },
+
+  async shiftSummaryMonth(delta) {
     this.resetAllOffsets()
-    const monthKey = getOffsetMonthKey(this.data.monthKey, -1)
+    const monthKey = getOffsetMonthKey(this.data.monthKey, delta)
+    const monthPickerItems = this.data.monthPickerItems.length
+      ? this.data.monthPickerItems
+      : generateMonthPickerItems(monthKey)
+    let currentPickerIndex = findMonthPickerIndex(monthPickerItems, monthKey)
+    if (currentPickerIndex < 0) currentPickerIndex = 0
+    // 不要在这里 set swiperSummaryIndex: 1，否则会先播「滑回中间」再加载数据，出现二次动画。
+    // 交给 refreshBudgetList 与 summarySwiperKey 一起重建 swiper，直接落在中间屏。
     this.setData({
       monthKey,
       monthLabel: getMonthLabel(monthKey),
+      monthPickerItems,
+      currentPickerIndex,
     })
     await this.refreshBudgetList()
   },
 
-  async onNextMonth() {
+  async onSelectMonth(e) {
+    const idx = Number(e.detail.value)
+    const item = this.data.monthPickerItems[idx]
+    if (!item) return
+    vibrateLight()
     this.resetAllOffsets()
-    const monthKey = getOffsetMonthKey(this.data.monthKey, 1)
     this.setData({
-      monthKey,
-      monthLabel: getMonthLabel(monthKey),
+      monthKey: item.monthKey,
+      monthLabel: getMonthLabel(item.monthKey),
+      currentPickerIndex: idx,
     })
     await this.refreshBudgetList()
   },

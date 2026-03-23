@@ -1,5 +1,28 @@
-<navigation-bar title="{{ navTitle }}" />
+<navigation-bar title="" home-url="/pages/index/index">
+	<view slot="center" class="nav-title-trigger" bindtap="onToggleRecordDropdown">
+		<text class="nav-title-text">{{ navTitle }}</text>
+		<text class="nav-title-arrow {{ showRecordDropdown ? 'is-open' : '' }}">▾</text>
+	</view>
+</navigation-bar>
 <view class="course-page">
+	<view wx:if="{{ showRecordDropdown }}" class="record-dropdown-mask" bindtap="onCloseRecordDropdown">
+		<view class="record-dropdown-panel" catchtap="noop">
+			<view class="record-option {{ !isViewerMode ? 'active' : '' }}" data-type="self" bindtap="onSelectRecordOption">
+				<text class="record-option-title">我的消课记录</text>
+			</view>
+			<view
+				wx:for="{{ recentShareRecords }}"
+				wx:key="token"
+				class="record-option {{ isViewerMode && shareToken === item.token ? 'active' : '' }}"
+				data-type="share"
+				data-token="{{ item.token }}"
+				bindtap="onSelectRecordOption"
+			>
+				<text class="record-option-title">{{ item.displayTitle }}</text>
+				<view class="record-option-delete" data-token="{{ item.token }}" catchtap="onDeleteRecordOption">删除</view>
+			</view>
+		</view>
+	</view>
 	<scroll-view class="month-content" scroll-y="true" enhanced show-scrollbar="{{ false }}">
 		<view class="top-placeholder"></view>
 		<checkin-calendar
@@ -109,6 +132,18 @@
 			</view>
 			<view class="popup-footer">
 				<view class="popup-btn primary" bindtap="onSaveCourse">{{ addPopupMode === 'edit' ? '保存' : '添加课程' }}</view>
+			</view>
+		</view>
+	</view>
+
+	<view wx:if="{{ showShareNickPopup }}" class="share-nick-mask" bindtap="onCancelShareNick">
+		<view class="share-nick-dialog" catchtap="noop">
+			<text class="share-nick-title">分享展示名称</text>
+			<text class="share-nick-hint">仅用于生成分享链接，不会写入账号资料</text>
+			<input class="share-nick-input" placeholder="选填，留空则不展示昵称" maxlength="16" value="{{ shareNickInputValue }}" bindinput="onShareNickInput" type="nickname" />
+			<view class="share-nick-actions">
+				<view class="share-nick-btn share-nick-btn--ghost" bindtap="onCancelShareNick">取消</view>
+				<view class="share-nick-btn share-nick-btn--primary" bindtap="onConfirmShareNick">确定</view>
 			</view>
 		</view>
 	</view>

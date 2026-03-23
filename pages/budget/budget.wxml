@@ -6,27 +6,43 @@
 				<view class="budget-sticky-header">
 					<view class="summary-card">
 						<view class="month-row">
-							<view class="month-switch" bindtap="onPrevMonth">
+							<view class="month-switch" bindtap="onSummarySwipePrev">
 								<image class="month-switch-icon" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
 							</view>
-							<text class="month-title">{{ monthLabel }}</text>
-							<view class="month-switch" bindtap="onNextMonth">
+							<picker mode="selector" range="{{ monthPickerItems }}" range-key="label" value="{{ currentPickerIndex }}" bindchange="onSelectMonth">
+								<view class="month-title-wrap">
+									<text class="month-title">{{ monthLabel }}</text>
+								</view>
+							</picker>
+							<view class="month-switch" bindtap="onSummarySwipeNext">
 								<image class="month-switch-icon" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
 							</view>
 						</view>
-						<view class="summary-grid">
-							<view class="summary-item">
-								<text class="summary-label">总预算</text>
-								<text class="summary-value">¥{{ totalBudgetText }}</text>
-							</view>
-							<view class="summary-item">
-								<text class="summary-label">已使用</text>
-								<text class="summary-value">¥{{ totalUsedText }}</text>
-							</view>
-							<view class="summary-item">
-								<text class="summary-label">剩余</text>
-								<text class="summary-value">¥{{ remainText }}</text>
-							</view>
+						<view class="summary-swiper-mount" wx:for="{{ [summarySwiperKey] }}" wx:key="*this">
+							<swiper
+								class="summary-swiper"
+								current="{{ swiperSummaryIndex }}"
+								duration="300"
+								easing-function="easeOutCubic"
+								bindchange="onSummarySwiperChange"
+							>
+								<swiper-item wx:for="{{ summarySwipe }}" wx:for-item="sum" wx:key="monthKey">
+									<view class="summary-grid">
+										<view class="summary-item">
+											<text class="summary-label">总预算</text>
+											<text class="summary-value">¥{{ sum.totalBudgetText }}</text>
+										</view>
+										<view class="summary-item">
+											<text class="summary-label">已使用</text>
+											<text class="summary-value">¥{{ sum.totalUsedText }}</text>
+										</view>
+										<view class="summary-item">
+											<text class="summary-label">剩余</text>
+											<text class="summary-value">¥{{ sum.remainText }}</text>
+										</view>
+									</view>
+								</swiper-item>
+							</swiper>
 						</view>
 					</view>
 				</view>
