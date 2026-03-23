@@ -394,6 +394,43 @@ async function getMonthCheckinsForShare(payload) {
   return getMonthCheckinsByOpenid(monthKey, ownerOpenid)
 }
 
+async function getCheckinLogsForShare(payload) {
+  const token = payload.token
+  const courseId = payload.courseId
+  const monthKey = payload.monthKey
+  if (!courseId) throw new Error('课程不存在')
+
+  const ownerOpenid = await getOwnerOpenidByToken(token)
+  const course = await getOwnedDocById(COURSES_COLLECTION, courseId, ownerOpenid)
+  if (!course) throw new Error('课程不存在')
+
+  let query = { courseId, openid: ownerOpenid }
+  if (monthKey) {
+    ensureMonthKey(monthKey)
+    query.checkinDate = db.RegExp({
+      regexp: `^${monthKey}`,
+      options: 'i',
+    })
+  }
+
+  const res = await db
+    .collection(CHECKINS_COLLECTION)
+    .where(query)
+    .orderBy('checkinDate', 'desc')
+    .get()
+
+  const list = (res.data || []).map((item) => ({
+    id: item._id,
+    courseId: item.courseId,
+    checkinDate: item.checkinDate,
+    checkinTimestamp: item.checkinTimestamp,
+    note: item.note || '',
+    createdAt: item.createdAt || 0,
+  }))
+
+  return { list }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   try {
@@ -435,6 +472,9 @@ exports.main = async (event) => {
         break
       case 'getMonthCheckinsForShare':
         data = await getMonthCheckinsForShare(payload)
+        break
+      case 'getCheckinLogsForShare':
+        data = await getCheckinLogsForShare(payload)
         break
       default:
         throw new Error('不支持的 action')

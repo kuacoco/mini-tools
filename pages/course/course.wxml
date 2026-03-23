@@ -2,39 +2,23 @@
 <view class="course-page">
 	<scroll-view class="month-content" scroll-y="true" enhanced show-scrollbar="{{ false }}">
 		<view class="top-placeholder"></view>
-		<view class="calendar-card">
-			<view class="month-row">
-				<view class="month-switch" bindtap="onPrevMonth">
-					<image class="month-switch-icon" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
-				</view>
-				<picker mode="selector" range="{{ monthPickerItems }}" range-key="label" value="{{ currentPickerIndex }}" bindchange="onSelectMonth">
-					<text class="month-title">{{ currentMonthLabel }}</text>
-				</picker>
-				<view class="month-switch" bindtap="onNextMonth">
-					<image class="month-switch-icon" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
-				</view>
-			</view>
-			<view class="calendar-header">
-				<text class="calendar-weekday" wx:for="{{ weekDays }}" wx:key="*this">{{ item }}</text>
-			</view>
-			<view class="calendar-grid">
-				<view
-					wx:for="{{ calendarDays }}"
-					wx:key="date"
-					class="calendar-day {{ item.isToday ? 'is-today' : '' }} {{ item.isSelected ? 'is-selected' : '' }} {{ !item.isCurrentMonth ? 'other-month' : '' }}"
-					data-date="{{ item.date }}"
-					bindtap="onSelectDate"
-				>
-					<text class="day-number">{{ item.day }}</text>
-					<view wx:if="{{ item.hasCheckin }}" class="checkin-dot"></view>
-				</view>
-			</view>
-		</view>
-
-		<view class="selected-date-bar">
-			<text class="selected-date-value">{{ selectedDateDisplay }}</text>
-			<text wx:if="{{ selectedDate !== todayDateString }}" class="today-btn" bindtap="goToToday">回今天</text>
-		</view>
+		<checkin-calendar
+			week-days="{{ weekDays }}"
+			month-picker-items="{{ monthPickerItems }}"
+			current-picker-index="{{ currentPickerIndex }}"
+			current-month-label="{{ currentMonthLabel }}"
+			calendar-days-swipe="{{ calendarDaysSwipe }}"
+			swiper-month-index="{{ swiperMonthIndex }}"
+			swiper-remount-key="{{ calendarSwiperKey }}"
+			selected-date="{{ selectedDate }}"
+			today-date-string="{{ todayDateString }}"
+			selected-date-display="{{ selectedDateDisplay }}"
+			bind:swipeprev="onPrevMonth"
+			bind:swipenext="onNextMonth"
+			bind:selectmonth="onSelectMonth"
+			bind:selectdate="onSelectDate"
+			bind:gotoday="goToToday"
+		/>
 
 		<view class="course-list-content">
 			<view wx:if="{{ !courseList.length }}" class="empty-card">

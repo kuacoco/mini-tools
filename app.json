@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/budget/budget",
     "pages/course/course",
+    "pages/course-detail/course-detail",
     "pages/logs/logs",
     "pages/location/location",
     "pages/admin/admin"

@@ -1,0 +1,54 @@
+<view class="checkin-calendar">
+	<view class="calendar-card">
+		<view class="month-row">
+			<view class="month-switch" bindtap="onPrevMonth">
+				<image class="month-switch-icon" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
+			</view>
+			<picker mode="selector" range="{{ monthPickerItems }}" range-key="label" value="{{ currentPickerIndex }}" bindchange="onSelectMonth">
+				<text class="month-title">{{ currentMonthLabel }}</text>
+			</picker>
+			<view class="month-switch" bindtap="onNextMonth">
+				<image class="month-switch-icon" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
+			</view>
+		</view>
+		<text wx:if="{{ caption }}" class="calendar-caption">{{ caption }}</text>
+		<view class="calendar-header">
+			<text class="calendar-weekday" wx:for="{{ weekDays }}" wx:key="*this">{{ item }}</text>
+		</view>
+		<!-- swiperRemountKey 变化时整段重建，避免把 current 从 0/2 拉回 1 时再播一次滑回动画 -->
+		<view class="calendar-swiper-mount" wx:for="{{ [swiperRemountKey] }}" wx:key="*this">
+			<swiper
+				class="calendar-swiper"
+				current="{{ innerSwiperIndex }}"
+				duration="300"
+				bindchange="onSwiperCalendarChange"
+				easing-function="easeOutCubic"
+			>
+				<swiper-item wx:for="{{ calendarDaysSwipe }}" wx:for-item="monthDays" wx:for-index="swIdx" wx:key="swIdx">
+					<view class="calendar-grid">
+						<view
+							wx:for="{{ monthDays }}"
+							wx:for-item="cell"
+							wx:key="date"
+							class="calendar-day {{ cell.isToday ? 'is-today' : '' }} {{ cell.isSelected ? 'is-selected' : '' }} {{ !cell.isCurrentMonth ? 'other-month' : '' }}"
+							data-date="{{ cell.date }}"
+							bindtap="onSelectDate"
+						>
+							<text class="day-number">{{ cell.day }}</text>
+							<view
+								wx:if="{{ cell.hasCheckin }}"
+								class="checkin-dot"
+								style="background: {{ cell.checkinDotStyle }}"
+							></view>
+						</view>
+					</view>
+				</swiper-item>
+			</swiper>
+		</view>
+	</view>
+
+	<view class="selected-date-bar">
+		<text class="selected-date-value">{{ selectedDateDisplay }}</text>
+		<text wx:if="{{ selectedDate !== todayDateString }}" class="today-btn" bindtap="onGoToToday">回今天</text>
+	</view>
+</view>

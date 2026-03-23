@@ -143,14 +143,14 @@ Page({
 
     // 页面加载完成后（onShow）自动同步一次
     // 避免用户反复进页面时对同一月份重复触发同步
-    if (
-      this.data.isWhitelisted &&
-      this.data.monthKey &&
-      this.autoSyncedMonthKey !== this.data.monthKey
-    ) {
-      const ok = await this.startFeideeSync({ auto: true })
-      if (ok) this.autoSyncedMonthKey = this.data.monthKey
-    }
+    // if (
+    //   this.data.isWhitelisted &&
+    //   this.data.monthKey &&
+    //   this.autoSyncedMonthKey !== this.data.monthKey
+    // ) {
+    //   const ok = await this.startFeideeSync({ auto: true })
+    //   if (ok) this.autoSyncedMonthKey = this.data.monthKey
+    // }
   },
 
   async fetchSubscribeCount() {

@@ -12,92 +12,15 @@ const {
   getMonthCheckinsForShare,
   createShareToken,
 } = require('../../utils/course-storage')
-
-// 课程头像/进度条颜色（最多支持10种课程时保持区分度）
-const COLOR_PALETTE = [
-  { main: '#2dd4bf', light: '#ccfbf1' }, // 青绿
-  { main: '#a78bfa', light: '#ede9fe' }, // 紫
-  { main: '#f472b6', light: '#fce7f3' }, // 粉
-  { main: '#67e8f9', light: '#cffafe' }, // 青蓝
-  { main: '#c084fc', light: '#f5f3ff' }, // 淡紫
-  { main: '#fb923c', light: '#ffedd5' }, // 橙
-  { main: '#34d399', light: '#dcfce7' }, // 绿
-  { main: '#60a5fa', light: '#dbeafe' }, // 蓝
-  { main: '#f43f5e', light: '#ffe4e6' }, // 玫红
-  { main: '#f59e0b', light: '#fff7ed' }, // 金橙
-]
-
-const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
-
-function getMonthLabel(monthKey) {
-  const [year, month] = monthKey.split('-')
-  return `${year}年${Number(month)}月`
-}
-
-function getOffsetMonthKey(monthKey, offset) {
-  const [year, month] = monthKey.split('-')
-  const date = new Date(Number(year), Number(month) - 1 + offset, 1)
-  return getCurrentMonthKey(date)
-}
-
-function generateCalendarDays(year, month, checkinDates = [], selectedDate = '') {
-  const firstDay = new Date(year, month - 1, 1)
-  const lastDay = new Date(year, month, 0)
-  const daysInMonth = lastDay.getDate()
-  const startWeekday = firstDay.getDay()
-
-  const today = new Date()
-  const todayStr = getCurrentDateString(today)
-
-  const checkinSet = new Set(checkinDates)
-  const days = []
-
-  // 上月天数
-  const prevMonth = new Date(year, month - 1, 0)
-  const prevMonthDays = prevMonth.getDate()
-  for (let i = startWeekday - 1; i >= 0; i--) {
-    const d = prevMonthDays - i
-    const dateStr = `${year}-${String(month - 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    days.push({
-      day: d,
-      date: dateStr,
-      isCurrentMonth: false,
-      isToday: false,
-      isSelected: dateStr === selectedDate,
-      hasCheckin: false,
-    })
-  }
-
-  // 当月天数
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    const isToday = dateStr === todayStr
-    days.push({
-      day: d,
-      date: dateStr,
-      isCurrentMonth: true,
-      isToday,
-      isSelected: dateStr === selectedDate,
-      hasCheckin: checkinSet.has(dateStr),
-    })
-  }
-
-  // 下月天数，补齐到42天（6行）
-  const remaining = 42 - days.length
-  for (let d = 1; d <= remaining; d++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    days.push({
-      day: d,
-      date: dateStr,
-      isCurrentMonth: false,
-      isToday: false,
-      isSelected: dateStr === selectedDate,
-      hasCheckin: false,
-    })
-  }
-
-  return days
-}
+const { COLOR_PALETTE } = require('../../utils/course-palette')
+const {
+  WEEKDAYS,
+  getMonthLabel,
+  getOffsetMonthKey,
+  generateMonthPickerItems,
+  findMonthPickerIndex,
+  buildCourseMonthCalendar,
+} = require('../../utils/course-calendar')
 
 const SWIPE_EDIT_WIDTH = 82
 const SWIPE_DELETE_WIDTH = 82
@@ -115,28 +38,6 @@ function formatDateDisplay(dateStr) {
   return `${Number(month)}月${Number(day)}日`
 }
 
-// 生成月份选择器数据（当前年份前后各2年）
-function generateMonthPickerItems(currentMonthKey) {
-  const [year, month] = currentMonthKey.split('-').map(Number)
-  const items = []
-  const currentYear = new Date().getFullYear()
-
-  for (let y = currentYear - 2; y <= currentYear + 1; y++) {
-    for (let m = 1; m <= 12; m++) {
-      const monthKey = `${y}-${String(m).padStart(2, '0')}`
-      items.push({
-        monthKey,
-        label: `${y}年${m}月`,
-      })
-    }
-  }
-  return items
-}
-
-function findMonthPickerIndex(items, currentMonthKey) {
-  return items.findIndex(item => item.monthKey === currentMonthKey)
-}
-
 Page({
   data: {
     weekDays: WEEKDAYS,
@@ -147,7 +48,10 @@ Page({
     selectedDate: '',
     selectedDateDisplay: '',
     todayDateString: '',
-    calendarDays: [],
+    calendarDaysSwipe: [[], [], []],
+    swiperMonthIndex: 1,
+    /** 月份切换时递增，用于强制重建 swiper，避免出现「滑到新月份后又滑回中间」的二次动画 */
+    calendarSwiperKey: 0,
     courseList: [],
     showAddPopup: false,
     addPopupClosing: false,
@@ -198,14 +102,22 @@ Page({
   },
 
   async loadMonthData(monthKey) {
-    const [year, month] = monthKey.split('-')
     const { selectedDate, isViewerMode, shareToken } = this.data
+    const prevKey = getOffsetMonthKey(monthKey, -1)
+    const nextKey = getOffsetMonthKey(monthKey, 1)
 
-    let checkinsMap = {}
+    let mapPrev = {}
+    let mapCurr = {}
+    let mapNext = {}
     let list = []
+
     if (isViewerMode && shareToken) {
       try {
-        checkinsMap = await getMonthCheckinsForShare(shareToken, monthKey)
+        ;[mapPrev, mapCurr, mapNext] = await Promise.all([
+          getMonthCheckinsForShare(shareToken, prevKey),
+          getMonthCheckinsForShare(shareToken, monthKey),
+          getMonthCheckinsForShare(shareToken, nextKey),
+        ])
       } catch (err) {
         wx.showToast({ title: '分享链接无效或已失效', icon: 'none' })
         return
@@ -217,11 +129,11 @@ Page({
         return
       }
     } else {
-      try {
-        checkinsMap = await getMonthCheckins(monthKey)
-      } catch (err) {
-        // ignore
-      }
+      ;[mapPrev, mapCurr, mapNext] = await Promise.all([
+        getMonthCheckins(prevKey).catch(() => ({})),
+        getMonthCheckins(monthKey).catch(() => ({})),
+        getMonthCheckins(nextKey).catch(() => ({})),
+      ])
       try {
         list = await listCourses()
       } catch (err) {
@@ -229,31 +141,13 @@ Page({
       }
     }
 
-    // 收集所有打卡日期
-    const allCheckinDates = []
-    for (const checks of Object.values(checkinsMap)) {
-      for (const c of checks) {
-        if (c.checkinDate) {
-          allCheckinDates.push(c.checkinDate)
-        }
-      }
-    }
-
-    const calendarDays = generateCalendarDays(
-      Number(year),
-      Number(month),
-      allCheckinDates,
-      selectedDate
-    )
-
-    // 按创建时间升序排序（旧课在前，便于颜色稳定）
     list.sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
 
-    // 统计每个课程在当月的打卡次数
-    const checkinCountMap = {}
-    for (const courseId of Object.keys(checkinsMap)) {
-      checkinCountMap[courseId] = (checkinsMap[courseId] || []).length
-    }
+    const calendarDaysSwipe = [
+      buildCourseMonthCalendar(prevKey, mapPrev, list, selectedDate),
+      buildCourseMonthCalendar(monthKey, mapCurr, list, selectedDate),
+      buildCourseMonthCalendar(nextKey, mapNext, list, selectedDate),
+    ]
 
     const decorated = list.map((item, index) => {
       const total = Number(item.totalClasses || 0)
@@ -264,8 +158,7 @@ Page({
       const remain = total - displayUsed
       const color = COLOR_PALETTE[index % COLOR_PALETTE.length]
 
-      // 检查当天是否已打卡
-      const monthChecks = checkinsMap[item.id] || []
+      const monthChecks = mapCurr[item.id] || []
       const checkedToday = monthChecks.some(c => c.checkinDate === selectedDate)
 
       return {
@@ -284,10 +177,19 @@ Page({
       }
     })
 
-    this.setData({
-      calendarDays,
+    const prevCenter = this._lastCalendarCenterMonthKey
+    const monthChanged = prevCenter !== monthKey
+    this._lastCalendarCenterMonthKey = monthKey
+
+    const patch = {
+      calendarDaysSwipe,
+      swiperMonthIndex: 1,
       courseList: decorated,
-    })
+    }
+    if (monthChanged) {
+      patch.calendarSwiperKey = (this.data.calendarSwiperKey || 0) + 1
+    }
+    this.setData(patch)
   },
 
   // 上个月
@@ -326,14 +228,28 @@ Page({
   },
 
   onSelectDate(e) {
-    const { date } = e.currentTarget.dataset
+    const date = (e.detail && e.detail.date) || (e.currentTarget.dataset && e.currentTarget.dataset.date)
     if (!date) return
 
     vibrateLight()
     const dateDisplay = formatDateDisplay(date)
+    const monthKeyOfDate = date.slice(0, 7)
+    if (monthKeyOfDate !== this.data.currentMonthKey) {
+      const monthPickerItems = this.data.monthPickerItems.length
+        ? this.data.monthPickerItems
+        : generateMonthPickerItems(monthKeyOfDate)
+      const currentPickerIndex = findMonthPickerIndex(monthPickerItems, monthKeyOfDate)
+      this.setData({
+        selectedDate: date,
+        selectedDateDisplay: dateDisplay,
+        currentMonthKey: monthKeyOfDate,
+        currentMonthLabel: getMonthLabel(monthKeyOfDate),
+        currentPickerIndex: currentPickerIndex >= 0 ? currentPickerIndex : 0,
+      })
+      this.loadMonthData(monthKeyOfDate)
+      return
+    }
     this.setData({ selectedDate: date, selectedDateDisplay: dateDisplay })
-
-    // 刷新课程打卡状态
     this.loadMonthData(this.data.currentMonthKey)
   },
 
@@ -517,6 +433,14 @@ Page({
       this.resetAllOffsets()
       return
     }
+    if (!id) return
+    const parts = [`id=${encodeURIComponent(id)}`]
+    if (this.data.isViewerMode && this.data.shareToken) {
+      parts.push(`shareToken=${encodeURIComponent(this.data.shareToken)}`)
+    }
+    wx.navigateTo({
+      url: `/pages/course-detail/course-detail?${parts.join('&')}`,
+    })
   },
 
   onItemTouchStart(e) {
@@ -665,6 +589,10 @@ Page({
     const today = getCurrentDateString()
     const todayDisplay = formatDateDisplay(today)
     const monthKey = getCurrentMonthKey()
+    const monthPickerItems = this.data.monthPickerItems.length
+      ? this.data.monthPickerItems
+      : generateMonthPickerItems(monthKey)
+    const currentPickerIndex = findMonthPickerIndex(monthPickerItems, monthKey)
 
     vibrateLight()
     this.setData({
@@ -672,6 +600,7 @@ Page({
       selectedDateDisplay: todayDisplay,
       currentMonthKey: monthKey,
       currentMonthLabel: getMonthLabel(monthKey),
+      currentPickerIndex: currentPickerIndex >= 0 ? currentPickerIndex : 0,
     })
     this.loadMonthData(monthKey)
   },

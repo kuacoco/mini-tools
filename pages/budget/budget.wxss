@@ -233,9 +233,12 @@ page {
   bottom: 116rpx;
   display: flex;
   flex-direction: column;
-  gap: 14rpx;
   align-items: flex-end;
   transform-origin: right bottom;
+}
+
+.fab-menu-item + .fab-menu-item {
+  margin-top: 14rpx;
 }
 
 .fab-menu.is-entering {

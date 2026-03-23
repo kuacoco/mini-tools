@@ -252,8 +252,11 @@
 
 .popup-actions {
   display: flex;
-  gap: 24rpx;
   margin-top: 32rpx;
+}
+
+.popup-actions .popup-btn + .popup-btn {
+  margin-left: 24rpx;
 }
 
 .popup-btn {

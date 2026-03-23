@@ -100,6 +100,13 @@ async function getMonthCheckinsForShare(token, monthKey) {
   return data && data.checkins ? data.checkins : {}
 }
 
+async function getCheckinLogsForShare(token, courseId, monthKey) {
+  const payload = { token, courseId }
+  if (monthKey) payload.monthKey = monthKey
+  const data = await callCourseCrud('getCheckinLogsForShare', payload)
+  return Array.isArray(data && data.list) ? data.list : []
+}
+
 module.exports = {
   getCurrentMonthKey,
   getCurrentDateString,
@@ -114,4 +121,5 @@ module.exports = {
   createShareToken,
   listCoursesForShare,
   getMonthCheckinsForShare,
+  getCheckinLogsForShare,
 }
