@@ -236,6 +236,19 @@ async function syncAllFeideeUsers() {
   return result.data
 }
 
+async function fetchFeideeTransactions(startDate, endDate) {
+  ensureCloudReady()
+  const res = await wx.cloud.callFunction({
+    name: 'feideeTransactions',
+    data: { startDate, endDate },
+  })
+  const result = res && res.result ? res.result : {}
+  if (!result.success) {
+    throw new Error(result.message || '获取飞笛交易明细失败')
+  }
+  return result.data || { totalAmount: 0, list: [] }
+}
+
 module.exports = {
   getCurrentMonthKey,
   getMonthBudgetList,
@@ -257,4 +270,5 @@ module.exports = {
   incrementSubscribe,
   getSubscribeCount,
   syncAllFeideeUsers,
+  fetchFeideeTransactions,
 }

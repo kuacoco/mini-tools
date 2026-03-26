@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index"
+  },
+  "navigationBarTitleText": "消费账单",
+  "disableScroll": true,
+  "renderer": "skyline"
+}
+

@@ -2,6 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/budget/budget",
+    "pages/feidee-bill/feidee-bill",
     "pages/course/course",
     "pages/course-detail/course-detail",
     "pages/logs/logs",

@@ -1,0 +1,291 @@
+page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bill-page {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: linear-gradient(180deg, #f6f7ff 0%, #ffffff 55%, #fff8f9 100%);
+  box-sizing: border-box;
+}
+
+.bill-scroll {
+  height: 100%;
+  min-height: 0;
+}
+
+.bill-top-card {
+  margin: 22rpx 28rpx 16rpx;
+  padding: 26rpx 24rpx 22rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 24rpx;
+  box-shadow: 0 10rpx 40rpx rgba(69, 57, 113, 0.08);
+}
+
+.range-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: rgba(47, 49, 82, 0.95);
+  margin-bottom: 18rpx;
+}
+
+.range-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.range-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.range-label {
+  font-size: 22rpx;
+  color: rgba(138, 141, 167, 0.9);
+  margin-bottom: 10rpx;
+}
+
+.range-sep {
+  width: 40rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: rgba(138, 141, 167, 0.9);
+  padding-bottom: 6rpx;
+  margin: 0 18rpx;
+}
+
+.range-value {
+  font-size: 28rpx;
+  font-weight: 650;
+  color: #2f3152;
+  background: #f5f6ff;
+  border: 1px solid rgba(47, 49, 82, 0.08);
+  border-radius: 16rpx;
+  padding: 16rpx 18rpx;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-seg {
+  display: flex;
+  margin-top: 18rpx;
+  padding: 4rpx;
+  border-radius: 16rpx;
+  background: #f5f6ff;
+  border: 1px solid rgba(47, 49, 82, 0.08);
+}
+
+.quick-seg-item {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  border-radius: 14rpx;
+  font-size: 24rpx;
+  font-weight: 650;
+  color: rgba(47, 49, 82, 0.78);
+}
+
+.quick-seg-item.active {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10rpx 24rpx rgba(69, 57, 113, 0.1);
+  color: rgba(47, 49, 82, 0.96);
+}
+
+.total-row {
+  margin-top: 22rpx;
+  padding-top: 18rpx;
+  border-top: 1px solid rgba(47, 49, 82, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.total-label {
+  font-size: 24rpx;
+  color: rgba(138, 141, 167, 0.95);
+}
+
+.total-value {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #2f3152;
+}
+
+.bill-list {
+  padding: 0 28rpx 140rpx;
+  box-sizing: border-box;
+}
+
+/* 与 bill-top-card 同套卡片语言，避免与头部割裂 */
+.bill-body-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 24rpx;
+  box-shadow: 0 10rpx 40rpx rgba(69, 57, 113, 0.08);
+  padding: 22rpx 24rpx 24rpx;
+  box-sizing: border-box;
+}
+
+/* 清单在卡片内平铺，仅行分割线 */
+.bill-sheet {
+  background: transparent;
+}
+
+.sheet-group:last-child .sheet-rows .sheet-row:last-child {
+  border-bottom: none;
+}
+
+.sheet-cat {
+  display: flex;
+  align-items: center;
+  padding: 30rpx 0 26rpx;
+  border-bottom: 1px solid rgba(47, 49, 82, 0.1);
+  min-width: 0;
+}
+
+.sheet-cat > view + view {
+  margin-left: 8rpx;
+}
+
+.sheet-cat-icon {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2rpx 10rpx rgba(47, 49, 82, 0.06);
+}
+
+.sheet-cat-icon-text {
+  font-size: 24rpx;
+  font-weight: 650;
+  color: rgba(47, 49, 82, 0.72);
+  line-height: 1;
+}
+
+.sheet-cat-mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+}
+
+.sheet-cat-mid > text + text {
+  margin-left: 8rpx;
+}
+
+.sheet-cat-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2f3152;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sheet-cat-count {
+  font-size: 22rpx;
+  color: rgba(138, 141, 167, 0.95);
+  flex: none;
+  line-height: 1.2;
+}
+
+.sheet-cat-right {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.sheet-cat-right > text + text {
+  margin-left: 12rpx;
+}
+
+.sheet-cat-total {
+  font-size: 28rpx;
+  font-weight: 650;
+  color: #2f3152;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet-cat-arrow {
+  font-size: 26rpx;
+  color: rgba(138, 141, 167, 0.95);
+  transform: rotate(90deg);
+  transform-origin: center;
+  transition: transform 120ms ease;
+}
+
+.sheet-cat-arrow.collapsed {
+  transform: rotate(0deg);
+}
+
+.sheet-rows {
+  padding-bottom: 4rpx;
+}
+
+.sheet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 20rpx 18rpx 20rpx;
+  border-bottom: 1px solid rgba(47, 49, 82, 0.06);
+  box-sizing: border-box;
+}
+
+.sheet-remark {
+  flex: 1;
+  min-width: 0;
+  font-size: 26rpx;
+  color: rgba(47, 49, 82, 0.88);
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.sheet-amt {
+  flex: none;
+  margin-left: 20rpx;
+  font-size: 28rpx;
+  color: rgba(47, 49, 82, 0.88);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-placeholder,
+.empty-card {
+  padding: 32rpx 0;
+  text-align: center;
+}
+
+.placeholder-text {
+  font-size: 26rpx;
+  color: rgba(47, 49, 82, 0.75);
+}
+
+.empty-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 650;
+  color: rgba(47, 49, 82, 0.92);
+}
+
+.empty-desc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: rgba(138, 141, 167, 0.9);
+}

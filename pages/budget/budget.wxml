@@ -19,13 +19,7 @@
 							</view>
 						</view>
 						<view class="summary-swiper-mount" wx:for="{{ [summarySwiperKey] }}" wx:key="*this">
-							<swiper
-								class="summary-swiper"
-								current="{{ swiperSummaryIndex }}"
-								duration="300"
-								easing-function="easeOutCubic"
-								bindchange="onSummarySwiperChange"
-							>
+							<swiper class="summary-swiper" current="{{ swiperSummaryIndex }}" duration="300" easing-function="easeOutCubic" bindchange="onSummarySwiperChange">
 								<swiper-item wx:for="{{ summarySwipe }}" wx:for-item="sum" wx:key="monthKey">
 									<view class="summary-grid">
 										<view class="summary-item">
@@ -93,10 +87,11 @@
 	<view wx:if="{{ showFabMenu }}" class="fab-mask {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup"></view>
 	<view class="fab-wrap">
 		<view wx:if="{{ showFabMenu }}" class="fab-menu {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}">
-			<view wx:if="{{ isAdminUser }}" class="fab-menu-item" bindtap="onGoToAdmin">配置管理</view>
-			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view>
 			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSyncFromFeidee">同步数据</view>
-			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSubscribeNotification">订阅通知</view>
+			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onGoToFeideeBill">消费账单</view>
+			<!-- <view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view>
+			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSubscribeNotification">订阅通知</view> -->
+			<view wx:if="{{ isAdminUser }}" class="fab-menu-item" bindtap="onGoToAdmin">配置管理</view>
 			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算项</view>
 		</view>
 		<view class="add-btn {{ showFabMenu && !fabMenuClosing ? 'is-active' : '' }}" bindtap="onToggleFabMenu">

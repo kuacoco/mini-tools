@@ -1,0 +1,11 @@
+{
+  "name": "feidee-transactions",
+  "version": "1.0.0",
+  "description": "飞笛消费交易明细查询（白名单）",
+  "main": "index.js",
+  "dependencies": {
+    "request": "^2.88.2",
+    "wx-server-sdk": "~2.6.3"
+  }
+}
+
