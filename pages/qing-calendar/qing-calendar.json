@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index"
+  },
+  "navigationBarTitleText": "青青日历",
+  "enablePullDownRefresh": false,
+  "renderer": "skyline"
+}

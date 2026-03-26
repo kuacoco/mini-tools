@@ -5,6 +5,7 @@
     "pages/feidee-bill/feidee-bill",
     "pages/course/course",
     "pages/course-detail/course-detail",
+    "pages/qing-calendar/qing-calendar",
     "pages/logs/logs",
     "pages/location/location",
     "pages/admin/admin"

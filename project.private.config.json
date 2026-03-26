@@ -24,11 +24,18 @@
     "miniprogram": {
       "list": [
         {
-          "name": "pages/feidee-bill/feidee-bill",
-          "pathName": "pages/feidee-bill/feidee-bill",
+          "name": "pages/qing-calendar/qing-calendar",
+          "pathName": "pages/qing-calendar/qing-calendar",
           "query": "",
           "scene": null,
           "launchMode": "default"
+        },
+        {
+          "name": "pages/feidee-bill/feidee-bill",
+          "pathName": "pages/feidee-bill/feidee-bill",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
         }
       ]
     }

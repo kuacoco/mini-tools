@@ -15,6 +15,12 @@ Page({
         path: '/pages/course/course',
       },
       {
+        id: 'qing-calendar',
+        title: '青青日历',
+        desc: '无限滚动月历展示，多日程管理与共享查看',
+        path: '/pages/qing-calendar/qing-calendar',
+      },
+      {
         id: 'location',
         title: '定位拾取(gcj02)',
         desc: '获取当前所在位置的经纬度并支持复制',

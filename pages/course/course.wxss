@@ -621,7 +621,10 @@ page {
 .share-nick-actions {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+}
+
+.share-nick-btn + .share-nick-btn {
+  margin-left: 20rpx;
 }
 
 .share-nick-btn {

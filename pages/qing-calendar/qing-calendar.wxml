@@ -1,0 +1,178 @@
+<navigation-bar title="" home-url="/pages/index/index">
+	<view slot="center" class="nav-title-trigger" bindtap="onToggleCalendarDropdown">
+		<text class="nav-title-text">青青日历</text>
+		<text class="nav-title-arrow {{ showCalendarDropdown ? 'is-open' : '' }}">▾</text>
+	</view>
+</navigation-bar>
+
+<view class="calendar-page">
+	<view wx:if="{{ showCalendarDropdown }}" class="calendar-dropdown-mask" bindtap="onCloseCalendarDropdown">
+		<view class="calendar-dropdown-panel" catchtap="noop">
+			<view class="calendar-option">
+				<view class="calendar-option-main">
+					<text class="calendar-option-title">我的日历</text>
+					<text class="calendar-option-sub">{{ myCalendarVisible ? '已显示' : '已隐藏' }}</text>
+				</view>
+				<view class="calendar-option-actions">
+					<view class="calendar-action toggle" bindtap="onToggleMyCalendarVisibility">{{ myCalendarVisible ? '隐藏' : '显示' }}</view>
+					<view class="calendar-action setting" bindtap="onOpenShareNamePopup">分享名称</view>
+				</view>
+			</view>
+
+			<view wx:if="{{ !shareRecords.length }}" class="calendar-empty">暂无共享日历</view>
+
+			<view wx:for="{{ shareRecords }}" wx:for-item="share" wx:key="token" class="calendar-option">
+				<view class="calendar-option-main">
+					<text class="calendar-option-title">{{ share.displayTitle }}</text>
+					<text class="calendar-option-sub">{{ share.visible ? '已显示' : '已隐藏' }}</text>
+				</view>
+				<view class="calendar-option-actions">
+					<view class="calendar-action toggle" data-token="{{ share.token }}" bindtap="onToggleShareVisibility">{{ share.visible ? '隐藏' : '显示' }}</view>
+					<view class="calendar-action delete" data-token="{{ share.token }}" bindtap="onDeleteShareRecord">删除</view>
+				</view>
+			</view>
+		</view>
+	</view>
+
+	<scroll-view
+		class="calendar-scroll"
+		scroll-y="true"
+		enhanced
+		show-scrollbar="{{ false }}"
+		upper-threshold="320"
+		lower-threshold="320"
+		scroll-into-view="{{ scrollIntoViewId }}"
+		scroll-with-animation="{{ scrollWithAnimation }}"
+		bindscrolltoupper="onReachCalendarTop"
+		bindscrolltolower="onReachCalendarBottom"
+	>
+		<!-- <view class="top-placeholder"></view> -->
+		<view wx:for="{{ monthSections }}" wx:for-item="month" wx:key="monthKey" class="month-card" id="month-{{ month.monthKey }}">
+			<view class="month-head">
+				<text class="month-title">{{ month.label }}</text>
+			</view>
+			<view class="calendar-header">
+				<text class="calendar-weekday" wx:for="{{ weekDays }}" wx:for-item="weekday" wx:key="*this">{{ weekday }}</text>
+			</view>
+			<view class="calendar-grid">
+				<view
+					wx:for="{{ month.cells }}"
+					wx:for-item="cell"
+					wx:key="key"
+					class="calendar-day {{ cell.isPlaceholder ? 'is-placeholder' : '' }} {{ cell.isToday ? 'is-today' : '' }} {{ cell.isSelected ? 'is-selected' : '' }}"
+					data-date="{{ cell.date }}"
+					bindtap="onTapDay"
+				>
+					<text wx:if="{{ !cell.isPlaceholder }}" class="day-number">{{ cell.day }}</text>
+					<view wx:if="{{ !cell.isPlaceholder }}" class="day-events">
+						<view wx:for="{{ cell.displayEvents }}" wx:for-item="eventItem" wx:key="id" class="event-pill" style="background: {{ eventItem.color }}">
+							<text class="event-pill-text">{{ eventItem.title }}</text>
+						</view>
+						<text wx:if="{{ cell.moreCount > 0 }}" class="event-more">+{{ cell.moreCount }}</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		<view class="bottom-placeholder"></view>
+	</scroll-view>
+
+	<view class="fab-left">
+		<view class="today-btn" bindtap="onGoToday">今天</view>
+	</view>
+	<view class="fab-right">
+		<view class="add-btn" bindtap="onOpenAddPopup">
+			<image class="add-btn-icon" src="/pages/statics/plus.svg" mode="aspectFit" />
+		</view>
+	</view>
+
+	<view wx:if="{{ showDayPopup }}" class="popup-mask {{ dayPopupClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onCloseDayPopup">
+		<view class="popup-sheet popup-sheet-center popup-sheet-day" catchtap="noop">
+			<view class="popup-head">
+				<text class="popup-title">{{ dayPopupDateLabel }}</text>
+				<view class="popup-close" bindtap="onCloseDayPopup">
+					<image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" />
+				</view>
+			</view>
+			<scroll-view class="popup-body day-popup-body" scroll-y="true" enhanced show-scrollbar="{{ false }}">
+				<view wx:if="{{ dayPopupLoading }}" class="popup-empty">加载中...</view>
+				<view wx:if="{{ !dayPopupLoading && !dayPopupEvents.length }}" class="popup-empty">当天暂无日程</view>
+				<view wx:for="{{ dayPopupEvents }}" wx:for-item="dayEvent" wx:key="id" class="day-event-row">
+					<view class="day-event-dot" style="background: {{ dayEvent.color }}"></view>
+					<view class="day-event-main">
+						<text class="day-event-title">{{ dayEvent.title }}</text>
+						<text class="day-event-range">{{ dayEvent.rangeText }}</text>
+						<text wx:if="{{ !dayEvent.isOwner }}" class="day-event-owner">来自：{{ dayEvent.calendarName }}</text>
+					</view>
+					<view wx:if="{{ dayEvent.canEdit }}" class="day-event-actions">
+						<view class="day-action" data-id="{{ dayEvent.id }}" bindtap="onEditEventFromDay">编辑</view>
+						<view class="day-action delete" data-id="{{ dayEvent.id }}" bindtap="onDeleteEventFromDay">删除</view>
+					</view>
+				</view>
+				<view class="day-popup-footer-spacer"></view>
+			</scroll-view>
+			<view class="popup-footer day-popup-footer-absolute">
+				<view class="popup-btn popup-btn--day primary" bindtap="onOpenAddFromDay">新增当天日程</view>
+			</view>
+		</view>
+	</view>
+
+	<view wx:if="{{ showEventPopup }}" class="popup-mask {{ eventPopupClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onCloseEventPopup">
+		<view class="popup-sheet popup-sheet-center" catchtap="noop">
+			<view class="popup-head">
+				<text class="popup-title">{{ eventPopupTitle }}</text>
+				<view class="popup-close" bindtap="onCloseEventPopup">
+					<image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" />
+				</view>
+			</view>
+			<view class="popup-body">
+				<view class="popup-field">
+					<text class="popup-label">日程</text>
+					<input class="popup-input" placeholder="例如：亲子活动 / 复诊" maxlength="40" value="{{ eventFormTitle }}" bindinput="onEventTitleInput" />
+				</view>
+				<view class="popup-field">
+					<text class="popup-label">日期区间</text>
+					<view class="date-range-row">
+						<picker class="date-picker" mode="date" value="{{ eventFormStartDate }}" bindchange="onPickEventStartDate">
+							<view class="date-picker-btn">{{ eventFormStartDate || '开始日期' }}</view>
+						</picker>
+						<text class="date-range-sep">-</text>
+						<picker class="date-picker" mode="date" value="{{ eventFormEndDate }}" bindchange="onPickEventEndDate">
+							<view class="date-picker-btn">{{ eventFormEndDate || '结束日期' }}</view>
+						</picker>
+					</view>
+				</view>
+				<view class="popup-field">
+					<text class="popup-label">日程颜色</text>
+					<view class="palette-grid">
+						<view
+							wx:for="{{ colorPalette }}"
+							wx:for-item="color"
+							wx:key="*this"
+							class="palette-item {{ eventFormColor === color ? 'active' : '' }}"
+							style="background: {{ color }}"
+							data-color="{{ color }}"
+							bindtap="onPickEventColor"
+						></view>
+					</view>
+				</view>
+			</view>
+			<view class="popup-footer">
+				<view class="popup-btn popup-btn--day primary {{ isSavingEvent ? 'disabled' : '' }}" bindtap="onSaveEvent">
+					{{ isSavingEvent ? '保存中...' : (eventPopupMode === 'edit' ? '保存' : '添加日程') }}
+				</view>
+			</view>
+		</view>
+	</view>
+
+	<view wx:if="{{ showShareNamePopup }}" class="share-name-mask" bindtap="onCancelShareNamePopup">
+		<view class="share-name-dialog" catchtap="noop">
+			<text class="share-name-title">分享日历名称</text>
+			<text class="share-name-hint">分享前请先填写，用于他人识别你的日历</text>
+			<input class="share-name-input" maxlength="30" placeholder="例如：小青家庭日历" value="{{ shareNameInput }}" bindinput="onShareNameInput" />
+			<view class="share-name-actions">
+				<view class="share-name-btn share-name-btn--ghost" bindtap="onCancelShareNamePopup">取消</view>
+				<view class="share-name-btn share-name-btn--primary" bindtap="onConfirmShareNamePopup">确定</view>
+			</view>
+		</view>
+	</view>
+</view>

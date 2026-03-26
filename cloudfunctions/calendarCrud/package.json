@@ -1,0 +1,9 @@
+{
+  "name": "calendar-crud",
+  "version": "1.0.0",
+  "description": "Qing calendar CRUD cloud function",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "^3.0.4"
+  }
+}
