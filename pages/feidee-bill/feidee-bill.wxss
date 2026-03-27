@@ -8,7 +8,7 @@ page {
   position: relative;
   flex: 1;
   min-height: 0;
-  background: linear-gradient(180deg, #f6f7ff 0%, #ffffff 55%, #fff8f9 100%);
+  background: linear-gradient(180deg, #ecefff 0%, #f6f8ff 55%, #fff0f3 100%);
   box-sizing: border-box;
 }
 
@@ -21,8 +21,8 @@ page {
   margin: 22rpx 28rpx 16rpx;
   padding: 26rpx 24rpx 22rpx;
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 24rpx;
-  box-shadow: 0 10rpx 40rpx rgba(69, 57, 113, 0.08);
+  /* border-radius: 24rpx; */
+  /* box-shadow: 0 10rpx 40rpx rgba(69, 57, 113, 0.08); */
 }
 
 .range-title {
@@ -95,7 +95,7 @@ page {
 
 .quick-seg-item.active {
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10rpx 24rpx rgba(69, 57, 113, 0.1);
+  /* box-shadow: 0 10rpx 24rpx rgba(69, 57, 113, 0.1); */
   color: rgba(47, 49, 82, 0.96);
 }
 
@@ -127,26 +127,55 @@ page {
 /* 与 bill-top-card 同套卡片语言，避免与头部割裂 */
 .bill-body-card {
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 24rpx;
-  box-shadow: 0 10rpx 40rpx rgba(69, 57, 113, 0.08);
+  /* border-radius: 24rpx; */
+  /* box-shadow: 0 10rpx 40rpx rgba(69, 57, 113, 0.08); */
   padding: 22rpx 24rpx 24rpx;
   box-sizing: border-box;
 }
 
-/* 清单在卡片内平铺，仅行分割线 */
-.bill-sheet {
-  background: transparent;
+.bill-list-bottom-space {
+  height: 140rpx;
 }
 
-.sheet-group:last-child .sheet-rows .sheet-row:last-child {
+.sheet-cat-shell,
+.sheet-rows-shell {
+  margin: 0 28rpx;
+  background: rgba(255, 255, 255);
+  box-sizing: border-box;
+}
+
+.sheet-cat-shell {
+  position: relative;
+  /* border-radius: 24rpx 24rpx 0 0; */
+  overflow: hidden;
+}
+
+.sheet-cat-shell.collapsed {
+  /* border-radius: 24rpx; */
+}
+
+.sheet-cat-shell.collapsed .sheet-cat {
+  border-bottom: none;
+}
+
+.sheet-rows-shell {
+  /* border-radius: 0 0 24rpx 24rpx; */
+  overflow: hidden;
+}
+
+.sheet-group-gap {
+  height: 16rpx;
+}
+
+.sheet-rows .sheet-row:last-child {
   border-bottom: none;
 }
 
 .sheet-cat {
   display: flex;
   align-items: center;
-  padding: 30rpx 0 26rpx;
-  border-bottom: 1px solid rgba(47, 49, 82, 0.1);
+  padding: 30rpx 24rpx 26rpx;
+  /* border-bottom: 1px solid rgba(47, 49, 82, 0.1); */
   min-width: 0;
 }
 
@@ -232,14 +261,14 @@ page {
 }
 
 .sheet-rows {
-  padding-bottom: 4rpx;
+  padding: 0 24rpx 4rpx;
 }
 
 .sheet-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18rpx 20rpx 18rpx 20rpx;
+  padding: 22rpx;
   border-bottom: 1px solid rgba(47, 49, 82, 0.06);
   box-sizing: border-box;
 }

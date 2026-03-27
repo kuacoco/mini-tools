@@ -5,19 +5,25 @@ const {
   upsertEvent,
   deleteEvent,
   createShareToken,
+  getMyShareInfo,
   listEventsForShareByRange,
   listViewedShares,
   upsertViewedShare,
+  setViewedShareVisibility,
   removeViewedShare,
 } = require('../../utils/qing-calendar-storage')
 
-const SHARE_NAME_STORAGE_KEY = 'qing_calendar_share_name_v1'
-const CALENDAR_VISIBILITY_STORAGE_KEY = 'qing_calendar_visibility_v1'
 const INITIAL_PREV_MONTHS = 3
 const INITIAL_NEXT_MONTHS = 5
 const LOAD_CHUNK_MONTHS = 4
 const POPUP_ANIMATION_MS = 220
 const EDGE_LOAD_THROTTLE_MS = 320
+const DAY_EVENT_SWIPE_ACTION_TOTAL_WIDTH_RPX = 160
+const DAY_EVENT_SWIPE_OPEN_THRESHOLD_RPX = 50
+const DEFAULT_SHARE_NAME = 'TA的日历'
+const DEFAULT_SHARE_ICON_TEXT = '享'
+const MAX_UPLOAD_IMAGE_SIZE = 10 * 1024 * 1024
+const MAX_COMPRESSED_IMAGE_SIZE = 500 * 1024
 
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -41,87 +47,6 @@ const COLOR_PALETTE = [
   '#9A95DA',
   '#B58DD2',
 ]
-
-function readShareNameConfig() {
-  try {
-    const raw = wx.getStorageSync(SHARE_NAME_STORAGE_KEY)
-    if (raw && typeof raw === 'object' && raw.configured === true) {
-      const name = String(raw.name || '').trim()
-      return {
-        configured: true,
-        name,
-      }
-    }
-  } catch (err) {
-    // ignore
-  }
-  return {
-    configured: false,
-    name: '',
-  }
-}
-
-function writeShareNameConfig(name) {
-  try {
-    wx.setStorageSync(SHARE_NAME_STORAGE_KEY, {
-      configured: true,
-      name: String(name || '').trim(),
-    })
-  } catch (err) {
-    // ignore
-  }
-}
-
-function readCalendarVisibilityConfig() {
-  try {
-    const raw = wx.getStorageSync(CALENDAR_VISIBILITY_STORAGE_KEY)
-    if (raw && typeof raw === 'object') {
-      const myCalendarVisible = typeof raw.myCalendarVisible === 'boolean'
-        ? raw.myCalendarVisible
-        : true
-      const shareVisibility = {}
-      if (raw.shareVisibility && typeof raw.shareVisibility === 'object') {
-        Object.keys(raw.shareVisibility).forEach((token) => {
-          const clean = String(token || '').trim()
-          if (!clean) return
-          shareVisibility[clean] = !!raw.shareVisibility[token]
-        })
-      }
-      return {
-        myCalendarVisible,
-        shareVisibility,
-      }
-    }
-  } catch (err) {
-    // ignore
-  }
-  return {
-    myCalendarVisible: true,
-    shareVisibility: {},
-  }
-}
-
-function writeCalendarVisibilityConfig(config) {
-  const input = config && typeof config === 'object' ? config : {}
-  const shareVisibilityInput = input.shareVisibility && typeof input.shareVisibility === 'object'
-    ? input.shareVisibility
-    : {}
-  const shareVisibility = {}
-  Object.keys(shareVisibilityInput).forEach((token) => {
-    const clean = String(token || '').trim()
-    if (!clean) return
-    shareVisibility[clean] = !!shareVisibilityInput[token]
-  })
-
-  try {
-    wx.setStorageSync(CALENDAR_VISIBILITY_STORAGE_KEY, {
-      myCalendarVisible: typeof input.myCalendarVisible === 'boolean' ? input.myCalendarVisible : true,
-      shareVisibility,
-    })
-  } catch (err) {
-    // ignore
-  }
-}
 
 function vibrateLight() {
   if (typeof wx === 'undefined' || !wx.vibrateShort) return
@@ -217,23 +142,134 @@ function eventCoversDate(item, dateStr) {
   return item.startDate <= dateStr && item.endDate >= dateStr
 }
 
-function normalizeIncomingShareRecords(input, visibilityMap = {}) {
+function isCloudFileId(value) {
+  return String(value || '').startsWith('cloud://')
+}
+
+function isHttpUrl(value) {
+  return /^https?:\/\//i.test(String(value || ''))
+}
+
+function rpxToPx(rpx) {
+  let windowWidth = 375
+  if (typeof wx !== 'undefined') {
+    if (wx.getWindowInfo) {
+      windowWidth = Number(wx.getWindowInfo().windowWidth || 375)
+    } else if (wx.getSystemInfoSync) {
+      windowWidth = Number(wx.getSystemInfoSync().windowWidth || 375)
+    }
+  }
+  return (Number(rpx) * windowWidth) / 750
+}
+
+function getFileSize(filePath) {
+  return new Promise((resolve, reject) => {
+    wx.getFileInfo({
+      filePath,
+      success: (res) => resolve(Number(res.size || 0)),
+      fail: (err) => reject(err),
+    })
+  })
+}
+
+function downloadTempFile(url) {
+  return new Promise((resolve, reject) => {
+    wx.downloadFile({
+      url,
+      success: (res) => {
+        const tempFilePath = res && res.tempFilePath ? String(res.tempFilePath) : ''
+        if (!tempFilePath) {
+          reject(new Error('下载头像失败'))
+          return
+        }
+        resolve(tempFilePath)
+      },
+      fail: (err) => reject(err),
+    })
+  })
+}
+
+function compressImage(filePath, quality) {
+  return new Promise((resolve, reject) => {
+    wx.compressImage({
+      src: filePath,
+      quality,
+      success: (res) => {
+        const tempFilePath = res && res.tempFilePath ? String(res.tempFilePath) : ''
+        resolve(tempFilePath || filePath)
+      },
+      fail: (err) => reject(err),
+    })
+  })
+}
+
+async function compressImageToLimit(filePath) {
+  let currentPath = filePath
+  const qualityQueue = [80, 70, 60, 50, 40]
+  for (const quality of qualityQueue) {
+    currentPath = await compressImage(currentPath, quality)
+    const size = await getFileSize(currentPath)
+    if (size <= MAX_COMPRESSED_IMAGE_SIZE) {
+      return currentPath
+    }
+  }
+  throw new Error('头像压缩后仍超过 500KB，请更换图片')
+}
+
+function uploadShareIconToCloud(filePath) {
+  if (!wx.cloud || !wx.cloud.uploadFile) {
+    throw new Error('云开发未初始化')
+  }
+  const extMatch = String(filePath || '').match(/\.[a-zA-Z0-9]+$/)
+  const ext = extMatch ? extMatch[0] : '.jpg'
+  const cloudPath = `calendar-share-icons/${Date.now()}_${Math.floor(Math.random() * 10000)}${ext}`
+  return wx.cloud.uploadFile({
+    cloudPath,
+    filePath,
+  })
+}
+
+async function processShareIconForSave(iconValue) {
+  const raw = String(iconValue || '').trim()
+  if (!raw) return ''
+  if (isCloudFileId(raw)) return raw
+
+  let localPath = raw
+  if (isHttpUrl(localPath)) {
+    localPath = await downloadTempFile(localPath)
+  }
+
+  const rawSize = await getFileSize(localPath)
+  if (rawSize > MAX_UPLOAD_IMAGE_SIZE) {
+    throw new Error('头像原图不能超过 10MB')
+  }
+
+  const compressedPath = await compressImageToLimit(localPath)
+  const uploadRes = await uploadShareIconToCloud(compressedPath)
+  const fileID = uploadRes && uploadRes.fileID ? String(uploadRes.fileID) : ''
+  if (!fileID) {
+    throw new Error('头像上传失败，请重试')
+  }
+  return fileID
+}
+
+function normalizeIncomingShareRecords(input) {
   if (!Array.isArray(input)) return []
   return input
     .map((row) => {
       const token = row && row.token ? String(row.token).trim() : ''
       if (!token) return null
-      const calendarName = row && row.calendarName ? String(row.calendarName).trim() : ''
-      const short = token.length > 8 ? `${token.slice(0, 4)}...${token.slice(-2)}` : token
-      const displayTitle = calendarName || `共享日历 ${short}`
-      const visibilityFromPrev = visibilityMap[token]
-      const visible = typeof visibilityFromPrev === 'boolean'
-        ? visibilityFromPrev
-        : true
+      const calendarName = row && row.calendarName
+        ? String(row.calendarName).trim()
+        : DEFAULT_SHARE_NAME
+      const calendarIcon = row && row.calendarIcon ? String(row.calendarIcon).trim() : ''
+      const visible = row && typeof row.visible === 'boolean' ? row.visible : true
       return {
         token,
         calendarName,
-        displayTitle,
+        displayTitle: calendarName || DEFAULT_SHARE_NAME,
+        calendarIcon,
+        iconText: DEFAULT_SHARE_ICON_TEXT,
         visible,
         updatedAt: Number(row && row.updatedAt) || Date.now(),
       }
@@ -327,7 +363,6 @@ Page({
     dayPopupDate: '',
     dayPopupDateLabel: '',
     dayPopupEvents: [],
-    dayPopupLoading: false,
 
     showEventPopup: false,
     eventPopupClosing: false,
@@ -341,9 +376,12 @@ Page({
     colorPalette: COLOR_PALETTE,
     isSavingEvent: false,
 
-    showShareNamePopup: false,
-    shareNameInput: '',
-    thisCalendarName: '',
+    showShareInfoPopup: false,
+    shareInfoNameInput: '',
+    shareInfoIcon: '',
+    shareInfoIconText: DEFAULT_SHARE_ICON_TEXT,
+    thisShareCalendarName: '',
+    thisShareCalendarIcon: '',
     thisShareToken: '',
   },
 
@@ -352,12 +390,7 @@ Page({
     const monthKey = getCurrentMonthKey()
     const monthKeys = buildMonthWindow(monthKey, INITIAL_PREV_MONTHS, INITIAL_NEXT_MONTHS)
 
-    const shareConfig = readShareNameConfig()
-    const visibilityConfig = readCalendarVisibilityConfig()
     const incomingToken = options && options.shareToken ? String(options.shareToken).trim() : ''
-    const incomingCalendarName = options && options.calendarName
-      ? decodeURIComponent(String(options.calendarName)).trim()
-      : ''
 
     this._myEvents = []
     this._shareEventsByToken = {}
@@ -368,18 +401,13 @@ Page({
     this._topLoadTs = 0
     this._bottomLoadTs = 0
     this._incomingToken = incomingToken
-    this._incomingCalendarName = incomingCalendarName
-    this._visibilityConfig = visibilityConfig
 
     this.setData({
       todayDateString: today,
       selectedDate: today,
       selectedDateDisplay: formatDateDisplay(today),
       loadedMonthKeys: monthKeys,
-      myCalendarVisible: visibilityConfig.myCalendarVisible,
-      thisCalendarName: shareConfig.name,
-      shareNameInput: shareConfig.name,
-      showShareNamePopup: !shareConfig.configured,
+      myCalendarVisible: true,
     })
 
     if (wx.showShareMenu) {
@@ -387,6 +415,10 @@ Page({
         withShareTicket: true,
         menus: ['shareAppMessage'],
       })
+    }
+
+    if (!incomingToken) {
+      await this.syncMyShareInfoFromCloud({ openWhenIncomplete: true })
     }
 
     await this.bootstrapShareRecords()
@@ -407,25 +439,6 @@ Page({
     }
   },
 
-  persistCalendarVisibility(options = {}) {
-    const myCalendarVisible = typeof options.myCalendarVisible === 'boolean'
-      ? options.myCalendarVisible
-      : !!this.data.myCalendarVisible
-    const shareRecords = Array.isArray(options.shareRecords)
-      ? options.shareRecords
-      : (this.data.shareRecords || [])
-    const shareVisibility = {}
-    shareRecords.forEach((item) => {
-      const token = item && item.token ? String(item.token).trim() : ''
-      if (!token) return
-      shareVisibility[token] = !!item.visible
-    })
-    writeCalendarVisibilityConfig({
-      myCalendarVisible,
-      shareVisibility,
-    })
-  },
-
   async bootstrapShareRecords() {
     let records = []
     try {
@@ -436,7 +449,7 @@ Page({
 
     if (this._incomingToken) {
       try {
-        await upsertViewedShare(this._incomingToken, this._incomingCalendarName)
+        await upsertViewedShare(this._incomingToken)
       } catch (err) {
         wx.showToast({ title: err.message || '共享日历无效', icon: 'none' })
       }
@@ -447,22 +460,9 @@ Page({
       }
     }
 
-    const visibilityMap = {
-      ...(this._visibilityConfig && this._visibilityConfig.shareVisibility
-        ? this._visibilityConfig.shareVisibility
-        : {}),
-    }
-    ;(this.data.shareRecords || []).forEach((item) => {
-      visibilityMap[item.token] = !!item.visible
-    })
-
-    const normalized = normalizeIncomingShareRecords(records, visibilityMap)
+    const normalized = normalizeIncomingShareRecords(records)
 
     this.setData({ shareRecords: normalized })
-    this.persistCalendarVisibility({
-      myCalendarVisible: this.data.myCalendarVisible,
-      shareRecords: normalized,
-    })
   },
 
   buildAggregatedDateEventMap(rangeStart, rangeEnd) {
@@ -480,6 +480,7 @@ Page({
           isOwner: true,
           token: 'self',
           calendarName: '我的日历',
+          calendarIcon: '',
           sourceRank: 0,
           createdAt: Number(item.createdAt || 0),
         })
@@ -499,6 +500,7 @@ Page({
           isOwner: false,
           token: record.token,
           calendarName: record.calendarName || record.displayTitle,
+          calendarIcon: record.calendarIcon || '',
           sourceRank: index + 1,
           createdAt: Number(item.createdAt || 0),
         })
@@ -527,6 +529,7 @@ Page({
           isOwner: item.isOwner,
           token: item.token,
           calendarName: item.calendarName,
+          calendarIcon: item.calendarIcon,
           startDate: item.startDate,
           endDate: item.endDate,
           createdAt: item.createdAt,
@@ -595,7 +598,8 @@ Page({
             token: item.token,
             ok: true,
             list: data.list || [],
-            calendarName: String(data.calendarName || '').trim(),
+            calendarName: String(data.calendarName || '').trim() || DEFAULT_SHARE_NAME,
+            calendarIcon: String(data.calendarIcon || '').trim(),
           }
         } catch (err) {
           return {
@@ -610,6 +614,7 @@ Page({
     const shareEventsByToken = {}
     const invalidTokens = []
     const remoteNameMap = {}
+    const remoteIconMap = {}
 
     shareResults.forEach((res) => {
       if (res.ok) {
@@ -617,6 +622,7 @@ Page({
         if (res.calendarName) {
           remoteNameMap[res.token] = res.calendarName
         }
+        remoteIconMap[res.token] = res.calendarIcon || ''
       } else {
         invalidTokens.push(res.token)
       }
@@ -624,14 +630,18 @@ Page({
 
     let shareRecords = this.data.shareRecords || []
 
-    if (Object.keys(remoteNameMap).length) {
+    if (Object.keys(remoteNameMap).length || Object.keys(remoteIconMap).length) {
       shareRecords = shareRecords.map((item) => {
         const nextName = remoteNameMap[item.token]
-        if (!nextName || nextName === item.calendarName) return item
+        const nextIcon = remoteIconMap[item.token]
+        const sameName = !nextName || nextName === item.calendarName
+        const sameIcon = typeof nextIcon === 'undefined' || nextIcon === item.calendarIcon
+        if (sameName && sameIcon) return item
         return {
           ...item,
-          calendarName: nextName,
-          displayTitle: nextName,
+          calendarName: nextName || item.calendarName || DEFAULT_SHARE_NAME,
+          displayTitle: nextName || item.displayTitle || DEFAULT_SHARE_NAME,
+          calendarIcon: typeof nextIcon === 'undefined' ? (item.calendarIcon || '') : nextIcon,
         }
       })
     }
@@ -652,10 +662,6 @@ Page({
     this._shareEventsByToken = shareEventsByToken
 
     this.setData({ shareRecords })
-    this.persistCalendarVisibility({
-      myCalendarVisible: this.data.myCalendarVisible,
-      shareRecords,
-    })
     this.rebuildMonthSections(this.data.selectedDate)
 
     if (this.data.showDayPopup && this.data.dayPopupDate) {
@@ -697,15 +703,6 @@ Page({
 
     this.setData({ loadedMonthKeys: [...prepend, ...oldKeys] })
     await this.refreshCalendarData()
-    if (wx.nextTick) {
-      wx.nextTick(() => {
-        this.scrollToMonth(anchorMonth, false)
-      })
-    } else {
-      setTimeout(() => {
-        this.scrollToMonth(anchorMonth, false)
-      }, 16)
-    }
 
     this._isPrepending = false
   },
@@ -749,20 +746,10 @@ Page({
   },
 
   scrollToMonth(monthKey, animated) {
-    const id = `month-${monthKey}`
-    this.setData({
-      scrollWithAnimation: !!animated,
-      scrollIntoViewId: '',
+    const targetId = `month-${monthKey}`
+    this.setData({ scrollIntoViewId: '', scrollWithAnimation: !!animated }, () => {
+      this.setData({ scrollIntoViewId: targetId })
     })
-
-    setTimeout(() => {
-      this.setData({ scrollIntoViewId: id })
-      setTimeout(() => {
-        if (this.data.scrollIntoViewId === id) {
-          this.setData({ scrollIntoViewId: '' })
-        }
-      }, animated ? 420 : 120)
-    }, 30)
   },
 
   onTapDay(e) {
@@ -773,151 +760,29 @@ Page({
     this.openDayPopup(date)
   },
 
-  async fetchAllEventsForDate(date) {
-    const allEvents = []
-
-    if (this.data.myCalendarVisible) {
-      try {
-        const ownList = await listEventsByRange(date, date)
-        ownList.forEach((item) => {
-          allEvents.push({
-            id: item.id,
-            title: item.title || '',
-            startDate: item.startDate,
-            endDate: item.endDate,
-            color: item.color,
-            isOwner: true,
-            token: 'self',
-            calendarName: '我的日历',
-            sourceRank: 0,
-            createdAt: Number(item.createdAt || 0),
-          })
-        })
-      } catch (err) {
-        // ignore
-      }
-    }
-
-    const visibleShares = (this.data.shareRecords || []).filter((item) => item.visible)
-    const shareResults = await Promise.all(
-      visibleShares.map(async (share, index) => {
-        try {
-          const data = await listEventsForShareByRange(share.token, date, date)
-          return {
-            ok: true,
-            token: share.token,
-            sourceRank: index + 1,
-            calendarName: String(data.calendarName || '').trim() || share.displayTitle,
-            list: data.list || [],
-          }
-        } catch (err) {
-          return {
-            ok: false,
-            token: share.token,
-          }
-        }
-      })
-    )
-
-    const invalidTokens = []
-    const renameMap = {}
-    shareResults.forEach((res) => {
-      if (!res.ok) {
-        invalidTokens.push(res.token)
-        return
-      }
-      renameMap[res.token] = res.calendarName
-      res.list.forEach((item) => {
-        allEvents.push({
-          id: item.id,
-          title: item.title || '',
-          startDate: item.startDate,
-          endDate: item.endDate,
-          color: item.color,
-          isOwner: false,
-          token: res.token,
-          calendarName: res.calendarName,
-          sourceRank: res.sourceRank,
-          createdAt: Number(item.createdAt || 0),
-        })
-      })
-    })
-
-    if (Object.keys(renameMap).length || invalidTokens.length) {
-      let nextShares = this.data.shareRecords || []
-      if (Object.keys(renameMap).length) {
-        nextShares = nextShares.map((item) => {
-          const name = renameMap[item.token]
-          if (!name || name === item.calendarName) return item
-          return {
-            ...item,
-            calendarName: name,
-            displayTitle: name,
-          }
-        })
-      }
-      if (invalidTokens.length) {
-        nextShares = nextShares.filter((item) => !invalidTokens.includes(item.token))
-        for (const token of invalidTokens) {
-          try {
-            await removeViewedShare(token)
-          } catch (err) {
-            // ignore
-          }
-        }
-        wx.showToast({ title: '已清理失效共享日历', icon: 'none' })
-      }
-      this.setData({ shareRecords: nextShares })
-      this.persistCalendarVisibility({
-        myCalendarVisible: this.data.myCalendarVisible,
-        shareRecords: nextShares,
-      })
-    }
-
-    allEvents.sort((a, b) => {
-      if (a.sourceRank !== b.sourceRank) return a.sourceRank - b.sourceRank
-      if (a.createdAt !== b.createdAt) return a.createdAt - b.createdAt
-      return String(a.id).localeCompare(String(b.id))
-    })
-
-    return allEvents.map((item) => ({
+  openDayPopup(date) {
+    const list = (this._dateEventMap[date] || []).map((item, index) => ({
       ...item,
+      rowKey: `${String(item.token || 'self')}::${String(item.id || '')}::${index}`,
       rangeText: formatEventRange(item.startDate, item.endDate),
       canEdit: !!item.isOwner,
-    }))
-  },
-
-  async openDayPopup(date) {
-    const list = (this._dateEventMap[date] || []).map((item) => ({
-      ...item,
-      rangeText: formatEventRange(item.startDate, item.endDate),
-      canEdit: !!item.isOwner,
+      shareCalendarName: item.isOwner
+        ? ''
+        : (String(item.calendarName || '').trim() || DEFAULT_SHARE_NAME),
+      shareCalendarIcon: item.isOwner ? '' : String(item.calendarIcon || '').trim(),
+      shareCalendarIconText: DEFAULT_SHARE_ICON_TEXT,
+      offsetX: 0,
     }))
 
     if (this.dayPopupTimer) clearTimeout(this.dayPopupTimer)
-    const requestId = Date.now()
-    this._dayPopupReqId = requestId
+    this.dayEventSwipeState = null
     this.setData({
       showDayPopup: true,
       dayPopupClosing: false,
       dayPopupDate: date,
       dayPopupDateLabel: formatDayPopupTitle(date),
       dayPopupEvents: list,
-      dayPopupLoading: true,
     })
-
-    try {
-      const remoteList = await this.fetchAllEventsForDate(date)
-      if (this._dayPopupReqId !== requestId) return
-      this.setData({
-        dayPopupEvents: remoteList,
-        dayPopupLoading: false,
-      })
-    } catch (err) {
-      if (this._dayPopupReqId !== requestId) return
-      this.setData({ dayPopupLoading: false })
-      wx.showToast({ title: err.message || '加载当天日程失败', icon: 'none' })
-    }
   },
 
   onCloseDayPopup() {
@@ -925,10 +790,11 @@ Page({
     if (this.dayPopupTimer) clearTimeout(this.dayPopupTimer)
     this.setData({ dayPopupClosing: true })
     this.dayPopupTimer = setTimeout(() => {
+      this.dayEventSwipeState = null
       this.setData({
         showDayPopup: false,
         dayPopupClosing: false,
-        dayPopupLoading: false,
+        dayPopupEvents: [],
       })
     }, POPUP_ANIMATION_MS)
   },
@@ -939,23 +805,24 @@ Page({
 
   onOpenAddFromDay() {
     const date = this.data.dayPopupDate || this.data.selectedDate || this.data.todayDateString
-    this.onCloseDayPopup()
     this.openEventPopup('add', null, date)
   },
 
   onEditEventFromDay(e) {
-    const id = e.currentTarget.dataset.id
-    if (!id) return
-    const target = (this.data.dayPopupEvents || []).find((item) => item.id === id)
+    const rowKey = String(e.currentTarget.dataset.rowKey || '')
+    if (!rowKey) return
+    const target = (this.data.dayPopupEvents || []).find((item) => item.rowKey === rowKey)
     if (!target || !target.isOwner) return
+    this.resetDayEventOffsets()
     this.openEventPopup('edit', target, target.startDate)
   },
 
   onDeleteEventFromDay(e) {
-    const id = e.currentTarget.dataset.id
-    if (!id) return
-    const target = (this.data.dayPopupEvents || []).find((item) => item.id === id)
+    const rowKey = String(e.currentTarget.dataset.rowKey || '')
+    if (!rowKey) return
+    const target = (this.data.dayPopupEvents || []).find((item) => item.rowKey === rowKey)
     if (!target || !target.isOwner) return
+    this.resetDayEventOffsets()
 
     wx.showModal({
       title: '删除日程',
@@ -964,7 +831,7 @@ Page({
       success: async (res) => {
         if (!res.confirm) return
         try {
-          await deleteEvent(id)
+          await deleteEvent(target.id)
           await this.refreshCalendarData()
           this.openDayPopup(this.data.dayPopupDate || this.data.selectedDate)
           wx.showToast({ title: '已删除', icon: 'success' })
@@ -973,6 +840,78 @@ Page({
         }
       },
     })
+  },
+
+  getDayEventOffset(rowKey) {
+    const item = (this.data.dayPopupEvents || []).find((eventItem) => eventItem.rowKey === rowKey)
+    return item ? Number(item.offsetX || 0) : 0
+  },
+
+  updateDayEventOffset(rowKey, offsetX) {
+    const nextList = (this.data.dayPopupEvents || []).map((item) => {
+      if (item.rowKey === rowKey) return { ...item, offsetX }
+      if (item.offsetX !== 0) return { ...item, offsetX: 0 }
+      return item
+    })
+    this.setData({ dayPopupEvents: nextList })
+  },
+
+  resetDayEventOffsets() {
+    const list = this.data.dayPopupEvents || []
+    if (!list.some((item) => Number(item.offsetX || 0) !== 0)) return
+    const nextList = list.map((item) => ({ ...item, offsetX: 0 }))
+    this.setData({ dayPopupEvents: nextList })
+  },
+
+  getDayEventSwipeMetrics() {
+    return {
+      actionTotalWidthPx: rpxToPx(DAY_EVENT_SWIPE_ACTION_TOTAL_WIDTH_RPX),
+      openThresholdPx: rpxToPx(DAY_EVENT_SWIPE_OPEN_THRESHOLD_RPX),
+    }
+  },
+
+  onDayEventTouchStart(e) {
+    const rowKey = String(e.currentTarget.dataset.rowKey || '')
+    if (!rowKey) return
+    const target = (this.data.dayPopupEvents || []).find((item) => item.rowKey === rowKey)
+    if (!target || !target.canEdit) return
+    const touch = e.touches && e.touches[0]
+    if (!touch) return
+    this.dayEventSwipeState = {
+      rowKey,
+      startX: touch.pageX,
+      startY: touch.pageY,
+      initialOffset: this.getDayEventOffset(rowKey),
+      moving: false,
+    }
+  },
+
+  onDayEventTouchMove(e) {
+    if (!this.dayEventSwipeState) return
+    const touch = e.touches && e.touches[0]
+    if (!touch) return
+    const dx = touch.pageX - this.dayEventSwipeState.startX
+    const dy = touch.pageY - this.dayEventSwipeState.startY
+    if (!this.dayEventSwipeState.moving) {
+      if (Math.abs(dx) <= 4 || Math.abs(dx) < Math.abs(dy)) return
+      this.dayEventSwipeState.moving = true
+    }
+    const { actionTotalWidthPx } = this.getDayEventSwipeMetrics()
+    let next = this.dayEventSwipeState.initialOffset + dx
+    if (next > 0) next = 0
+    if (next < -actionTotalWidthPx) next = -actionTotalWidthPx
+    this.updateDayEventOffset(this.dayEventSwipeState.rowKey, next)
+  },
+
+  onDayEventTouchEnd() {
+    if (!this.dayEventSwipeState) return
+    const rowKey = this.dayEventSwipeState.rowKey
+    const offset = this.getDayEventOffset(rowKey)
+    const { actionTotalWidthPx, openThresholdPx } = this.getDayEventSwipeMetrics()
+    let finalOffset = 0
+    if (offset < -openThresholdPx) finalOffset = -actionTotalWidthPx
+    this.updateDayEventOffset(rowKey, finalOffset)
+    this.dayEventSwipeState = null
   },
 
   openEventPopup(mode = 'add', eventItem = null, defaultDate = '') {
@@ -1122,29 +1061,30 @@ Page({
   async onToggleMyCalendarVisibility() {
     const nextVisible = !this.data.myCalendarVisible
     this.setData({ myCalendarVisible: nextVisible })
-    this.persistCalendarVisibility({
-      myCalendarVisible: nextVisible,
-      shareRecords: this.data.shareRecords || [],
-    })
     await this.refreshCalendarData()
   },
 
   async onToggleShareVisibility(e) {
     const token = e.currentTarget.dataset.token
     if (!token) return
-    const next = (this.data.shareRecords || []).map((item) => {
+    const current = this.data.shareRecords || []
+    const next = current.map((item) => {
       if (item.token !== token) return item
       return {
         ...item,
         visible: !item.visible,
       }
     })
+    const toggled = next.find((item) => item.token === token)
+    if (!toggled) return
     this.setData({ shareRecords: next })
-    this.persistCalendarVisibility({
-      myCalendarVisible: this.data.myCalendarVisible,
-      shareRecords: next,
-    })
-    await this.refreshCalendarData()
+    try {
+      await setViewedShareVisibility(token, toggled.visible)
+      await this.refreshCalendarData()
+    } catch (err) {
+      this.setData({ shareRecords: current })
+      wx.showToast({ title: err.message || '更新显示状态失败', icon: 'none' })
+    }
   },
 
   async onDeleteShareRecord(e) {
@@ -1165,90 +1105,125 @@ Page({
 
         const next = (this.data.shareRecords || []).filter((item) => item.token !== token)
         this.setData({ shareRecords: next })
-        this.persistCalendarVisibility({
-          myCalendarVisible: this.data.myCalendarVisible,
-          shareRecords: next,
-        })
         await this.refreshCalendarData()
       },
     })
   },
 
-  onOpenShareNamePopup() {
+  async syncMyShareInfoFromCloud(options = {}) {
+    const input = options && typeof options === 'object' ? options : {}
+    try {
+      const remote = await getMyShareInfo()
+      const remoteToken = remote && remote.token ? String(remote.token).trim() : ''
+      const remoteName = remote && remote.calendarName ? String(remote.calendarName).trim() : ''
+      const remoteIcon = remote && remote.calendarIcon ? String(remote.calendarIcon).trim() : ''
+      const shouldOpen = !!input.openWhenIncomplete && (!remoteName || !remoteIcon)
+      this.setData({
+        thisShareToken: remoteToken || this.data.thisShareToken || '',
+        thisShareCalendarName: remoteName,
+        thisShareCalendarIcon: remoteIcon,
+        shareInfoNameInput: remoteName,
+        shareInfoIcon: remoteIcon,
+        ...(shouldOpen ? { showShareInfoPopup: true } : {}),
+      })
+    } catch (err) {
+      if (input.showErrorToast) {
+        wx.showToast({ title: err.message || '读取分享信息失败', icon: 'none' })
+      }
+    }
+  },
+
+  async onOpenShareInfoPopup() {
     this.setData({
-      showShareNamePopup: true,
-      shareNameInput: this.data.thisCalendarName || '',
+      showShareInfoPopup: true,
+      shareInfoNameInput: this.data.thisShareCalendarName || '',
+      shareInfoIcon: this.data.thisShareCalendarIcon || '',
     })
+    await this.syncMyShareInfoFromCloud({ showErrorToast: true })
   },
 
-  onShareNameInput(e) {
-    this.setData({ shareNameInput: e.detail.value })
+  onShareInfoNameInput(e) {
+    this.setData({ shareInfoNameInput: e.detail.value })
   },
 
-  onCancelShareNamePopup() {
-    this.setData({ showShareNamePopup: false })
+  onCancelShareInfoPopup() {
+    this.setData({ showShareInfoPopup: false })
   },
 
-  onConfirmShareNamePopup() {
-    const name = String(this.data.shareNameInput || '').trim()
-    if (!name) {
-      wx.showToast({ title: '请填写日历名称', icon: 'none' })
+  onChooseAvatarForShare(e) {
+    const avatarUrl = e && e.detail && e.detail.avatarUrl ? String(e.detail.avatarUrl).trim() : ''
+    if (!avatarUrl) {
+      wx.showToast({ title: '获取头像失败，请重试', icon: 'none' })
       return
     }
-    writeShareNameConfig(name)
     this.setData({
-      thisCalendarName: name,
-      showShareNamePopup: false,
+      shareInfoIcon: avatarUrl,
     })
   },
 
-  buildSharePath(token, calendarName) {
-    if (!token) return '/pages/qing-calendar/qing-calendar'
-    const q = [`shareToken=${encodeURIComponent(token)}`]
-    if (calendarName) {
-      q.push(`calendarName=${encodeURIComponent(calendarName)}`)
+  async onConfirmShareInfoPopup() {
+    if (this._isSavingShareInfo) return
+    const calendarName = String(this.data.shareInfoNameInput || '').trim()
+    const calendarIconRaw = String(this.data.shareInfoIcon || '').trim()
+    this._isSavingShareInfo = true
+    try {
+      const calendarIcon = await processShareIconForSave(calendarIconRaw)
+      const data = await createShareToken(calendarName, calendarIcon)
+      const token = data && data.token ? String(data.token) : ''
+      this.setData({
+        thisShareToken: token || this.data.thisShareToken || '',
+        thisShareCalendarName: calendarName,
+        thisShareCalendarIcon: calendarIcon,
+        shareInfoIcon: calendarIcon,
+        showShareInfoPopup: false,
+      })
+      wx.showToast({ title: '分享信息已保存', icon: 'success' })
+    } catch (err) {
+      wx.showToast({ title: err.message || '保存分享信息失败', icon: 'none' })
+    } finally {
+      this._isSavingShareInfo = false
     }
-    return `/pages/qing-calendar/qing-calendar?${q.join('&')}`
+  },
+
+  buildSharePath(token) {
+    if (!token) return '/pages/qing-calendar/qing-calendar'
+    return `/pages/qing-calendar/qing-calendar?shareToken=${encodeURIComponent(token)}`
   },
 
   onShareAppMessage() {
-    const configuredName = String(this.data.thisCalendarName || '').trim()
-    if (!configuredName) {
-      wx.showToast({ title: '请先填写日历名称', icon: 'none' })
-      this.onOpenShareNamePopup()
-      return {
-        title: '青青日历',
-        path: '/pages/qing-calendar/qing-calendar',
-      }
-    }
+    const configuredName = String(this.data.thisShareCalendarName || '').trim()
 
     const promise = (async () => {
       try {
-        const data = await createShareToken(configuredName)
+        const data = await createShareToken()
         const token = data && data.token ? data.token : ''
-        const calendarName = data && data.calendarName ? data.calendarName : configuredName
+        const calendarName = data && data.calendarName
+          ? String(data.calendarName).trim()
+          : (configuredName || DEFAULT_SHARE_NAME)
         if (token) {
-          this.setData({ thisShareToken: token })
+          this.setData({
+            thisShareToken: token,
+          })
         }
         return {
-          title: calendarName || '青青日历',
-          path: this.buildSharePath(token, calendarName),
+          title: calendarName || DEFAULT_SHARE_NAME,
+          path: this.buildSharePath(token),
         }
       } catch (err) {
         wx.showToast({ title: err.message || '分享生成失败', icon: 'none' })
         return {
-          title: configuredName,
+          title: configuredName || DEFAULT_SHARE_NAME,
           path: '/pages/qing-calendar/qing-calendar',
         }
       }
     })()
 
     return {
-      title: configuredName,
+      title: configuredName || DEFAULT_SHARE_NAME,
       path: '/pages/qing-calendar/qing-calendar',
       promise,
     }
   },
 
-  noop() {},
+  noop() { },
 })

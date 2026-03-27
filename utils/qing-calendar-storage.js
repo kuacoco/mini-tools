@@ -53,11 +53,28 @@ async function deleteEvent(id) {
   await callCalendarCrud('deleteEvent', { id })
 }
 
-async function createShareToken(calendarName) {
-  const data = await callCalendarCrud('createShareToken', { calendarName })
+async function createShareToken(calendarName, calendarIcon) {
+  const payload = {}
+  if (typeof calendarName === 'string') {
+    payload.calendarName = calendarName
+  }
+  if (typeof calendarIcon === 'string') {
+    payload.calendarIcon = calendarIcon
+  }
+  const data = await callCalendarCrud('createShareToken', payload)
   return {
     token: data && data.token ? data.token : '',
     calendarName: data && data.calendarName ? data.calendarName : '',
+    calendarIcon: data && data.calendarIcon ? data.calendarIcon : '',
+  }
+}
+
+async function getMyShareInfo() {
+  const data = await callCalendarCrud('getMyShareInfo')
+  return {
+    token: data && data.token ? data.token : '',
+    calendarName: data && data.calendarName ? data.calendarName : '',
+    calendarIcon: data && data.calendarIcon ? data.calendarIcon : '',
   }
 }
 
@@ -69,6 +86,7 @@ async function listEventsForShareByRange(token, startDate, endDate) {
   })
   return {
     calendarName: data && data.calendarName ? data.calendarName : '',
+    calendarIcon: data && data.calendarIcon ? data.calendarIcon : '',
     list: Array.isArray(data && data.list) ? data.list : [],
   }
 }
@@ -78,10 +96,17 @@ async function listViewedShares() {
   return Array.isArray(data && data.list) ? data.list : []
 }
 
-async function upsertViewedShare(token, calendarName = '') {
+async function upsertViewedShare(token) {
   const data = await callCalendarCrud('upsertViewedShare', {
     token,
-    calendarName,
+  })
+  return data || { ok: true }
+}
+
+async function setViewedShareVisibility(token, visible) {
+  const data = await callCalendarCrud('setViewedShareVisibility', {
+    token,
+    visible: !!visible,
   })
   return data || { ok: true }
 }
@@ -97,8 +122,10 @@ module.exports = {
   upsertEvent,
   deleteEvent,
   createShareToken,
+  getMyShareInfo,
   listEventsForShareByRange,
   listViewedShares,
   upsertViewedShare,
+  setViewedShareVisibility,
   removeViewedShare,
 }

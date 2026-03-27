@@ -8,6 +8,7 @@ const _ = db.command
 const EVENTS_COLLECTION = 'calendar_events'
 const SHARE_COLLECTION = 'calendar_share'
 const VIEWED_SHARE_COLLECTION = 'calendar_viewed_share'
+const DEFAULT_SHARE_NAME = 'TA的日历'
 
 const DAILY_EVENT_LIMIT = 5
 const PAGE_SIZE = 100
@@ -19,6 +20,10 @@ function normalizeTitle(title) {
 
 function normalizeCalendarName(name) {
   return String(name || '').trim()
+}
+
+function normalizeCalendarIcon(icon) {
+  return String(icon || '').trim()
 }
 
 function normalizeColor(color) {
@@ -236,11 +241,11 @@ async function getShareDocByToken(token) {
 }
 
 async function createShareToken(payload, openid) {
-  const calendarName = normalizeCalendarName(payload.calendarName)
-  if (!calendarName) {
-    throw new Error('日历名称不能为空')
-  }
-  if (calendarName.length > 30) {
+  const hasCalendarName = Object.prototype.hasOwnProperty.call(payload || {}, 'calendarName')
+  const hasCalendarIcon = Object.prototype.hasOwnProperty.call(payload || {}, 'calendarIcon')
+  const inputName = normalizeCalendarName(hasCalendarName ? payload.calendarName : '')
+  const inputIcon = normalizeCalendarIcon(hasCalendarIcon ? payload.calendarIcon : '')
+  if (hasCalendarName && inputName.length > 30) {
     throw new Error('日历名称不能超过30个字符')
   }
 
@@ -254,15 +259,19 @@ async function createShareToken(payload, openid) {
   const now = Date.now()
   if (existing.length) {
     const doc = existing[0]
+    const calendarName = hasCalendarName ? inputName : normalizeCalendarName(doc.calendarName)
+    const calendarIcon = hasCalendarIcon ? inputIcon : normalizeCalendarIcon(doc.calendarIcon)
     await db.collection(SHARE_COLLECTION).doc(doc._id).update({
       data: {
         calendarName,
+        calendarIcon,
         updatedAt: now,
       },
     })
     return {
       token: doc.token,
-      calendarName,
+      calendarName: calendarName || DEFAULT_SHARE_NAME,
+      calendarIcon,
     }
   }
 
@@ -283,7 +292,8 @@ async function createShareToken(payload, openid) {
     data: {
       ownerOpenid: openid,
       token,
-      calendarName,
+      calendarName: hasCalendarName ? inputName : '',
+      calendarIcon: hasCalendarIcon ? inputIcon : '',
       createdAt: now,
       updatedAt: now,
     },
@@ -291,7 +301,30 @@ async function createShareToken(payload, openid) {
 
   return {
     token,
-    calendarName,
+    calendarName: (hasCalendarName ? inputName : '') || DEFAULT_SHARE_NAME,
+    calendarIcon: hasCalendarIcon ? inputIcon : '',
+  }
+}
+
+async function getMyShareInfo(openid) {
+  const res = await db
+    .collection(SHARE_COLLECTION)
+    .where({ ownerOpenid: openid })
+    .limit(1)
+    .get()
+  const list = Array.isArray(res.data) ? res.data : []
+  if (!list.length) {
+    return {
+      token: '',
+      calendarName: '',
+      calendarIcon: '',
+    }
+  }
+  const doc = list[0] || {}
+  return {
+    token: String(doc.token || '').trim(),
+    calendarName: normalizeCalendarName(doc.calendarName),
+    calendarIcon: normalizeCalendarIcon(doc.calendarIcon),
   }
 }
 
@@ -306,7 +339,8 @@ async function listEventsForShareByRange(payload) {
   const events = await listEventsByOpenidAndRange(ownerOpenid, startDate, endDate)
 
   return {
-    calendarName: shareDoc.calendarName || '',
+    calendarName: normalizeCalendarName(shareDoc.calendarName) || DEFAULT_SHARE_NAME,
+    calendarIcon: normalizeCalendarIcon(shareDoc.calendarIcon),
     list: events.map((item) => toEventDTO(item, token)),
   }
 }
@@ -319,11 +353,39 @@ async function listViewedShares(openid) {
     .limit(20)
     .get()
 
-  const list = (res.data || []).map((item) => ({
-    token: item.token,
-    calendarName: item.calendarName || '',
-    updatedAt: Number(item.updatedAt || 0),
-  }))
+  const viewedRows = Array.isArray(res.data) ? res.data : []
+  const tokens = Array.from(new Set(
+    viewedRows
+      .map((item) => String(item && item.token ? item.token : '').trim())
+      .filter(Boolean)
+  ))
+  let shareMap = {}
+  if (tokens.length) {
+    const shareRes = await db
+      .collection(SHARE_COLLECTION)
+      .where({ token: _.in(tokens) })
+      .limit(tokens.length)
+      .get()
+    const shareRows = Array.isArray(shareRes.data) ? shareRes.data : []
+    shareMap = shareRows.reduce((acc, row) => {
+      const token = String(row && row.token ? row.token : '').trim()
+      if (!token) return acc
+      acc[token] = row
+      return acc
+    }, {})
+  }
+
+  const list = viewedRows.map((item) => {
+    const token = String(item && item.token ? item.token : '').trim()
+    const shareDoc = shareMap[token] || {}
+    return {
+      token,
+      calendarName: normalizeCalendarName(shareDoc.calendarName) || DEFAULT_SHARE_NAME,
+      calendarIcon: normalizeCalendarIcon(shareDoc.calendarIcon),
+      visible: item.visible !== false,
+      updatedAt: Number(item.updatedAt || 0),
+    }
+  }).filter((item) => !!item.token)
 
   return { list }
 }
@@ -334,8 +396,7 @@ async function upsertViewedShare(payload, openid) {
     throw new Error('token 不能为空')
   }
 
-  const shareDoc = await getShareDocByToken(token)
-  const calendarName = normalizeCalendarName(payload.calendarName) || normalizeCalendarName(shareDoc.calendarName)
+  await getShareDocByToken(token)
   const now = Date.now()
 
   const existingRes = await db
@@ -348,7 +409,6 @@ async function upsertViewedShare(payload, openid) {
   if (existing.length) {
     await db.collection(VIEWED_SHARE_COLLECTION).doc(existing[0]._id).update({
       data: {
-        calendarName,
         updatedAt: now,
       },
     })
@@ -357,7 +417,7 @@ async function upsertViewedShare(payload, openid) {
       data: {
         viewerOpenid: openid,
         token,
-        calendarName,
+        visible: true,
         createdAt: now,
         updatedAt: now,
       },
@@ -366,7 +426,35 @@ async function upsertViewedShare(payload, openid) {
 
   return {
     ok: true,
-    calendarName,
+  }
+}
+
+async function setViewedShareVisibility(payload, openid) {
+  const token = String(payload.token || '').trim()
+  if (!token) {
+    throw new Error('token 不能为空')
+  }
+  const visible = payload.visible !== false
+
+  const res = await db
+    .collection(VIEWED_SHARE_COLLECTION)
+    .where({ viewerOpenid: openid, token })
+    .limit(1)
+    .get()
+  const list = Array.isArray(res.data) ? res.data : []
+  if (!list.length) {
+    throw new Error('共享日历记录不存在')
+  }
+
+  await db.collection(VIEWED_SHARE_COLLECTION).doc(list[0]._id).update({
+    data: {
+      visible,
+      updatedAt: Date.now(),
+    },
+  })
+  return {
+    ok: true,
+    visible,
   }
 }
 
@@ -412,6 +500,9 @@ exports.main = async (event) => {
       case 'createShareToken':
         data = await createShareToken(payload, OPENID)
         break
+      case 'getMyShareInfo':
+        data = await getMyShareInfo(OPENID)
+        break
       case 'listEventsForShareByRange':
         data = await listEventsForShareByRange(payload)
         break
@@ -420,6 +511,9 @@ exports.main = async (event) => {
         break
       case 'upsertViewedShare':
         data = await upsertViewedShare(payload, OPENID)
+        break
+      case 'setViewedShareVisibility':
+        data = await setViewedShareVisibility(payload, OPENID)
         break
       case 'removeViewedShare':
         data = await removeViewedShare(payload, OPENID)

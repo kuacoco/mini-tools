@@ -36,44 +36,62 @@
 			</view>
 		</view>
 
-		<view class="bill-list">
-			<view class="bill-body-card">
-				<view wx:if="{{ isLoading }}" class="card-placeholder">
-					<text class="placeholder-text">加载中...</text>
-				</view>
-
-				<view wx:else>
-					<view wx:if="{{ !sections.length }}" class="empty-card">
-						<text class="empty-title">该区间暂无消费记录</text>
-						<text class="empty-desc">可尝试调整日期区间</text>
-					</view>
-
-					<view wx:else class="bill-sheet">
-						<view wx:for="{{ sections }}" wx:key="key" class="sheet-group">
-							<view class="sheet-cat" data-key="{{ item.key }}" bindtap="onToggleCategory">
-								<view class="sheet-cat-icon" style="background-color: {{ item.catIconBg }}">
-									<text class="sheet-cat-icon-text">{{ item.catInitial }}</text>
-								</view>
-								<view class="sheet-cat-mid">
-									<text class="sheet-cat-name">{{ item.name }}</text>
-									<text class="sheet-cat-count">({{ item.count }})</text>
-								</view>
-								<view class="sheet-cat-right">
-									<text class="sheet-cat-total">¥{{ item.totalText }}</text>
-									<text class="sheet-cat-arrow {{ item.collapsed ? 'collapsed' : '' }}">›</text>
-								</view>
-							</view>
-
-							<view wx:if="{{ !item.collapsed }}" class="sheet-rows">
-								<view wx:for="{{ item.items }}" wx:for-item="tx" wx:key="id" class="sheet-row">
-									<text class="sheet-remark">{{ tx.remark || '无备注' }}</text>
-									<text class="sheet-amt">{{ tx.amountText }}</text>
-								</view>
-							</view>
-						</view>
+		<block wx:if="{{ isLoading }}">
+			<view class="bill-list">
+				<view class="bill-body-card">
+					<view class="card-placeholder">
+						<text class="placeholder-text">加载中...</text>
 					</view>
 				</view>
 			</view>
-		</view>
+		</block>
+
+		<block wx:elif="{{ !sections.length }}">
+			<view class="bill-list">
+				<view class="bill-body-card">
+					<view class="empty-card">
+						<text class="empty-title">该区间暂无消费记录</text>
+						<text class="empty-desc">可尝试调整日期区间</text>
+					</view>
+				</view>
+			</view>
+		</block>
+
+		<block wx:else>
+			<sticky-section wx:for="{{ sections }}" wx:key="key" wx:for-item="section" wx:for-index="sectionIndex" push-pinned-header="{{ false }}">
+				<sticky-header>
+					<view class="sheet-cat-shell {{ section.collapsed ? 'collapsed' : '' }}">
+						<view class="sheet-cat" data-key="{{ section.key }}" bindtap="onToggleCategory">
+							<view class="sheet-cat-icon" style="background-color: {{ section.catIconBg }}">
+								<text class="sheet-cat-icon-text">{{ section.catInitial }}</text>
+							</view>
+							<view class="sheet-cat-mid">
+								<text class="sheet-cat-name">{{ section.name }}</text>
+								<text class="sheet-cat-count">({{ section.count }})</text>
+							</view>
+							<view class="sheet-cat-right">
+								<text class="sheet-cat-total">¥{{ section.totalText }}</text>
+								<text class="sheet-cat-arrow {{ section.collapsed ? 'collapsed' : '' }}">›</text>
+							</view>
+						</view>
+					</view>
+				</sticky-header>
+
+				<list-view wx:if="{{ !section.collapsed }}">
+					<view class="sheet-rows-shell">
+						<view class="sheet-rows">
+							<view wx:for="{{ section.items }}" wx:for-item="tx" wx:key="id" class="sheet-row">
+								<text class="sheet-remark">{{ tx.remark || '无备注' }}</text>
+								<text class="sheet-amt">{{ tx.amountText }}</text>
+							</view>
+						</view>
+					</view>
+				</list-view>
+
+				<view wx:if="{{ sectionIndex !== sections.length - 1 }}" class="sheet-group-gap" />
+			</sticky-section>
+
+			<view class="bill-list-bottom-space" />
+		</block>
 	</scroll-view>
 </view>
