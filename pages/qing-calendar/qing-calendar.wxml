@@ -65,29 +65,31 @@
 					<text class="calendar-weekday" wx:for="{{ weekDays }}" wx:for-item="weekday" wx:key="*this">{{ weekday }}</text>
 				</view>
 				<view class="calendar-grid">
-					<view
-						wx:for="{{ month.cells }}"
-						wx:for-item="cell"
-						wx:key="key"
-						class="calendar-day {{ cell.isPlaceholder ? 'is-placeholder' : '' }} {{ cell.isToday ? 'is-today' : '' }} {{ cell.isSelected ? 'is-selected' : '' }}"
-						data-date="{{ cell.date }}"
-						bindtap="onTapDay"
-					>
-						<text wx:if="{{ !cell.isPlaceholder }}" class="day-number">{{ cell.day }}</text>
-						<view wx:if="{{ !cell.isPlaceholder }}" class="day-events">
-							<view wx:for="{{ cell.displayEvents }}" wx:for-item="eventItem" wx:key="id" class="event-pill" style="background: {{ eventItem.color }}">
-								<view class="event-pill-content">
-									<image
-										wx:if="{{ !eventItem.isOwner && eventItem.calendarIcon }}"
-										class="event-pill-icon"
-										src="{{ eventItem.calendarIcon }}"
-										mode="aspectFill"
-									/>
-									<view wx:if="{{ !eventItem.isOwner && !eventItem.calendarIcon }}" class="event-pill-icon event-pill-icon--text">享</view>
-									<text class="event-pill-text">{{ eventItem.title }}</text>
+					<view wx:for="{{ month.weekRows }}" wx:for-item="weekRow" wx:key="rowKey" class="calendar-week-row">
+						<view
+							wx:for="{{ weekRow.cells }}"
+							wx:for-item="cell"
+							wx:key="key"
+							class="calendar-day {{ cell.isPlaceholder ? 'is-placeholder' : '' }} {{ cell.isToday ? 'is-today' : '' }} {{ cell.isSelected ? 'is-selected' : '' }}"
+							data-date="{{ cell.date }}"
+							bindtap="onTapDay"
+						>
+							<text wx:if="{{ !cell.isPlaceholder }}" class="day-number">{{ cell.day }}</text>
+							<view wx:if="{{ !cell.isPlaceholder }}" class="day-events">
+								<view wx:for="{{ cell.displayEvents }}" wx:for-item="eventItem" wx:key="id" class="event-pill" style="background: {{ eventItem.color }}">
+									<view class="event-pill-content">
+										<image
+											wx:if="{{ !eventItem.isOwner && eventItem.calendarIcon }}"
+											class="event-pill-icon"
+											src="{{ eventItem.calendarIcon }}"
+											mode="aspectFill"
+										/>
+										<view wx:if="{{ !eventItem.isOwner && !eventItem.calendarIcon }}" class="event-pill-icon event-pill-icon--text">享</view>
+										<text class="event-pill-text">{{ eventItem.title }}</text>
+									</view>
 								</view>
+								<text wx:if="{{ cell.moreCount > 0 }}" class="event-more">+{{ cell.moreCount }}</text>
 							</view>
-							<text wx:if="{{ cell.moreCount > 0 }}" class="event-more">+{{ cell.moreCount }}</text>
 						</view>
 					</view>
 				</view>

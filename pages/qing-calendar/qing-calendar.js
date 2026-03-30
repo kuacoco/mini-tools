@@ -339,6 +339,17 @@ function createDayCells(monthKey, selectedDate, todayDate, dateEventMap) {
   return cells
 }
 
+function splitCellsIntoWeekRows(monthKey, cells) {
+  const rows = []
+  for (let i = 0; i < cells.length; i += 7) {
+    rows.push({
+      rowKey: `${monthKey}-w${i / 7}`,
+      cells: cells.slice(i, i + 7),
+    })
+  }
+  return rows
+}
+
 Page({
   data: {
     weekDays: WEEK_DAYS,
@@ -549,16 +560,19 @@ Page({
 
     this.buildAggregatedDateEventMap(rangeStart, rangeEnd)
 
-    const sections = monthKeys.map((monthKey) => ({
-      monthKey,
-      label: getMonthLabel(monthKey),
-      cells: createDayCells(
+    const sections = monthKeys.map((monthKey) => {
+      const cells = createDayCells(
         monthKey,
         selectedDate || this.data.selectedDate,
         this.data.todayDateString,
         this._dateEventMap
-      ),
-    }))
+      )
+      return {
+        monthKey,
+        label: getMonthLabel(monthKey),
+        weekRows: splitCellsIntoWeekRows(monthKey, cells),
+      }
+    })
 
     this.setData({
       monthSections: sections,

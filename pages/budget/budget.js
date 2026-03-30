@@ -7,8 +7,8 @@ const {
   deleteBudgetItem,
   mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,
-  checkWhitelist,
-  isAdmin,
+  // checkWhitelist,
+  // isAdmin,
   incrementSubscribe,
   getSubscribeCount,
 } = require('../../utils/budget-storage')
@@ -45,6 +45,9 @@ function summarizeBudgetList(list, monthKey) {
     remainText: formatAmount(remain),
   }
 }
+
+/** 与云函数 adminCrud / syncFeideeBudget 侧管理员 openId 一致；仅本地比较，不再走 checkWhitelist / isAdmin */
+const BUDGET_PRIVILEGED_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
 
 const SWIPE_EDIT_WIDTH = 82
 const SWIPE_DELETE_WIDTH = 82
@@ -159,8 +162,9 @@ Page({
   },
 
   async onShow() {
-    await this.checkWhitelistPermission()
-    await this.checkAdminPermission()
+    await this.applyBudgetFeatureFlags()
+    // await this.checkWhitelistPermission()
+    // await this.checkAdminPermission()
 
     // // 获取订阅次数
     // if (this.data.isWhitelisted) {
@@ -190,23 +194,47 @@ Page({
     }
   },
 
-  async checkWhitelistPermission() {
+  async applyBudgetFeatureFlags() {
+    let privileged = false
     try {
-      const isWhitelisted = await checkWhitelist()
-      this.setData({ isWhitelisted })
+      if (wx.cloud && wx.cloud.callFunction) {
+        const res = await wx.cloud.callFunction({
+          name: 'budgetCrud',
+          data: { action: 'getOpenId', payload: {} },
+        })
+        const result = res && res.result ? res.result : {}
+        const openId =
+          result.success && result.data && result.data.openId
+            ? String(result.data.openId)
+            : ''
+        privileged = openId === BUDGET_PRIVILEGED_OPENID
+      }
     } catch (err) {
-      this.setData({ isWhitelisted: false })
+      privileged = false
     }
+    this.setData({
+      isWhitelisted: privileged,
+      isAdminUser: privileged,
+    })
   },
 
-  async checkAdminPermission() {
-    try {
-      const isAdminUser = await isAdmin()
-      this.setData({ isAdminUser })
-    } catch (err) {
-      this.setData({ isAdminUser: false })
-    }
-  },
+  // async checkWhitelistPermission() {
+  //   try {
+  //     const isWhitelisted = await checkWhitelist()
+  //     this.setData({ isWhitelisted })
+  //   } catch (err) {
+  //     this.setData({ isWhitelisted: false })
+  //   }
+  // },
+
+  // async checkAdminPermission() {
+  //   try {
+  //     const isAdminUser = await isAdmin()
+  //     this.setData({ isAdminUser })
+  //   } catch (err) {
+  //     this.setData({ isAdminUser: false })
+  //   }
+  // },
 
   async refreshBudgetList() {
     const { monthKey } = this.data

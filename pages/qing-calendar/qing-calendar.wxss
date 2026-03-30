@@ -230,7 +230,14 @@ page {
 
 .calendar-grid {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.calendar-week-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .calendar-day {

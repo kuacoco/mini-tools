@@ -322,6 +322,9 @@ exports.main = async (event) => {
       case 'mergeFromOcr':
         data = await mergeFromOcr(payload, OPENID)
         break
+      case 'getOpenId':
+        data = { openId: OPENID }
+        break
       case 'checkWhitelist':
         data = await checkWhitelist(OPENID)
         break
