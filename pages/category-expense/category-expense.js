@@ -52,16 +52,14 @@ Page({
     this.setData({ collapsedMap: {} })
   },
 
-  onLoad() {
+  async onLoad() {
     const { startDate, endDate } = calcMonthRange()
     this.setData({
       quickType: 'month',
       startDate,
       endDate,
     })
-  },
 
-  async onShow() {
     await this.checkWhitelistPermission()
     if (!this.data.isWhitelisted) {
       wx.showToast({ title: '该功能仅限白名单用户使用', icon: 'none' })
@@ -69,6 +67,10 @@ Page({
       return
     }
     await this.loadCategoryExpense()
+  },
+
+  async onShow() {
+    // 数据已在 onLoad 中加载，这里不再重复加载
   },
 
   async checkWhitelistPermission() {
@@ -157,5 +159,14 @@ Page({
       s.group_id === groupId ? { ...s, collapsed: Boolean(next[groupId]) } : s,
     )
     this.setData({ collapsedMap: next, sections: nextSections })
+  },
+
+  onChildTap(e) {
+    const { groupid, groupname } = e?.currentTarget?.dataset || {}
+    if (!groupid) return
+
+    const { startDate, endDate } = this.data
+    const url = `/pages/feidee-bill/feidee-bill?startDate=${startDate}&endDate=${endDate}&categoryId=${groupid}&categoryName=${encodeURIComponent(groupname || '')}`
+    wx.navigateTo({ url })
   },
 })

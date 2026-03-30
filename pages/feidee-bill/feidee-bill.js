@@ -15,6 +15,16 @@ function calcMonthRange(date = new Date()) {
   }
 }
 
+function formatTransactionDate(timestamp) {
+  if (!timestamp) return ''
+  const d = new Date(timestamp)
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+  const weekday = weekdays[d.getDay()]
+  return `${month}-${day} 周${weekday}`
+}
+
 function buildCategorySections(list, collapsedMap) {
   const map = new Map()
   for (const item of list || []) {
@@ -59,19 +69,48 @@ Page({
 
     sections: [],
     collapsedMap: {},
+
+    // 分类过滤模式
+    categoryFilter: null,
+    categoryName: '',
   },
 
   resetCollapsed() {
     this.setData({ collapsedMap: {} })
   },
 
-  onLoad() {
+  onLoad(options) {
     const today = getCurrentDateString()
-    this.setData({
-      quickType: 'today',
-      startDate: today,
-      endDate: today,
-    })
+    const { startDate, endDate, categoryId, categoryName } = options || {}
+
+    // 如果从分类支出页跳转，使用传入的参数
+    if (startDate && endDate && categoryId) {
+      const filter = {
+        group_key: 'CATEGORY_SECOND',
+        group_id: categoryId,
+      }
+
+      // 判断是否为当天或当月
+      const { startDate: monthStart, endDate: monthEnd } = calcMonthRange()
+      const isToday = startDate === today && endDate === today
+      const isCurrentMonth = startDate === monthStart && endDate === monthEnd
+
+      this.setData({
+        quickType: isToday ? 'today' : (isCurrentMonth ? 'month' : 'custom'),
+        startDate,
+        endDate,
+        categoryFilter: filter,
+        categoryName: categoryName ? decodeURIComponent(categoryName) : '',
+      })
+    } else {
+      this.setData({
+        quickType: 'today',
+        startDate: today,
+        endDate: today,
+        categoryFilter: null,
+        categoryName: '',
+      })
+    }
   },
 
   async onShow() {
@@ -95,28 +134,41 @@ Page({
 
   async loadTransactions() {
     if (this.data.isLoading) return
-    const { startDate, endDate } = this.data
+    const { startDate, endDate, categoryFilter } = this.data
     if (!startDate || !endDate) return
 
     this.setData({ isLoading: true, sections: [] })
     try {
-      const res = await fetchFeideeTransactions(startDate, endDate)
+      const res = await fetchFeideeTransactions(startDate, endDate, categoryFilter)
       const rawList = Array.isArray(res?.list) ? res.list : []
 
       const decorated = rawList.map((item) => ({
         ...item,
         amountText: formatAmount(item.amount || 0),
+        dateText: formatTransactionDate(item.transaction_time),
       }))
 
       const totalAmount = Number(res?.totalAmount || 0)
-      this.setData({
-        sections: buildCategorySections(decorated, this.data.collapsedMap),
-        totalAmount,
-        totalAmountText: formatAmount(totalAmount),
-      })
+
+      // 如果是分类过滤模式，不按分类分组，直接显示交易列表
+      if (categoryFilter) {
+        this.setData({
+          sections: [],
+          rawTransactions: decorated,
+          totalAmount,
+          totalAmountText: formatAmount(totalAmount),
+        })
+      } else {
+        this.setData({
+          sections: buildCategorySections(decorated, this.data.collapsedMap),
+          rawTransactions: [],
+          totalAmount,
+          totalAmountText: formatAmount(totalAmount),
+        })
+      }
     } catch (err) {
       wx.showToast({ title: err?.message || '查询失败', icon: 'none' })
-      this.setData({ sections: [], totalAmount: 0, totalAmountText: '0' })
+      this.setData({ sections: [], rawTransactions: [], totalAmount: 0, totalAmountText: '0' })
     } finally {
       this.setData({ isLoading: false })
     }
@@ -126,7 +178,7 @@ Page({
     if (this.data.quickType === 'today') return
     const today = getCurrentDateString()
     this.resetCollapsed()
-    this.setData({ quickType: 'today', startDate: today, endDate: today })
+    this.setData({ quickType: 'today', startDate: today, endDate: today, categoryFilter: null, categoryName: '' })
     this.loadTransactions()
   },
 
@@ -134,7 +186,7 @@ Page({
     if (this.data.quickType === 'month') return
     const { startDate, endDate } = calcMonthRange()
     this.resetCollapsed()
-    this.setData({ quickType: 'month', startDate, endDate })
+    this.setData({ quickType: 'month', startDate, endDate, categoryFilter: null, categoryName: '' })
     this.loadTransactions()
   },
 
@@ -175,5 +227,10 @@ Page({
       s.key === key ? { ...s, collapsed: Boolean(next[key]) } : s,
     )
     this.setData({ collapsedMap: next, sections: nextSections })
+  },
+
+  onClearCategoryFilter() {
+    this.setData({ categoryFilter: null, categoryName: '' })
+    this.loadTransactions()
   },
 })

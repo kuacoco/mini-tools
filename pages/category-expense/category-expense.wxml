@@ -80,7 +80,7 @@
 				<list-view wx:if="{{ !section.collapsed }}">
 					<view class="sheet-rows-shell">
 						<view class="sheet-rows">
-							<view wx:for="{{ section.children }}" wx:for-item="child" wx:key="group_id" class="sheet-row">
+							<view wx:for="{{ section.children }}" wx:for-item="child" wx:key="group_id" class="sheet-row" data-groupid="{{ child.group_id }}" data-groupname="{{ child.group_name }}" bindtap="onChildTap">
 								<view class="child-left">
 									<image wx:if="{{ child.icon && child.icon.url }}" class="child-icon" src="{{ child.icon.url }}" mode="aspectFit" />
 									<view wx:else class="child-icon-placeholder">{{ child.group_name[0] || '?' }}</view>

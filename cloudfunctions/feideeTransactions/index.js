@@ -185,9 +185,23 @@ function normalizeTransaction(record) {
   }
 }
 
-async function fetchTransactions(config, { startDate, endDate }) {
+async function fetchTransactions(config, { startDate, endDate, categoryFilter }) {
   const accountIds = normalizeAccountIds(config.accountIds)
   const dateRange = getDateRangeTimeRange(startDate, endDate)
+
+  // 如果指定了分类过滤，使用 group_filter 按分类查询
+  if (categoryFilter && categoryFilter.group_key && categoryFilter.group_id) {
+    const records = await fetchAllTransactionsByQuery(config, {
+      query: {
+        start_time: dateRange.start_time,
+        end_time: dateRange.end_time,
+        account_ids: accountIds,
+        category_types: ['Expense'],
+      },
+      group_filter: categoryFilter,
+    })
+    return records
+  }
 
   // 先尝试：只用 query 时间范围（不依赖 group_filter），以减少请求次数
   try {
@@ -230,7 +244,7 @@ exports.main = async (event) => {
   const { OPENID } = ctx
 
   try {
-    const { startDate, endDate } = event || {}
+    const { startDate, endDate, categoryFilter } = event || {}
     if (!OPENID) throw new Error('用户信息缺失')
     if (!isValidYmd(startDate) || !isValidYmd(endDate)) {
       throw new Error('日期格式不正确，应为 YYYY-MM-DD')
@@ -246,7 +260,7 @@ exports.main = async (event) => {
       return { success: false, message: '未配置飞笛账号' }
     }
 
-    const rawRecords = await fetchTransactions(config, { startDate, endDate })
+    const rawRecords = await fetchTransactions(config, { startDate, endDate, categoryFilter })
     const list = rawRecords
       .map(normalizeTransaction)
       .filter(Boolean)

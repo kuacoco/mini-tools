@@ -273,6 +273,21 @@ page {
   box-sizing: border-box;
 }
 
+.row-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.sheet-date {
+  flex: none;
+  font-size: 22rpx;
+  color: rgba(138, 141, 167, 0.95);
+  margin-right: 16rpx;
+  font-variant-numeric: tabular-nums;
+}
+
 .sheet-remark {
   flex: 1;
   min-width: 0;
@@ -317,4 +332,36 @@ page {
   margin-top: 10rpx;
   font-size: 22rpx;
   color: rgba(138, 141, 167, 0.9);
+}
+
+.filter-tag-shell {
+  margin: 0 28rpx 16rpx;
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 12rpx 20rpx;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 20rpx;
+  border: 1px solid rgba(47, 49, 82, 0.1);
+}
+
+.filter-tag-name {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #2f3152;
+  margin-right: 12rpx;
+}
+
+.filter-tag-close {
+  width: 32rpx;
+  height: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  color: rgba(138, 141, 167, 0.95);
+  background: #f5f6ff;
+  border-radius: 50%;
 }

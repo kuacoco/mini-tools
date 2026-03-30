@@ -236,11 +236,11 @@ async function syncAllFeideeUsers() {
   return result.data
 }
 
-async function fetchFeideeTransactions(startDate, endDate) {
+async function fetchFeideeTransactions(startDate, endDate, categoryFilter) {
   ensureCloudReady()
   const res = await wx.cloud.callFunction({
     name: 'feideeTransactions',
-    data: { startDate, endDate },
+    data: { startDate, endDate, categoryFilter },
   })
   const result = res && res.result ? res.result : {}
   if (!result.success) {
