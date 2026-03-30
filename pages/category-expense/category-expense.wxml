@@ -1,0 +1,101 @@
+<navigation-bar title="分类支出" />
+
+<view class="expense-page">
+	<scroll-view class="expense-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
+		<view class="expense-top-card">
+			<view class="range-title">选择日期区间</view>
+
+			<view class="range-row">
+				<view class="range-item">
+					<text class="range-label">开始</text>
+					<picker mode="date" value="{{ startDate }}" bindchange="onStartDateChange">
+						<view class="range-value">{{ startDate }}</view>
+					</picker>
+				</view>
+				<view class="range-sep">至</view>
+				<view class="range-item">
+					<text class="range-label">结束</text>
+					<picker mode="date" value="{{ endDate }}" bindchange="onEndDateChange">
+						<view class="range-value">{{ endDate }}</view>
+					</picker>
+				</view>
+			</view>
+
+			<view class="quick-seg" role="tablist" aria-label="快捷选择">
+				<view class="quick-seg-item {{ quickType === 'today' ? 'active' : '' }}" bindtap="onQuickToday" role="tab" aria-selected="{{ quickType === 'today' }}">
+					当天
+				</view>
+				<view class="quick-seg-item {{ quickType === 'month' ? 'active' : '' }}" bindtap="onQuickMonth" role="tab" aria-selected="{{ quickType === 'month' }}">
+					当月
+				</view>
+			</view>
+
+			<view class="total-row">
+				<text class="total-label">总支出</text>
+				<text class="total-value">¥{{ totalAmountText }}</text>
+			</view>
+		</view>
+
+		<block wx:if="{{ isLoading }}">
+			<view class="expense-list">
+				<view class="expense-body-card">
+					<view class="card-placeholder">
+						<text class="placeholder-text">加载中...</text>
+					</view>
+				</view>
+			</view>
+		</block>
+
+		<block wx:elif="{{ !sections.length }}">
+			<view class="expense-list">
+				<view class="expense-body-card">
+					<view class="empty-card">
+						<text class="empty-title">该区间暂无支出记录</text>
+						<text class="empty-desc">可尝试调整日期区间</text>
+					</view>
+				</view>
+			</view>
+		</block>
+
+		<block wx:else>
+			<sticky-section wx:for="{{ sections }}" wx:key="group_id" wx:for-item="section" wx:for-index="sectionIndex" push-pinned-header="{{ false }}">
+				<sticky-header>
+					<view class="sheet-cat-shell {{ section.collapsed ? 'collapsed' : '' }}">
+						<view class="sheet-cat" data-group-id="{{ section.group_id }}" bindtap="onToggleCategory">
+							<view class="sheet-cat-icon" style="background-color: {{ section.catIconBg || '#f5f6ff' }}">
+								<text class="sheet-cat-icon-text">{{ section.catInitial || '?' }}</text>
+							</view>
+							<view class="sheet-cat-mid">
+								<text class="sheet-cat-name">{{ section.group_name }}</text>
+								<text class="sheet-cat-count">({{ section.children.length }})</text>
+							</view>
+							<view class="sheet-cat-right">
+								<text class="sheet-cat-total">¥{{ section.totalText }}</text>
+								<text class="sheet-cat-arrow {{ section.collapsed ? 'collapsed' : '' }}">›</text>
+							</view>
+						</view>
+					</view>
+				</sticky-header>
+
+				<list-view wx:if="{{ !section.collapsed }}">
+					<view class="sheet-rows-shell">
+						<view class="sheet-rows">
+							<view wx:for="{{ section.children }}" wx:for-item="child" wx:key="group_id" class="sheet-row">
+								<view class="child-left">
+									<image wx:if="{{ child.icon && child.icon.url }}" class="child-icon" src="{{ child.icon.url }}" mode="aspectFit" />
+									<view wx:else class="child-icon-placeholder">{{ child.group_name[0] || '?' }}</view>
+									<text class="child-name">{{ child.group_name }}</text>
+								</view>
+								<text class="child-amt">¥{{ child.expenseText }}</text>
+							</view>
+						</view>
+					</view>
+				</list-view>
+
+				<view wx:if="{{ sectionIndex !== sections.length - 1 }}" class="sheet-group-gap" />
+			</sticky-section>
+
+			<view class="expense-list-bottom-space" />
+		</block>
+	</scroll-view>
+</view>

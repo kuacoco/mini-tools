@@ -1,6 +1,5 @@
-const { checkWhitelist, fetchFeideeTransactions } = require('../../utils/budget-storage')
+const { checkWhitelist, fetchFeideeCategoryExpense } = require('../../utils/budget-storage')
 const { getCurrentDateString } = require('../../utils/course-storage')
-const { formatAmount } = require('../../utils/amount-expression')
 const { pickUniqueCategoryBg, categoryInitial } = require('../../utils/category-color')
 
 function calcMonthRange(date = new Date()) {
@@ -15,34 +14,22 @@ function calcMonthRange(date = new Date()) {
   }
 }
 
-function buildCategorySections(list, collapsedMap) {
-  const map = new Map()
-  for (const item of list || []) {
-    const name = String(item.category || '未分类').trim() || '未分类'
-    const key = name
-    const amount = Number(item.amount || 0)
-    if (!map.has(key)) {
-      map.set(key, { key, name, total: 0, items: [] })
-    }
-    const section = map.get(key)
-    section.total += amount
-    section.items.push(item)
-  }
+function formatAmount(amount) {
+  const n = Number(amount) || 0
+  return n.toFixed(2).replace(/\.?0+$/, '')
+}
 
+function buildSections(rawSections, collapsedMap) {
   const usedColors = new Set()
-  const sections = Array.from(map.values())
-    .map((s) => ({
-      ...s,
-      totalText: formatAmount(s.total),
-      count: (s.items || []).length,
-      catInitial: categoryInitial(s.name),
-      catIconBg: pickUniqueCategoryBg(s.name, usedColors),
-      items: (s.items || []).slice().sort((a, b) => Number(b.transaction_time || 0) - Number(a.transaction_time || 0)),
-      collapsed: Boolean(collapsedMap && collapsedMap[s.key]),
-    }))
-    .sort((a, b) => b.total - a.total)
-
-  return sections
+  return (rawSections || []).map((parent) => {
+    const catIconBg = pickUniqueCategoryBg(parent.group_name, usedColors)
+    return {
+      ...parent,
+      catIconBg,
+      catInitial: categoryInitial(parent.group_name),
+      collapsed: Boolean(collapsedMap && collapsedMap[parent.group_id]),
+    }
+  })
 }
 
 Page({
@@ -50,7 +37,7 @@ Page({
     isWhitelisted: false,
     isLoading: false,
 
-    quickType: 'today',
+    quickType: 'month',
     startDate: '',
     endDate: '',
 
@@ -66,11 +53,11 @@ Page({
   },
 
   onLoad() {
-    const today = getCurrentDateString()
+    const { startDate, endDate } = calcMonthRange()
     this.setData({
-      quickType: 'today',
-      startDate: today,
-      endDate: today,
+      quickType: 'month',
+      startDate,
+      endDate,
     })
   },
 
@@ -81,7 +68,7 @@ Page({
       setTimeout(() => wx.navigateBack(), 500)
       return
     }
-    await this.loadTransactions()
+    await this.loadCategoryExpense()
   },
 
   async checkWhitelistPermission() {
@@ -93,24 +80,19 @@ Page({
     }
   },
 
-  async loadTransactions() {
+  async loadCategoryExpense() {
     if (this.data.isLoading) return
     const { startDate, endDate } = this.data
     if (!startDate || !endDate) return
 
     this.setData({ isLoading: true, sections: [] })
     try {
-      const res = await fetchFeideeTransactions(startDate, endDate)
-      const rawList = Array.isArray(res?.list) ? res.list : []
-
-      const decorated = rawList.map((item) => ({
-        ...item,
-        amountText: formatAmount(item.amount || 0),
-      }))
-
+      const res = await fetchFeideeCategoryExpense(startDate, endDate)
+      const rawSections = Array.isArray(res?.sections) ? res.sections : []
       const totalAmount = Number(res?.totalAmount || 0)
+
       this.setData({
-        sections: buildCategorySections(decorated, this.data.collapsedMap),
+        sections: buildSections(rawSections, this.data.collapsedMap),
         totalAmount,
         totalAmountText: formatAmount(totalAmount),
       })
@@ -127,7 +109,7 @@ Page({
     const today = getCurrentDateString()
     this.resetCollapsed()
     this.setData({ quickType: 'today', startDate: today, endDate: today })
-    this.loadTransactions()
+    this.loadCategoryExpense()
   },
 
   onQuickMonth() {
@@ -135,7 +117,7 @@ Page({
     const { startDate, endDate } = calcMonthRange()
     this.resetCollapsed()
     this.setData({ quickType: 'month', startDate, endDate })
-    this.loadTransactions()
+    this.loadCategoryExpense()
   },
 
   onStartDateChange(e) {
@@ -149,7 +131,7 @@ Page({
 
     this.resetCollapsed()
     this.setData({ quickType: 'custom', startDate: nextStart })
-    this.loadTransactions()
+    this.loadCategoryExpense()
   },
 
   onEndDateChange(e) {
@@ -163,16 +145,16 @@ Page({
 
     this.resetCollapsed()
     this.setData({ quickType: 'custom', endDate: nextEnd })
-    this.loadTransactions()
+    this.loadCategoryExpense()
   },
 
   onToggleCategory(e) {
-    const key = e?.currentTarget?.dataset?.key
-    if (!key) return
+    const groupId = e?.currentTarget?.dataset?.groupId
+    if (!groupId) return
     const prev = this.data.collapsedMap || {}
-    const next = { ...prev, [key]: !prev[key] }
+    const next = { ...prev, [groupId]: !prev[groupId] }
     const nextSections = (this.data.sections || []).map((s) =>
-      s.key === key ? { ...s, collapsed: Boolean(next[key]) } : s,
+      s.group_id === groupId ? { ...s, collapsed: Boolean(next[groupId]) } : s,
     )
     this.setData({ collapsedMap: next, sections: nextSections })
   },

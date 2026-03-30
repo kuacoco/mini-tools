@@ -587,6 +587,14 @@ Page({
     })
   },
 
+  onGoToCategoryExpense() {
+    this.closeFabMenu({
+      afterClose: () => {
+        wx.navigateTo({ url: '/pages/category-expense/category-expense' })
+      },
+    })
+  },
+
   onSubscribeNotification() {
     // 先关闭菜单状态（不等待动画），然后立即请求订阅
     // requestSubscribeMessage 必须在用户点击事件的同步调用栈中执行

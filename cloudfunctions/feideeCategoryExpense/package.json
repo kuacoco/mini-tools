@@ -1,0 +1,10 @@
+{
+  "name": "feidee-category-expense",
+  "version": "1.0.0",
+  "description": "飞笛分类支出查询（按二级分类分组）",
+  "main": "index.js",
+  "dependencies": {
+    "request": "^2.88.2",
+    "wx-server-sdk": "~2.6.3"
+  }
+}

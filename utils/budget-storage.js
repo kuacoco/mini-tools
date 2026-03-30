@@ -249,6 +249,19 @@ async function fetchFeideeTransactions(startDate, endDate) {
   return result.data || { totalAmount: 0, list: [] }
 }
 
+async function fetchFeideeCategoryExpense(startDate, endDate) {
+  ensureCloudReady()
+  const res = await wx.cloud.callFunction({
+    name: 'feideeCategoryExpense',
+    data: { startDate, endDate },
+  })
+  const result = res && res.result ? res.result : {}
+  if (!result.success) {
+    throw new Error(result.message || '获取分类支出失败')
+  }
+  return result.data || { totalAmount: 0, sections: [] }
+}
+
 module.exports = {
   getCurrentMonthKey,
   getMonthBudgetList,
@@ -271,4 +284,5 @@ module.exports = {
   getSubscribeCount,
   syncAllFeideeUsers,
   fetchFeideeTransactions,
+  fetchFeideeCategoryExpense,
 }
