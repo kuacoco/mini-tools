@@ -42,13 +42,35 @@ utils/           → 工具函数（*-storage.js 封装云函数调用）
 cloudfunctions/  → 云函数（action-based 路由模式）
 ```
 
+### Pages
+
+| 页面 | 功能 |
+|------|------|
+| index | 首页，工具入口 |
+| budget | 预算看板（详见 BUDGET_DEV_DOC.md） |
+| feidee-bill | 飞笛账单明细 |
+| category-expense | 分类支出统计 |
+| course | 课程管理 |
+| course-detail | 课程详情编辑 |
+| qing-calendar | 清日历 |
+| admin | 管理后台（白名单、飞笛配置） |
+
+### Components
+
+- `navigation-bar` - 自定义导航栏（适配 Skyline）
+- `amount-keyboard` - 假键盘组件，支持表达式输入
+- `checkin-calendar` - 签到日历组件
+
 ### 数据流
 
 ```
 页面 → utils/*-storage.js → wx.cloud.callFunction → cloudfunctions/* → 云数据库
 ```
 
-每个 `*-storage.js` 封装对应云函数调用，如 `budget-storage.js` → `budgetCrud`。
+Storage 文件对应关系：
+- `budget-storage.js` → budgetCrud + syncFeideeBudget + feideeTransactions + feideeCategoryExpense
+- `course-storage.js` → courseCrud
+- `qing-calendar-storage.js` → calendarCrud
 
 ### 云函数模式
 
@@ -70,6 +92,26 @@ exports.main = async (event) => {
   }
 }
 ```
+
+### Database Collections
+
+| 集合 | 用途 |
+|------|------|
+| budget_items | 预算项数据（按 monthKey 分桶） |
+| budget_whitelist | 用户白名单 + 订阅次数 |
+| budget_config | 飞笛 API 配置（authorization、accountIds） |
+| calendar_events | 清日历事件 |
+| course_items | 课程数据 |
+
+## Feidee Integration
+
+飞笛（Feidee）是外部记账服务，通过云函数调用其 API：
+
+- `feideeTransactions` - 获取交易明细（按日期范围）
+- `feideeCategoryExpense` - 获取分类支出汇总
+- `syncFeideeBudget` - 同步飞笛数据到预算项
+
+配置存储在 `budget_config` 集合，包含 `authorization`、`tradingEntity`、`accountIds`。
 
 ## Key Patterns
 
