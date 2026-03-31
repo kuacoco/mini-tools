@@ -4,96 +4,86 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **WeChat Mini Program** (微信小程序) with cloud development capabilities. The app provides utility tools including a budget tracking dashboard and location picker.
+微信小程序，提供预算看板、课程管理、日历等工具，使用云开发能力。
 
 ## Development Environment
 
 - **Platform**: WeChat Mini Program
-- **IDE**: WeChat Developer Tools (微信开发者工具)
+- **IDE**: WeChat Developer Tools
 - **AppID**: wxe4a08baedb2fcf9d
-- **Cloud Environment**: cloud1-3gfzmsmq655e791e
+- **Cloud Environment**: cloud2-1gytehldd551cd77
 
-## Key Commands
+## CI Commands
 
-- **开发/预览**: Open the project in WeChat Developer Tools and use the "预览" button to test on a simulator or real device
-- **上传代码**: Use WeChat Developer Tools "上传" button to upload for review/release
-- **云函数部署**: Right-click on `cloudfunctions/` folder in WeChat Developer Tools to upload and configure cloud functions
+使用 `/mp-ci` skill 执行 CI 操作：
+
+```bash
+# 预览 - 生成二维码
+./mp-ci.sh preview
+
+# 上传代码（自动压缩）
+./mp-ci.sh upload <version> "<desc>"
+
+# 上传云函数
+./mp-ci.sh cloud <functionName>
+
+# 构建 npm
+./mp-ci.sh npm
+```
+
+云函数列表：budgetCrud, calendarCrud, courseCrud, adminCrud, feideeTransactions, syncFeideeBudget, ocrBudgetImport, feideeCategoryExpense
 
 ## Architecture
 
 ```
-/
-├── pages/                    # 页面目录
-│   ├── index/               # 首页 - 工具列表入口
-│   ├── budget/              # 预算看板
-│   ├── feidee-bill/         # 随手记账单页面
-│   ├── course/              # 课程页面
-│   ├── course-detail/       # 课程详情
-│   ├── qing-calendar/       # Qing 日历页面
-│   ├── statics/             # 统计页面
-│   ├── admin/               # 管理页面
-│   ├── location/            # 定位拾取工具
-│   └── logs/                # 日志页面
-├── components/              # 自定义组件
-│   ├── amount-keyboard/    # 金额输入键盘组件
-│   ├── navigation-bar/     # 自定义导航栏
-│   └── checkin-calendar/   # 签到日历组件
-├── utils/                   # 工具函数
-│   ├── budget-storage.js   # 预算数据存储 (云函数调用封装)
-│   ├── amount-expression.js # 金额表达式解析
-│   ├── course-storage.js   # 课程数据存储
-│   ├── course-calendar.js  # 课程日历逻辑
-│   ├── qing-calendar-storage.js # Qing 日历数据存储
-│   ├── tool.js             # 通用工具
-│   └── util.js             # 辅助工具
-├── cloudfunctions/          # 云函数
-│   ├── budgetCrud/         # 预算 CRUD
-│   ├── calendarCrud/       # 日历 CRUD
-│   ├── courseCrud/         # 课程 CRUD
-│   ├── adminCrud/          # 管理 CRUD
-│   ├── feideeTransactions/ # 随手记交易
-│   ├── syncFeideeBudget/   # 同步随手记预算
-│   └── ocrBudgetImport/    # OCR 图片识别导入
-└── app.js                   # 应用入口 (云开发初始化)
+pages/           → 页面（每个页面含 .js/.wxml/.wxss/.json）
+components/      → 自定义组件
+utils/           → 工具函数（*-storage.js 封装云函数调用）
+cloudfunctions/  → 云函数（action-based 路由模式）
 ```
 
-## 技术栈
+### 数据流
 
-- **渲染模式**: WeChat Skyline (现代渲染器)
-- **样式**: WXSS with v2 style
-- **组件框架**: glass-easel
-- **数据存储**: 本地 Storage + 云数据库
+```
+页面 → utils/*-storage.js → wx.cloud.callFunction → cloudfunctions/* → 云数据库
+```
 
-## 核心功能模块
+每个 `*-storage.js` 封装对应云函数调用，如 `budget-storage.js` → `budgetCrud`。
 
-### 预算看板 (Budget Dashboard)
+### 云函数模式
 
-详细开发文档见 `BUDGET_DEV_DOC.md`，核心特性：
+云函数采用 `action` 路由：
 
-- **月度视图**: 按自然月管理预算，支持月份切换
-- **交互**: 底部弹层、假键盘输入、滑动编辑/删除、振动反馈
-- **云函数**: `budgetCrud` 处理所有数据操作
+```javascript
+// 调用方式
+wx.cloud.callFunction({
+  name: 'budgetCrud',
+  data: { action: 'listByMonth', payload: { monthKey: '2026-03' } }
+})
 
-### 课程模块 (Course)
+// 云函数结构
+exports.main = async (event) => {
+  const { action, payload } = event
+  switch (action) {
+    case 'listByMonth': return listByMonth(payload, openid)
+    // ...
+  }
+}
+```
 
-- 课程列表与详情展示
-- 签到日历组件 (`checkin-calendar`)
-- 云函数: `courseCrud`
+## Key Patterns
 
-### Qing 日历
+### 预算模块
 
-- 日历事件管理
-- 云函数: `calendarCrud`
+详见 `BUDGET_DEV_DOC.md`。核心：
+- 月度分桶存储（monthKey: `YYYY-MM`）
+- 假键盘组件 (`amount-keyboard`) 支持表达式输入
+- 滑动操作 + 弹层交互
 
-### 随手记集成 (Feidee)
+### Skyline 渲染器
 
-- 账单页面 (`feidee-bill`)
-- 同步预算 (`syncFeideeBudget` 云函数)
-- 交易数据获取 (`feideeTransactions` 云函数)
+使用 `defaultDisplayBlock` 和 `defaultContentBox`，注意样式兼容性。
 
-## 关键实现
+### 自定义导航栏
 
-- **假键盘组件** (`components/amount-keyboard/`): 计算器样式数字键盘，支持表达式输入
-- **自定义导航栏**: 通过 `app.json` 的 `navigationStyle: custom` 启用
-- **数据流**: 页面 → utils/*-storage.js (云函数封装) → 云函数 → 云数据库
-- **Skyline 渲染器**: 使用 `defaultDisplayBlock` 和 `defaultContentBox` 模式，注意样式兼容性
+`app.json` 设置 `navigationStyle: custom`，使用 `navigation-bar` 组件。
