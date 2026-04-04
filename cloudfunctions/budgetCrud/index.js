@@ -298,6 +298,65 @@ async function getSubscribeCount(openid) {
   return { count: Number(res.data[0].subscribeCount || 0) }
 }
 
+async function copyFromMonth(payload, openid) {
+  const { sourceMonthKey, targetMonthKey } = payload
+  ensureMonthKey(sourceMonthKey)
+  ensureMonthKey(targetMonthKey)
+
+  // 1. 获取源月份预算项（按 createdAt desc 排序，与列表显示顺序一致）
+  const sourceRes = await db
+    .collection(COLLECTION)
+    .where({ openid, monthKey: sourceMonthKey })
+    .orderBy('createdAt', 'desc')
+    .get()
+  const sourceList = sourceRes.data || []
+
+  if (!sourceList.length) {
+    return { created: 0, skipped: 0 }
+  }
+
+  // 2. 获取目标月份已有预算项（用于排重）
+  const targetRes = await db
+    .collection(COLLECTION)
+    .where({ openid, monthKey: targetMonthKey })
+    .get()
+  const targetMap = new Map()
+  for (const doc of targetRes.data || []) {
+    const key = doc.nameNormalized || normalizeName(doc.name)
+    if (key) targetMap.set(key, doc)
+  }
+
+  // 3. 批量插入（跳过已存在，保持顺序一致）
+  let created = 0
+  let skipped = 0
+  const baseTime = Date.now()
+
+  for (const src of sourceList) {
+    const normalizedName = src.nameNormalized || normalizeName(src.name)
+    if (targetMap.has(normalizedName)) {
+      skipped += 1
+      continue
+    }
+    // 使用递减时间戳保持顺序：第1项时间戳最大，排在最前
+    const createdAt = baseTime + (sourceList.length - created)
+    await db.collection(COLLECTION).add({
+      data: {
+        openid,
+        monthKey: targetMonthKey,
+        name: src.name,
+        nameNormalized: normalizedName,
+        totalAmount: Number(src.totalAmount || 0),
+        usedAmount: 0,
+        createdAt,
+        updatedAt: createdAt,
+      },
+    })
+    created += 1
+  }
+
+  return { created, skipped }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   try {
@@ -336,6 +395,9 @@ exports.main = async (event) => {
         break
       case 'getSubscribeCount':
         data = await getSubscribeCount(OPENID)
+        break
+      case 'copyFromMonth':
+        data = await copyFromMonth(payload, OPENID)
         break
       default:
         throw new Error('不支持的 action')

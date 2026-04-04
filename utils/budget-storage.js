@@ -262,6 +262,14 @@ async function fetchFeideeCategoryExpense(startDate, endDate) {
   return result.data || { totalAmount: 0, sections: [] }
 }
 
+async function copyBudgetFromMonth(sourceMonthKey, targetMonthKey) {
+  const data = await callBudgetCrud('copyFromMonth', {
+    sourceMonthKey,
+    targetMonthKey,
+  })
+  return data || { created: 0, skipped: 0 }
+}
+
 module.exports = {
   getCurrentMonthKey,
   getMonthBudgetList,
@@ -285,4 +293,5 @@ module.exports = {
   syncAllFeideeUsers,
   fetchFeideeTransactions,
   fetchFeideeCategoryExpense,
+  copyBudgetFromMonth,
 }

@@ -65,13 +65,13 @@ case "$COMMAND" in
     fi
 
     echo "上传云函数: $FUNCTION_NAME..."
-    miniprogram-ci cloud  \
+    miniprogram-ci cloud functions upload \
+      --appid "$APPID" \
       --pp "$PROJECT_PATH" \
       --pkp "$KEY_PATH" \
-      --appid "$APPID" \
       --env "$ENV_ID" \
       --name "$FUNCTION_NAME" \
-      --path "$PROJECT_PATH/cloudfunctions/" \
+      --path "$PROJECT_PATH/cloudfunctions/$FUNCTION_NAME" \
       --remote-npm-install true
 
     echo "云函数上传完成: $FUNCTION_NAME"

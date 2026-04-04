@@ -93,6 +93,7 @@
 			<!-- <view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view>
 			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSubscribeNotification">订阅通知</view> -->
 			<view wx:if="{{ isAdminUser }}" class="fab-menu-item" bindtap="onGoToAdmin">配置管理</view>
+			<view class="fab-menu-item" bindtap="onOpenCopyPopup">复制预算</view>
 			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算项</view>
 		</view>
 		<view class="add-btn {{ showFabMenu && !fabMenuClosing ? 'is-active' : '' }}" bindtap="onToggleFabMenu">
@@ -146,6 +147,27 @@
 				bindchange="onUsedKeyboardChange"
 				bindprimary="onSaveUsedAmount"
 			/>
+		</view>
+	</view>
+
+	<view wx:if="{{ showCopyPopup }}" class="popup-mask {{ copyPopupClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup">
+		<view class="popup-sheet" catchtap="noop">
+			<view class="popup-head">
+				<text class="popup-title">复制预算项</text>
+				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit"/></view>
+			</view>
+			<view class="popup-content">
+				<view class="popup-item">
+					<text class="popup-label">源月份</text>
+					<picker mode="selector" range="{{ monthPickerItems }}" range-key="label" value="{{ copySourceMonthIndex }}" bindchange="onSelectCopySourceMonth">
+						<view class="popup-picker-trigger">
+							<text class="popup-picker-value">{{ monthPickerItems[copySourceMonthIndex].label }}</text>
+							<view class="popup-picker-arrow"></view>
+						</view>
+					</picker>
+				</view>
+				<view class="popup-copy-btn" bindtap="onConfirmCopy">确认复制</view>
+			</view>
 		</view>
 	</view>
 </view>

@@ -7,6 +7,7 @@ const {
   deleteBudgetItem,
   mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,
+  copyBudgetFromMonth,
   // checkWhitelist,
   // isAdmin,
   incrementSubscribe,
@@ -132,6 +133,9 @@ Page({
     isWhitelisted: false,
     isAdminUser: false,
     subscribeCount: 0,
+    showCopyPopup: false,
+    copyPopupClosing: false,
+    copySourceMonthIndex: 0,
   },
 
   onLoad() {
@@ -158,6 +162,7 @@ Page({
     if (this.addPopupTimer) clearTimeout(this.addPopupTimer)
     if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
     if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
+    if (this.copyPopupTimer) clearTimeout(this.copyPopupTimer)
     this.autoSyncedMonthKey = ''
   },
 
@@ -391,6 +396,9 @@ Page({
     }
     if (this.data.showAddPopup) {
       this.closeAddPopup()
+    }
+    if (this.data.showCopyPopup) {
+      this.closeCopyPopup()
     }
   },
 
@@ -752,6 +760,73 @@ Page({
         nextData.usedAmountFormula = ''
       }
       this.setData(nextData)
+    }, POPUP_ANIMATION_MS)
+  },
+
+  onOpenCopyPopup() {
+    this.closeFabMenu({
+      afterClose: () => this.openCopyPopup(),
+    })
+  },
+
+  openCopyPopup() {
+    if (this.copyPopupTimer) clearTimeout(this.copyPopupTimer)
+    // 默认选中上月
+    const prevKey = getOffsetMonthKey(this.data.monthKey, -1)
+    let sourceIndex = findMonthPickerIndex(this.data.monthPickerItems, prevKey)
+    if (sourceIndex < 0) sourceIndex = 0
+    this.setData({
+      showCopyPopup: true,
+      copyPopupClosing: false,
+      copySourceMonthIndex: sourceIndex,
+    })
+  },
+
+  onSelectCopySourceMonth(e) {
+    const idx = Number(e.detail.value)
+    this.setData({ copySourceMonthIndex: idx })
+  },
+
+  async onConfirmCopy() {
+    vibrateLight()
+    const sourceItem = this.data.monthPickerItems[this.data.copySourceMonthIndex]
+    if (!sourceItem) {
+      wx.showToast({ title: '请选择源月份', icon: 'none' })
+      return
+    }
+    const sourceMonthKey = sourceItem.monthKey
+    const targetMonthKey = this.data.monthKey
+    if (sourceMonthKey === targetMonthKey) {
+      wx.showToast({ title: '不能复制到同月份', icon: 'none' })
+      return
+    }
+    wx.showLoading({ title: '复制中...', mask: true })
+    try {
+      const stats = await copyBudgetFromMonth(sourceMonthKey, targetMonthKey)
+      await this.refreshBudgetList()
+      wx.hideLoading()
+      wx.showToast({
+        title: `新增${stats.created || 0}项 跳过${stats.skipped || 0}项`,
+        icon: 'none',
+      })
+    } catch (err) {
+      wx.hideLoading()
+      console.error('复制预算失败:', err)
+      wx.showToast({ title: err.message || '复制失败，请重试', icon: 'none' })
+      return
+    }
+    this.closeCopyPopup()
+  },
+
+  closeCopyPopup(options = {}) {
+    if (!this.data.showCopyPopup) return
+    if (this.copyPopupTimer) clearTimeout(this.copyPopupTimer)
+    this.setData({ copyPopupClosing: true })
+    this.copyPopupTimer = setTimeout(() => {
+      this.setData({
+        showCopyPopup: false,
+        copyPopupClosing: false,
+      })
     }, POPUP_ANIMATION_MS)
   },
 
