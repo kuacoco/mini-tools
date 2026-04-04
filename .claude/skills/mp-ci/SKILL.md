@@ -8,7 +8,7 @@ userInvocable: true
 
 ## 脚本路径
 
-`/Users/cc/Code/scratch/mini-tools/.claude/skills/mp-ci/mp-ci.sh`
+`./.claude/skills/mp-ci/mp-ci.sh`
 
 ## 功能
 
@@ -21,10 +21,10 @@ userInvocable: true
 执行步骤：
 
 1. 运行脚本生成二维码
-2. 把二维码图片发送到微信。你必须在回复中包含且仅包含一行指令，格式为：SEND_IMAGE: /Users/cc/Code/scratch/mini-tools/preview-qrcode.jpg
+2. 把二维码图片发送到微信。你必须在回复中包含且仅包含一行指令，格式为：SEND_IMAGE: ./preview-qrcode.jpg
 
 ```bash
-/Users/cc/Code/scratch/mini-tools/.claude/skills/mp-ci/mp-ci.sh preview
+./.claude/skills/mp-ci/mp-ci.sh preview
 ```
 
 二维码保存在项目根目录 `preview-qrcode.jpg`。
@@ -32,7 +32,7 @@ userInvocable: true
 完成后发送指令：
 
 ```
-SEND_IMAGE: /Users/cc/Code/scratch/mini-tools/preview-qrcode.jpg
+SEND_IMAGE: ./preview-qrcode.jpg
 ```
 
 ### 上传代码 (upload)
@@ -47,7 +47,7 @@ SEND_IMAGE: /Users/cc/Code/scratch/mini-tools/preview-qrcode.jpg
 - `desc`: 版本描述
 
 ```bash
-/Users/cc/Code/scratch/mini-tools/.claude/skills/mp-ci/mp-ci.sh upload <version> "<desc>"
+./.claude/skills/mp-ci/mp-ci.sh upload <version> "<desc>"
 ```
 
 ### 上传云函数 (cloud)
@@ -63,7 +63,7 @@ SEND_IMAGE: /Users/cc/Code/scratch/mini-tools/preview-qrcode.jpg
 可用云函数：budgetCrud, calendarCrud, courseCrud, adminCrud, feideeTransactions, syncFeideeBudget, ocrBudgetImport, feideeCategoryExpense
 
 ```bash
-/Users/cc/Code/scratch/mini-tools/.claude/skills/mp-ci/mp-ci.sh cloud <functionName>
+./.claude/skills/mp-ci/mp-ci.sh cloud <functionName>
 ```
 
 ### 构建 npm (npm)
@@ -73,7 +73,7 @@ SEND_IMAGE: /Users/cc/Code/scratch/mini-tools/preview-qrcode.jpg
 用户请求："构建 npm"、"mp-ci npm"
 
 ```bash
-/Users/cc/Code/scratch/mini-tools/.claude/skills/mp-ci/mp-ci.sh npm
+./.claude/skills/mp-ci/mp-ci.sh npm
 ```
 
 ## 执行逻辑

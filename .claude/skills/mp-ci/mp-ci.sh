@@ -2,7 +2,7 @@
 # 微信小程序 CI 工具脚本
 # 用法: ./mp-ci.sh <command> [args]
 
-PROJECT_PATH="/Users/cc/Code/scratch/mini-tools"
+PROJECT_PATH="~/Workspace/clawBot/mini-tool"
 APPID="wxe4a08baedb2fcf9d"
 KEY_PATH="$PROJECT_PATH/key/private.$APPID.key"
 ENV_ID="cloud2-1gytehldd551cd77"
