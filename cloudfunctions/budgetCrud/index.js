@@ -41,7 +41,7 @@ async function listByMonth({ monthKey }, openid) {
   const res = await db
     .collection(COLLECTION)
     .where({ openid, monthKey })
-    .orderBy('createdAt', 'desc')
+    .orderBy('createdAt', 'asc')
     .get()
   const list = (res.data || []).map((item) => ({
     id: item._id,
@@ -303,11 +303,11 @@ async function copyFromMonth(payload, openid) {
   ensureMonthKey(sourceMonthKey)
   ensureMonthKey(targetMonthKey)
 
-  // 1. 获取源月份预算项（按 createdAt desc 排序，与列表显示顺序一致）
+  // 1. 获取源月份预算项（按 createdAt asc 排序，与列表显示顺序一致）
   const sourceRes = await db
     .collection(COLLECTION)
     .where({ openid, monthKey: sourceMonthKey })
-    .orderBy('createdAt', 'desc')
+    .orderBy('createdAt', 'asc')
     .get()
   const sourceList = sourceRes.data || []
 
@@ -337,8 +337,8 @@ async function copyFromMonth(payload, openid) {
       skipped += 1
       continue
     }
-    // 使用递减时间戳保持顺序：第1项时间戳最大，排在最前
-    const createdAt = baseTime + (sourceList.length - created)
+    // 使用递增时间戳保持顺序：第1项时间戳最小，排在最前
+    const createdAt = baseTime + created
     await db.collection(COLLECTION).add({
       data: {
         openid,
