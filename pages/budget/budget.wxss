@@ -27,6 +27,21 @@ page {
   box-sizing: border-box;
 }
 
+.daily-tip {
+  padding: 0 28rpx 16rpx;
+  box-sizing: border-box;
+}
+
+.daily-tip-text {
+  display: block;
+  font-size: 24rpx;
+  color: #8a8da7;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 12rpx 20rpx;
+  border-radius: 12rpx;
+  text-align: center;
+}
+
 .summary-card {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24rpx;

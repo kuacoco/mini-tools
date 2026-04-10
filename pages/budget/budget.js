@@ -97,6 +97,8 @@ function uploadImageToCloud(tempFilePath) {
   })
 }
 
+const DAILY_FOOD_BUDGET = 40 // 每日食品酒水预算
+
 Page({
   data: {
     monthKey: '',
@@ -109,6 +111,10 @@ Page({
     swiperSummaryIndex: 1,
     /** 月份切换时递增，用于重建 swiper，避免回弹二次动画 */
     summarySwiperKey: 0,
+    /** 食品酒水每日预算提示 */
+    showDailyTip: false,
+    dailyBudgetText: '0',
+    dailyRemainText: '0',
     showFabMenu: false,
     fabMenuClosing: false,
     showAddPopup: false,
@@ -294,11 +300,32 @@ Page({
     const monthChanged = prevCenter !== monthKey
     this._lastSummaryCenterMonthKey = monthKey
 
+    // 计算食品酒水每日预算提示（仅当月显示）
+    const isCurrentMonth = monthKey === getCurrentMonthKey()
+    let showDailyTip = false
+    let dailyBudgetText = '0'
+    let dailyRemainText = '0'
+    if (isCurrentMonth) {
+      const today = new Date()
+      const dayOfMonth = today.getDate() // 今天是几号
+      const dailyBudget = dayOfMonth * DAILY_FOOD_BUDGET // 截止今天的食品酒水预算
+      // 从 budgetList 中找食品酒水项
+      const foodItem = decorated.find((item) => item.name === '食品酒水')
+      const foodUsed = foodItem ? Number(foodItem.usedAmount || 0) : 0
+      const dailyRemain = dailyBudget - foodUsed // 剩余额度
+      showDailyTip = true
+      dailyBudgetText = formatAmount(dailyBudget)
+      dailyRemainText = formatAmount(dailyRemain)
+    }
+
     const patch = {
       budgetList: decorated,
       monthLabel: getMonthLabel(monthKey),
       summarySwipe,
       swiperSummaryIndex: 1,
+      showDailyTip,
+      dailyBudgetText,
+      dailyRemainText,
     }
     if (monthChanged) {
       patch.summarySwiperKey = (this.data.summarySwiperKey || 0) + 1

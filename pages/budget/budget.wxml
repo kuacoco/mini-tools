@@ -42,6 +42,10 @@
 				</view>
 			</sticky-header>
 
+			<view wx:if="{{ showDailyTip }}" class="daily-tip">
+				<text class="daily-tip-text">食品酒水：预算 ¥{{ dailyBudgetText }}，剩余 ¥{{ dailyRemainText }}</text>
+			</view>
+
 			<view class="budget-list-content">
 				<view wx:if="{{ !budgetList.length }}" class="empty-card">
 					<text class="empty-title">本月还没有预算项</text>
