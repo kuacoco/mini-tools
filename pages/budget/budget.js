@@ -442,7 +442,7 @@ Page({
       wx.showToast({ title: '请输入预算名称', icon: 'none' })
       return
     }
-    if (!total || total <= 0) {
+    if (isNaN(total) || total < 0) {
       wx.showToast({ title: '请输入有效预算金额', icon: 'none' })
       return
     }

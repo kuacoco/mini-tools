@@ -63,7 +63,7 @@ async function upsertItem(payload, openid) {
   if (!name || !normalized) {
     throw new Error('预算项名称不能为空')
   }
-  if (totalAmount === null || totalAmount <= 0) {
+  if (totalAmount === null || totalAmount < 0) {
     throw new Error('预算金额不合法')
   }
 
