@@ -97,7 +97,7 @@ function uploadImageToCloud(tempFilePath) {
   })
 }
 
-const DAILY_FOOD_BUDGET = 40 // 每日食品酒水预算
+const DAILY_FOOD_BUDGET = 50 // 每日食品酒水预算
 
 Page({
   data: {
