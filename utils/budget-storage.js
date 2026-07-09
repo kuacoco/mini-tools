@@ -145,6 +145,32 @@ async function updateFeideeConfig(userId, authorization, accountIds, tradingEnti
   return result.data
 }
 
+async function getSystemConfig() {
+  ensureCloudReady()
+  const res = await wx.cloud.callFunction({
+    name: 'adminCrud',
+    data: { action: 'getSystemConfig', payload: {} },
+  })
+  const result = res && res.result ? res.result : {}
+  if (!result.success) {
+    throw new Error(result.message || '获取系统配置失败')
+  }
+  return result.data || {}
+}
+
+async function updateSystemConfig(payload) {
+  ensureCloudReady()
+  const res = await wx.cloud.callFunction({
+    name: 'adminCrud',
+    data: { action: 'updateSystemConfig', payload },
+  })
+  const result = res && res.result ? res.result : {}
+  if (!result.success) {
+    throw new Error(result.message || '更新系统配置失败')
+  }
+  return result.data || {}
+}
+
 async function deleteFeideeConfig(id) {
   ensureCloudReady()
   const res = await wx.cloud.callFunction({
@@ -236,6 +262,11 @@ async function syncAllFeideeUsers() {
   return result.data
 }
 
+async function getPublicBudgetConfig() {
+  const data = await callBudgetCrud('getPublicBudgetConfig', {})
+  return data || {}
+}
+
 async function fetchFeideeTransactions(startDate, endDate, categoryFilter) {
   ensureCloudReady()
   const res = await wx.cloud.callFunction({
@@ -285,12 +316,15 @@ module.exports = {
   listFeideeConfig,
   updateFeideeConfig,
   deleteFeideeConfig,
+  getSystemConfig,
+  updateSystemConfig,
   listWhitelist,
   addWhitelist,
   removeWhitelist,
   incrementSubscribe,
   getSubscribeCount,
   syncAllFeideeUsers,
+  getPublicBudgetConfig,
   fetchFeideeTransactions,
   fetchFeideeCategoryExpense,
   copyBudgetFromMonth,

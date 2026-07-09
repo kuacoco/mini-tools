@@ -42,6 +42,11 @@ page {
   text-align: center;
 }
 
+.daily-tip-line {
+  display: block;
+  line-height: 1.7;
+}
+
 .summary-card {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 24rpx;
@@ -587,4 +592,3 @@ page {
   margin-left: auto;
   margin-right: auto;
 }
-

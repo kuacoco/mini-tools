@@ -5,6 +5,25 @@
   </view>
 
   <view wx:else class="admin-content">
+    <view class="config-card">
+      <view class="card-header">
+        <view class="card-title">预算配置</view>
+      </view>
+      <view class="config-item">
+        <text class="config-label">食品酒水日预算</text>
+        <input
+          class="popup-input"
+          type="digit"
+          placeholder="请输入每天预算"
+          value="{{ dailyFoodBudget }}"
+          bindinput="onDailyFoodBudgetInput"
+        />
+      </view>
+      <view class="save-btn {{ budgetConfigSaving ? 'is-disabled' : '' }}" bindtap="onSaveBudgetConfig">
+        {{ budgetConfigSaving ? '保存中...' : '保存预算配置' }}
+      </view>
+    </view>
+
     <!-- 飞笛配置卡片 -->
     <view class="config-card">
       <view class="card-header">

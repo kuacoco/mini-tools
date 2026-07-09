@@ -1,4 +1,14 @@
-const { listFeideeConfig, updateFeideeConfig, deleteFeideeConfig, listWhitelist, addWhitelist, removeWhitelist, syncAllFeideeUsers } = require('../../utils/budget-storage')
+const {
+  listFeideeConfig,
+  updateFeideeConfig,
+  deleteFeideeConfig,
+  getSystemConfig,
+  updateSystemConfig,
+  listWhitelist,
+  addWhitelist,
+  removeWhitelist,
+  syncAllFeideeUsers
+} = require('../../utils/budget-storage')
 
 Page({
   data: {
@@ -17,6 +27,9 @@ Page({
     feideeAuthorization: '',
     feideeAccountIds: '',
     feideeTradingEntity: '',
+    // 预算配置
+    dailyFoodBudget: '50',
+    budgetConfigSaving: false,
     // 添加白名单弹窗
     showAddPopup: false,
     newOpenid: '',
@@ -29,13 +42,19 @@ Page({
 
   async loadAllData() {
     try {
-      const [feideeConfigs, whitelist] = await Promise.all([
+      const [feideeConfigs, whitelist, systemConfig] = await Promise.all([
         listFeideeConfig(),
-        listWhitelist()
+        listWhitelist(),
+        getSystemConfig()
       ])
       this.setData({
         feideeConfigs,
         whitelist,
+        dailyFoodBudget: String(
+          systemConfig && systemConfig.dailyFoodBudget != null
+            ? systemConfig.dailyFoodBudget
+            : 50
+        ),
         loading: false
       })
     } catch (err) {
@@ -96,6 +115,10 @@ Page({
     this.setData({ feideeTradingEntity: e.detail.value })
   },
 
+  onDailyFoodBudgetInput(e) {
+    this.setData({ dailyFoodBudget: e.detail.value })
+  },
+
   async onSaveFeideeConfig() {
     const { feideeUserId, feideeAuthorization, feideeAccountIds, feideeTradingEntity, editingFeideeId, saving } = this.data
     if (saving) return
@@ -140,6 +163,29 @@ Page({
         }
       }
     })
+  },
+
+  async onSaveBudgetConfig() {
+    const { dailyFoodBudget, budgetConfigSaving } = this.data
+    if (budgetConfigSaving) return
+
+    const value = String(dailyFoodBudget || '').trim()
+    if (!value) {
+      wx.showToast({ title: '请输入日预算', icon: 'none' })
+      return
+    }
+
+    this.setData({ budgetConfigSaving: true })
+    try {
+      const result = await updateSystemConfig({ dailyFoodBudget: value })
+      this.setData({
+        dailyFoodBudget: String(result.dailyFoodBudget)
+      })
+      wx.showToast({ title: '保存成功', icon: 'success' })
+    } catch (err) {
+      wx.showToast({ title: err.message || '保存失败', icon: 'none' })
+    }
+    this.setData({ budgetConfigSaving: false })
   },
 
   // 白名单管理

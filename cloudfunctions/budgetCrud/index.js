@@ -4,8 +4,11 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const COLLECTION = 'budget_items'
+const CONFIG_COLLECTION = 'budget_config'
 const WHITELIST_COLLECTION = 'budget_whitelist'
 const _ = db.command
+const DAILY_FOOD_BUDGET_CONFIG_KEY = 'dailyFoodBudget'
+const DEFAULT_DAILY_FOOD_BUDGET = 50
 
 function normalizeName(name) {
   return String(name || '')
@@ -298,6 +301,18 @@ async function getSubscribeCount(openid) {
   return { count: Number(res.data[0].subscribeCount || 0) }
 }
 
+async function getPublicBudgetConfig() {
+  const res = await db
+    .collection(CONFIG_COLLECTION)
+    .where({ configKey: DAILY_FOOD_BUDGET_CONFIG_KEY })
+    .limit(1)
+    .get()
+  const doc = res.data && res.data.length > 0 ? res.data[0] : null
+  return {
+    dailyFoodBudget: doc ? Number(doc.value || 0) : DEFAULT_DAILY_FOOD_BUDGET,
+  }
+}
+
 async function copyFromMonth(payload, openid) {
   const { sourceMonthKey, targetMonthKey } = payload
   ensureMonthKey(sourceMonthKey)
@@ -395,6 +410,9 @@ exports.main = async (event) => {
         break
       case 'getSubscribeCount':
         data = await getSubscribeCount(OPENID)
+        break
+      case 'getPublicBudgetConfig':
+        data = await getPublicBudgetConfig()
         break
       case 'copyFromMonth':
         data = await copyFromMonth(payload, OPENID)

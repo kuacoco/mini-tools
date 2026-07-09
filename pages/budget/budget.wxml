@@ -43,7 +43,10 @@
 			</sticky-header>
 
 			<view wx:if="{{ showDailyTip }}" class="daily-tip">
-				<text class="daily-tip-text">食品酒水：预算 ¥{{ dailyBudgetText }}，剩余 ¥{{ dailyRemainText }}</text>
+				<view class="daily-tip-text">
+					<text class="daily-tip-line">预算 ¥{{ dailyBudgetText }}，剩余 ¥{{ dailyRemainText }}</text>
+					<text class="daily-tip-line">剩余平均：今日 ¥{{ foodCategoryAvgWithTodayText }}/日，明日 ¥{{ foodCategoryAvgWithoutTodayText }}/日</text>
+				</view>
 			</view>
 
 			<view class="budget-list-content">

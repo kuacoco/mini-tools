@@ -6,6 +6,8 @@ const db = cloud.database()
 const CONFIG_COLLECTION = 'budget_config'
 const WHITELIST_COLLECTION = 'budget_whitelist'
 const ADMIN_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
+const DAILY_FOOD_BUDGET_CONFIG_KEY = 'dailyFoodBudget'
+const DEFAULT_DAILY_FOOD_BUDGET = 50
 
 async function checkPermission(openid) {
   if (openid !== ADMIN_OPENID) {
@@ -35,7 +37,9 @@ async function listFeideeConfig() {
     .orderBy('updatedAt', 'desc')
     .get()
   return {
-    list: (res.data || []).map(item => ({
+    list: (res.data || [])
+      .filter(item => item && item.userId)
+      .map(item => ({
       id: item._id,
       userId: item.userId || '',
       authorization: item.authorization || '',
@@ -43,7 +47,7 @@ async function listFeideeConfig() {
       tradingEntity: item.tradingEntity || '',
       createdAt: item.createdAt || 0,
       updatedAt: item.updatedAt || 0
-    }))
+      }))
   }
 }
 
@@ -87,6 +91,50 @@ async function deleteFeideeConfig(payload) {
   }
   await db.collection(CONFIG_COLLECTION).doc(id).remove()
   return { ok: true }
+}
+
+function normalizeNonNegativeNumber(value, fieldName) {
+  const num = Number(value)
+  if (!Number.isFinite(num) || num < 0) {
+    throw new Error(`${fieldName} 不合法`)
+  }
+  return Number(num.toFixed(2))
+}
+
+async function getSystemConfig() {
+  const res = await db.collection(CONFIG_COLLECTION)
+    .where({ configKey: DAILY_FOOD_BUDGET_CONFIG_KEY })
+    .limit(1)
+    .get()
+  const doc = res.data && res.data.length > 0 ? res.data[0] : null
+  return {
+    dailyFoodBudget: doc ? Number(doc.value || 0) : DEFAULT_DAILY_FOOD_BUDGET
+  }
+}
+
+async function updateSystemConfig(payload) {
+  const dailyFoodBudget = normalizeNonNegativeNumber(
+    payload.dailyFoodBudget,
+    '食品酒水日预算'
+  )
+  const now = Date.now()
+  const data = {
+    configKey: DAILY_FOOD_BUDGET_CONFIG_KEY,
+    value: dailyFoodBudget,
+    updatedAt: now
+  }
+  const res = await db.collection(CONFIG_COLLECTION)
+    .where({ configKey: DAILY_FOOD_BUDGET_CONFIG_KEY })
+    .limit(1)
+    .get()
+  const doc = res.data && res.data.length > 0 ? res.data[0] : null
+  if (doc) {
+    await db.collection(CONFIG_COLLECTION).doc(doc._id).update({ data })
+  } else {
+    data.createdAt = now
+    await db.collection(CONFIG_COLLECTION).add({ data })
+  }
+  return { ok: true, dailyFoodBudget }
 }
 
 async function checkAdminPermission(openid) {
@@ -166,6 +214,14 @@ exports.main = async (event) => {
       case 'deleteFeideeConfig':
         await checkPermission(OPENID)
         data = await deleteFeideeConfig(payload || {})
+        break
+      case 'getSystemConfig':
+        await checkPermission(OPENID)
+        data = await getSystemConfig()
+        break
+      case 'updateSystemConfig':
+        await checkPermission(OPENID)
+        data = await updateSystemConfig(payload || {})
         break
       case 'listWhitelist':
         await checkPermission(OPENID)

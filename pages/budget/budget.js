@@ -8,6 +8,7 @@ const {
   mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,
   copyBudgetFromMonth,
+  getPublicBudgetConfig,
   // checkWhitelist,
   // isAdmin,
   incrementSubscribe,
@@ -55,6 +56,7 @@ const SWIPE_DELETE_WIDTH = 82
 const SWIPE_OPEN_THRESHOLD = 38
 const POPUP_ANIMATION_MS = 240
 const FAB_MENU_ANIMATION_MS = 180
+const DEFAULT_DAILY_FOOD_BUDGET = 50
 
 function vibrateLight() {
   if (typeof wx === 'undefined' || !wx.vibrateShort) return
@@ -97,8 +99,6 @@ function uploadImageToCloud(tempFilePath) {
   })
 }
 
-const DAILY_FOOD_BUDGET = 50 // 每日食品酒水预算
-
 Page({
   data: {
     monthKey: '',
@@ -113,8 +113,12 @@ Page({
     summarySwiperKey: 0,
     /** 食品酒水每日预算提示 */
     showDailyTip: false,
+    dailyFoodBudget: DEFAULT_DAILY_FOOD_BUDGET,
     dailyBudgetText: '0',
     dailyRemainText: '0',
+    foodCategoryRemainText: '0',
+    foodCategoryAvgWithTodayText: '--',
+    foodCategoryAvgWithoutTodayText: '--',
     showFabMenu: false,
     fabMenuClosing: false,
     showAddPopup: false,
@@ -173,7 +177,7 @@ Page({
   },
 
   async onShow() {
-    await this.applyBudgetFeatureFlags()
+    await Promise.all([this.applyBudgetFeatureFlags(), this.loadBudgetTipConfig()])
     // await this.checkWhitelistPermission()
     // await this.checkAdminPermission()
 
@@ -227,6 +231,21 @@ Page({
       isWhitelisted: privileged,
       isAdminUser: privileged,
     })
+  },
+
+  async loadBudgetTipConfig() {
+    try {
+      const config = await getPublicBudgetConfig()
+      const dailyFoodBudget = Number(config && config.dailyFoodBudget)
+      this.setData({
+        dailyFoodBudget:
+          Number.isFinite(dailyFoodBudget) && dailyFoodBudget >= 0
+            ? dailyFoodBudget
+            : DEFAULT_DAILY_FOOD_BUDGET,
+      })
+    } catch (err) {
+      this.setData({ dailyFoodBudget: DEFAULT_DAILY_FOOD_BUDGET })
+    }
   },
 
   // async checkWhitelistPermission() {
@@ -305,17 +324,38 @@ Page({
     let showDailyTip = false
     let dailyBudgetText = '0'
     let dailyRemainText = '0'
+    let foodCategoryRemainText = '0'
+    let foodCategoryAvgWithTodayText = '--'
+    let foodCategoryAvgWithoutTodayText = '--'
     if (isCurrentMonth) {
       const today = new Date()
       const dayOfMonth = today.getDate() // 今天是几号
-      const dailyBudget = dayOfMonth * DAILY_FOOD_BUDGET // 截止今天的食品酒水预算
+      const daysInMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        0
+      ).getDate()
+      const remainDaysWithToday = Math.max(0, daysInMonth - dayOfMonth + 1)
+      const remainDaysWithoutToday = Math.max(0, daysInMonth - dayOfMonth)
+      const dailyBudget = dayOfMonth * Number(this.data.dailyFoodBudget || 0) // 截止今天的食品酒水预算
       // 从 budgetList 中找食品酒水项
       const foodItem = decorated.find((item) => item.name === '食品酒水')
       const foodUsed = foodItem ? Number(foodItem.usedAmount || 0) : 0
+      const foodTotal = foodItem ? Number(foodItem.totalAmount || 0) : 0
       const dailyRemain = dailyBudget - foodUsed // 剩余额度
+      const foodCategoryRemain = foodTotal - foodUsed
       showDailyTip = true
       dailyBudgetText = formatAmount(dailyBudget)
       dailyRemainText = formatAmount(dailyRemain)
+      foodCategoryRemainText = formatAmount(foodCategoryRemain)
+      foodCategoryAvgWithTodayText =
+        remainDaysWithToday > 0
+          ? formatAmount(foodCategoryRemain / remainDaysWithToday)
+          : '--'
+      foodCategoryAvgWithoutTodayText =
+        remainDaysWithoutToday > 0
+          ? formatAmount(foodCategoryRemain / remainDaysWithoutToday)
+          : '--'
     }
 
     const patch = {
@@ -326,6 +366,9 @@ Page({
       showDailyTip,
       dailyBudgetText,
       dailyRemainText,
+      foodCategoryRemainText,
+      foodCategoryAvgWithTodayText,
+      foodCategoryAvgWithoutTodayText,
     }
     if (monthChanged) {
       patch.summarySwiperKey = (this.data.summarySwiperKey || 0) + 1
