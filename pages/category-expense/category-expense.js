@@ -14,6 +14,21 @@ function calcMonthRange(date = new Date()) {
   }
 }
 
+function calcOffsetMonthRange(offset, baseDate = new Date()) {
+  const y = baseDate.getFullYear()
+  const m = baseDate.getMonth()
+  return calcMonthRange(new Date(y, m + offset, 1))
+}
+
+function calcShiftedMonthRangeFromDateString(dateString, offset) {
+  const source = String(dateString || '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(source)) {
+    return calcOffsetMonthRange(offset)
+  }
+  const [year, month] = source.split('-').map(Number)
+  return calcMonthRange(new Date(year, month - 1 + offset, 1))
+}
+
 function formatAmount(amount) {
   const n = Number(amount) || 0
   return n.toFixed(2).replace(/\.?0+$/, '')
@@ -119,6 +134,26 @@ Page({
     const { startDate, endDate } = calcMonthRange()
     this.resetCollapsed()
     this.setData({ quickType: 'month', startDate, endDate })
+    this.loadCategoryExpense()
+  },
+
+  onPagePrevMonth() {
+    const { startDate, endDate } = calcShiftedMonthRangeFromDateString(
+      this.data.startDate,
+      -1
+    )
+    this.resetCollapsed()
+    this.setData({ quickType: 'custom', startDate, endDate })
+    this.loadCategoryExpense()
+  },
+
+  onPageNextMonth() {
+    const { startDate, endDate } = calcShiftedMonthRangeFromDateString(
+      this.data.startDate,
+      1
+    )
+    this.resetCollapsed()
+    this.setData({ quickType: 'custom', startDate, endDate })
     this.loadCategoryExpense()
   },
 

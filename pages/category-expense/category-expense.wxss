@@ -8,7 +8,10 @@ page {
   position: relative;
   flex: 1;
   min-height: 0;
-  background: linear-gradient(180deg, #ecefff 0%, #f6f8ff 55%, #fff0f3 100%);
+  background:
+    radial-gradient(circle at top left, rgba(159, 183, 255, 0.24) 0, rgba(159, 183, 255, 0) 34%),
+    radial-gradient(circle at top right, rgba(255, 200, 188, 0.2) 0, rgba(255, 200, 188, 0) 28%),
+    linear-gradient(180deg, #eef2ff 0%, #f8f9ff 52%, #fff4f6 100%);
   box-sizing: border-box;
 }
 
@@ -18,21 +21,85 @@ page {
 }
 
 .expense-top-card {
-  margin: 22rpx 28rpx 16rpx;
-  padding: 26rpx 24rpx 22rpx;
-  background: rgba(255, 255, 255, 0.96);
+  margin: 22rpx 24rpx 18rpx;
+  padding: 28rpx;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 30rpx;
+  box-shadow: 0 22rpx 60rpx rgba(88, 102, 176, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+}
+
+.hero-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.hero-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-kicker {
+  display: block;
+  font-size: 18rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  color: rgba(117, 132, 204, 0.9);
 }
 
 .range-title {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: rgba(47, 49, 82, 0.95);
-  margin-bottom: 18rpx;
+  display: block;
+  margin-top: 8rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: rgba(38, 42, 74, 0.98);
+}
+
+.hero-subtitle {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: rgba(121, 128, 160, 0.95);
+}
+
+.summary-chip {
+  flex: none;
+  min-width: 220rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #313864 0%, #485394 100%);
+  box-shadow: 0 16rpx 36rpx rgba(54, 66, 127, 0.22);
+}
+
+.summary-chip-label {
+  display: block;
+  font-size: 20rpx;
+  color: rgba(236, 241, 255, 0.78);
+}
+
+.summary-chip-value {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 38rpx;
+  font-weight: 800;
+  color: #ffffff;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-panel {
+  margin-top: 24rpx;
+  padding: 22rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(180deg, rgba(244, 246, 255, 0.96) 0%, rgba(250, 251, 255, 0.96) 100%);
+  border: 1px solid rgba(131, 146, 222, 0.1);
 }
 
 .range-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
 }
 
@@ -45,86 +112,103 @@ page {
 
 .range-label {
   font-size: 22rpx;
-  color: rgba(138, 141, 167, 0.9);
-  margin-bottom: 10rpx;
+  color: rgba(115, 123, 161, 0.92);
+  margin-bottom: 12rpx;
 }
 
 .range-sep {
-  width: 40rpx;
+  width: 48rpx;
   text-align: center;
-  font-size: 22rpx;
-  color: rgba(138, 141, 167, 0.9);
-  padding-bottom: 6rpx;
-  margin: 0 18rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: rgba(122, 128, 168, 0.82);
+  margin: 22rpx 16rpx 0;
 }
 
 .range-value {
   font-size: 28rpx;
-  font-weight: 650;
-  color: #2f3152;
-  background: #f5f6ff;
-  border: 1px solid rgba(47, 49, 82, 0.08);
-  border-radius: 16rpx;
-  padding: 16rpx 18rpx;
+  font-weight: 700;
+  color: #2b3159;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(116, 130, 198, 0.14);
+  border-radius: 20rpx;
+  padding: 18rpx 20rpx;
   box-sizing: border-box;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+}
+
+.control-stack {
+  margin-top: 22rpx;
+}
+
+.control-block + .control-block {
+  margin-top: 16rpx;
+}
+
+.control-label {
+  display: block;
+  margin-bottom: 10rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: rgba(114, 121, 157, 0.96);
 }
 
 .quick-seg {
   display: flex;
-  margin-top: 18rpx;
   padding: 4rpx;
-  border-radius: 16rpx;
-  background: #f5f6ff;
-  border: 1px solid rgba(47, 49, 82, 0.08);
+  border-radius: 20rpx;
+  background: rgba(242, 245, 255, 0.96);
+  border: 1px solid rgba(122, 136, 205, 0.08);
 }
 
 .quick-seg-item {
   flex: 1;
   text-align: center;
-  padding: 12rpx 0;
-  border-radius: 14rpx;
+  padding: 16rpx 0;
+  border-radius: 16rpx;
   font-size: 24rpx;
   font-weight: 650;
-  color: rgba(47, 49, 82, 0.78);
+  color: rgba(73, 79, 117, 0.76);
 }
 
 .quick-seg-item.active {
-  background: rgba(255, 255, 255, 0.96);
-  color: rgba(47, 49, 82, 0.96);
+  background: linear-gradient(135deg, #ffffff 0%, #fdfdff 100%);
+  color: rgba(43, 49, 89, 0.98);
+  box-shadow: 0 10rpx 20rpx rgba(139, 151, 214, 0.18);
 }
 
-.total-row {
-  margin-top: 22rpx;
-  padding-top: 18rpx;
-  border-top: 1px solid rgba(47, 49, 82, 0.08);
+.month-pager {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  gap: 14rpx;
 }
 
-.total-label {
+.month-pager-btn {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  border-radius: 20rpx;
   font-size: 24rpx;
-  color: rgba(138, 141, 167, 0.95);
-}
-
-.total-value {
-  font-size: 36rpx;
-  font-weight: 800;
-  color: #2f3152;
+  font-weight: 650;
+  color: rgba(43, 49, 89, 0.92);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(115, 129, 196, 0.14);
+  box-shadow: 0 10rpx 26rpx rgba(139, 151, 214, 0.12);
 }
 
 .expense-list {
-  padding: 0 28rpx 140rpx;
+  padding: 0 24rpx 140rpx;
   box-sizing: border-box;
 }
 
 .expense-body-card {
   background: rgba(255, 255, 255, 0.96);
+  border-radius: 28rpx;
   padding: 22rpx 24rpx 24rpx;
   box-sizing: border-box;
+  box-shadow: 0 16rpx 40rpx rgba(88, 102, 176, 0.08);
 }
 
 .expense-list-bottom-space {
@@ -133,17 +217,20 @@ page {
 
 .sheet-cat-shell,
 .sheet-rows-shell {
-  margin: 0 28rpx;
-  background: rgba(255, 255, 255);
+  margin: 0 24rpx;
+  background: rgba(255, 255, 255, 0.97);
   box-sizing: border-box;
 }
 
 .sheet-cat-shell {
   position: relative;
+  border-radius: 28rpx 28rpx 0 0;
   overflow: hidden;
+  box-shadow: 0 16rpx 42rpx rgba(88, 102, 176, 0.08);
 }
 
 .sheet-cat-shell.collapsed {
+  border-radius: 28rpx;
 }
 
 .sheet-cat-shell.collapsed .sheet-cat {
@@ -151,11 +238,13 @@ page {
 }
 
 .sheet-rows-shell {
+  border-radius: 0 0 28rpx 28rpx;
   overflow: hidden;
+  box-shadow: 0 16rpx 42rpx rgba(88, 102, 176, 0.08);
 }
 
 .sheet-group-gap {
-  height: 16rpx;
+  height: 18rpx;
 }
 
 .sheet-rows .sheet-row:last-child {
@@ -165,8 +254,10 @@ page {
 .sheet-cat {
   display: flex;
   align-items: center;
-  padding: 30rpx 24rpx 26rpx;
+  padding: 28rpx 26rpx 24rpx;
   min-width: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 248, 255, 0.98) 100%);
+  border-bottom: 1px solid rgba(113, 126, 192, 0.08);
 }
 
 .sheet-cat > view + view {
@@ -174,8 +265,8 @@ page {
 }
 
 .sheet-cat-icon {
-  width: 52rpx;
-  height: 52rpx;
+  width: 60rpx;
+  height: 60rpx;
   border-radius: 50%;
   flex: none;
   display: flex;
@@ -185,7 +276,7 @@ page {
 }
 
 .sheet-cat-icon-text {
-  font-size: 24rpx;
+  font-size: 26rpx;
   font-weight: 650;
   color: rgba(47, 49, 82, 0.72);
   line-height: 1;
@@ -204,8 +295,8 @@ page {
 }
 
 .sheet-cat-name {
-  font-size: 28rpx;
-  font-weight: 600;
+  font-size: 30rpx;
+  font-weight: 700;
   color: #2f3152;
   flex: 0 1 auto;
   min-width: 0;
@@ -232,14 +323,14 @@ page {
 }
 
 .sheet-cat-total {
-  font-size: 28rpx;
-  font-weight: 650;
+  font-size: 30rpx;
+  font-weight: 700;
   color: #2f3152;
   font-variant-numeric: tabular-nums;
 }
 
 .sheet-cat-arrow {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: rgba(138, 141, 167, 0.95);
   transform: rotate(90deg);
   transform-origin: center;
@@ -251,15 +342,15 @@ page {
 }
 
 .sheet-rows {
-  padding: 0 24rpx 4rpx;
+  padding: 8rpx 22rpx 10rpx;
 }
 
 .sheet-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 22rpx;
-  border-bottom: 1px solid rgba(47, 49, 82, 0.06);
+  padding: 22rpx 8rpx;
+  border-bottom: 1px solid rgba(47, 49, 82, 0.05);
   box-sizing: border-box;
 }
 
@@ -271,17 +362,17 @@ page {
 }
 
 .child-icon {
-  width: 36rpx;
-  height: 36rpx;
+  width: 40rpx;
+  height: 40rpx;
   flex: none;
   margin-right: 12rpx;
 }
 
 .child-icon-placeholder {
-  width: 36rpx;
-  height: 36rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
-  background: #f5f6ff;
+  background: linear-gradient(135deg, #edf1ff 0%, #f8f9ff 100%);
   flex: none;
   display: flex;
   align-items: center;
@@ -294,7 +385,7 @@ page {
 
 .child-name {
   font-size: 26rpx;
-  color: rgba(47, 49, 82, 0.88);
+  color: rgba(47, 49, 82, 0.86);
   line-height: 1.35;
   overflow: hidden;
   white-space: nowrap;
@@ -305,6 +396,7 @@ page {
   flex: none;
   margin-left: 20rpx;
   font-size: 28rpx;
+  font-weight: 600;
   color: rgba(47, 49, 82, 0.88);
   font-variant-numeric: tabular-nums;
 }

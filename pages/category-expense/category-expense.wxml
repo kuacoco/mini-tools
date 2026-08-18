@@ -3,36 +3,56 @@
 <view class="expense-page">
 	<scroll-view class="expense-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
 		<view class="expense-top-card">
-			<view class="range-title">选择日期区间</view>
-
-			<view class="range-row">
-				<view class="range-item">
-					<text class="range-label">开始</text>
-					<picker mode="date" value="{{ startDate }}" bindchange="onStartDateChange">
-						<view class="range-value">{{ startDate }}</view>
-					</picker>
+			<view class="hero-row">
+				<view class="hero-copy">
+					<text class="hero-kicker">SPENDING RANGE</text>
+					<text class="range-title">选择日期区间</text>
+					<text class="hero-subtitle">{{ startDate }} 至 {{ endDate }}</text>
 				</view>
-				<view class="range-sep">至</view>
-				<view class="range-item">
-					<text class="range-label">结束</text>
-					<picker mode="date" value="{{ endDate }}" bindchange="onEndDateChange">
-						<view class="range-value">{{ endDate }}</view>
-					</picker>
+				<view class="summary-chip">
+					<text class="summary-chip-label">总支出</text>
+					<text class="summary-chip-value">¥{{ totalAmountText }}</text>
 				</view>
 			</view>
 
-			<view class="quick-seg" role="tablist" aria-label="快捷选择">
-				<view class="quick-seg-item {{ quickType === 'today' ? 'active' : '' }}" bindtap="onQuickToday" role="tab" aria-selected="{{ quickType === 'today' }}">
-					当天
-				</view>
-				<view class="quick-seg-item {{ quickType === 'month' ? 'active' : '' }}" bindtap="onQuickMonth" role="tab" aria-selected="{{ quickType === 'month' }}">
-					当月
+			<view class="range-panel">
+				<view class="range-row">
+					<view class="range-item">
+						<text class="range-label">开始</text>
+						<picker mode="date" value="{{ startDate }}" bindchange="onStartDateChange">
+							<view class="range-value">{{ startDate }}</view>
+						</picker>
+					</view>
+					<view class="range-sep">至</view>
+					<view class="range-item">
+						<text class="range-label">结束</text>
+						<picker mode="date" value="{{ endDate }}" bindchange="onEndDateChange">
+							<view class="range-value">{{ endDate }}</view>
+						</picker>
+					</view>
 				</view>
 			</view>
 
-			<view class="total-row">
-				<text class="total-label">总支出</text>
-				<text class="total-value">¥{{ totalAmountText }}</text>
+			<view class="control-stack">
+				<view class="control-block">
+					<text class="control-label">快捷选择</text>
+					<view class="quick-seg" role="tablist" aria-label="快捷选择">
+						<view class="quick-seg-item {{ quickType === 'today' ? 'active' : '' }}" bindtap="onQuickToday" role="tab" aria-selected="{{ quickType === 'today' }}">
+							当天
+						</view>
+						<view class="quick-seg-item {{ quickType === 'month' ? 'active' : '' }}" bindtap="onQuickMonth" role="tab" aria-selected="{{ quickType === 'month' }}">
+							当月
+						</view>
+					</view>
+				</view>
+
+				<view class="control-block">
+					<text class="control-label">月度翻页</text>
+					<view class="month-pager">
+						<view class="month-pager-btn" bindtap="onPagePrevMonth">‹ 上个月</view>
+						<view class="month-pager-btn" bindtap="onPageNextMonth">下个月 ›</view>
+					</view>
+				</view>
 			</view>
 		</view>
 

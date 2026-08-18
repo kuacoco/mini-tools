@@ -15,6 +15,33 @@ function calcMonthRange(date = new Date()) {
   }
 }
 
+function calcOffsetMonthRange(offset, baseDate = new Date()) {
+  const y = baseDate.getFullYear()
+  const m = baseDate.getMonth()
+  return calcMonthRange(new Date(y, m + offset, 1))
+}
+
+function calcShiftedMonthRangeFromDateString(dateString, offset) {
+  const source = String(dateString || '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(source)) {
+    return calcOffsetMonthRange(offset)
+  }
+  const [year, month] = source.split('-').map(Number)
+  return calcMonthRange(new Date(year, month - 1 + offset, 1))
+}
+
+function inferQuickTypeByRange(startDate, endDate, today) {
+  const currentMonthRange = calcMonthRange()
+  if (startDate === today && endDate === today) return 'today'
+  if (
+    startDate === currentMonthRange.startDate &&
+    endDate === currentMonthRange.endDate
+  ) {
+    return 'month'
+  }
+  return 'custom'
+}
+
 function formatTransactionDate(timestamp) {
   if (!timestamp) return ''
   const d = new Date(timestamp)
@@ -90,13 +117,8 @@ Page({
         group_id: categoryId,
       }
 
-      // 判断是否为当天或当月
-      const { startDate: monthStart, endDate: monthEnd } = calcMonthRange()
-      const isToday = startDate === today && endDate === today
-      const isCurrentMonth = startDate === monthStart && endDate === monthEnd
-
       this.setData({
-        quickType: isToday ? 'today' : (isCurrentMonth ? 'month' : 'custom'),
+        quickType: inferQuickTypeByRange(startDate, endDate, today),
         startDate,
         endDate,
         categoryFilter: filter,
@@ -187,6 +209,34 @@ Page({
     const { startDate, endDate } = calcMonthRange()
     this.resetCollapsed()
     this.setData({ quickType: 'month', startDate, endDate, categoryFilter: null, categoryName: '' })
+    this.loadTransactions()
+  },
+
+  onPagePrevMonth() {
+    const { startDate, endDate } = calcShiftedMonthRangeFromDateString(
+      this.data.startDate,
+      -1
+    )
+    this.resetCollapsed()
+    this.setData({
+      quickType: 'custom',
+      startDate,
+      endDate,
+    })
+    this.loadTransactions()
+  },
+
+  onPageNextMonth() {
+    const { startDate, endDate } = calcShiftedMonthRangeFromDateString(
+      this.data.startDate,
+      1
+    )
+    this.resetCollapsed()
+    this.setData({
+      quickType: 'custom',
+      startDate,
+      endDate,
+    })
     this.loadTransactions()
   },
 
