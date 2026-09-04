@@ -639,14 +639,6 @@ Page({
     })
   },
 
-  onGoToFeideeBill() {
-    this.closeFabMenu({
-      afterClose: () => {
-        wx.navigateTo({ url: '/pages/feidee-bill/feidee-bill' })
-      },
-    })
-  },
-
   onGoToCategoryExpense() {
     this.closeFabMenu({
       afterClose: () => {

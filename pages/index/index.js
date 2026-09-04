@@ -1,19 +1,27 @@
 const { isPrivilegedUser } = require('../../utils/privileged-user')
 
-const SPENDING_CALENDAR_TOOL = {
-  id: 'spending-calendar',
-  title: '消费日历',
-  desc: '以月历查看每日消费，点按日期查看流水',
-  path: '/pages/expense-calendar/expense-calendar',
-}
-
-const BASE_TOOL_LIST = [
+const PRIVILEGED_TOOL_LIST = [
+  {
+    id: 'spending-calendar',
+    title: '消费日历',
+    desc: '以月历查看每日消费，点按日期查看流水',
+    path: '/pages/expense-calendar/expense-calendar',
+  },
+  {
+    id: 'spending-bill',
+    title: '消费账单',
+    desc: '按月份查看消费，并按分类整理账单',
+    path: '/pages/feidee-bill/feidee-bill',
+  },
   {
     id: 'budget',
     title: '预算看板',
     desc: '按自然月追踪预算使用进度，支持快速录入',
     path: '/pages/budget/budget',
   },
+]
+
+const BASE_TOOL_LIST = [
   {
     id: 'course',
     title: '消课记录',
@@ -42,7 +50,7 @@ Page({
   async onShow() {
     const privileged = await isPrivilegedUser()
     const toolList = privileged
-      ? [SPENDING_CALENDAR_TOOL, ...BASE_TOOL_LIST]
+      ? [...PRIVILEGED_TOOL_LIST, ...BASE_TOOL_LIST]
       : BASE_TOOL_LIST
     this.setData({ toolList })
   },

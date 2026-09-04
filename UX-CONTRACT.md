@@ -2,8 +2,8 @@
 
 ## Product context
 
-- Audience: the fixed OpenID user authorized by the current budget-page entry rule.
-- Primary jobs: review one month's daily spend and inspect a selected day's transactions.
+- Audience: the fixed OpenID user authorized to discover the budget and spending tools from the home page.
+- Primary jobs: review daily spend in the calendar, inspect a selected day's transactions, and review a current-month bill grouped by category.
 - Active locales: Simplified Chinese.
 - Timezone/calendar policy: Gregorian date-only queries; the existing cloud function creates Beijing-time query boundaries and transaction display uses the Mini Program device time, matching the existing bill page.
 - Accessibility target: WCAG 2.2 AA where Mini Program native controls expose equivalent behavior.
@@ -29,14 +29,15 @@
 |---|---|---|---|---|
 | Date | Native Mini Program `picker` | Existing Mini Program picker usage | `mode=date`, `fields=month` | Device picker + month reload |
 | Toast | `wx.showToast` | Existing pages | permission/error | Device preview |
-| Data list | Skyline `scroll-view` + WXML list | Existing bill and calendar pages | chronological daily ledger | Loading, empty, error |
+| Data list | Skyline `scroll-view` + WXML list | Existing bill and calendar pages | chronological daily ledger / monthly category bill | Loading, empty, error |
 
 ## Flow ledger
 
 | Operation | Trigger | Pending | Success destination | Failure recovery | Source ref |
 |---|---|---|---|---|---|
-| Open tool | Privileged home entry | No entry until permission result | Consumption calendar | Direct route returns home when denied | `utils/privileged-user.js` |
+| Open privileged tool | Home entry for 消费日历 / 预算看板 / 消费账单 | No entry until permission result | Corresponding tool | All three entries remain hidden for non-privileged users | `utils/privileged-user.js` |
 | Change month | Native month picker | Stable empty calendar grid | Same calendar, refreshed total and day amounts | Inline error | `feideeTransactions` query |
+| Change bill month | Native month picker (`fields=month`) | Stable bill-list footprint | Same page, refreshed category groups and total | Toast and empty state | `fetchFeideeTransactions` |
 | Open day | Tap calendar date | None | Day ledger | Day ledger shows inline error | Existing transaction API |
 | Read day ledger | Page entry | Stable ledger state | Same page | Inline error or empty state | Existing transaction API |
 
@@ -45,6 +46,7 @@
 - Direct route denial returns to the tool list; this is UX containment, while cloud-function whitelist checks remain the data boundary.
 - A calendar day is always tappable, including zero-spend dates.
 - The detail page uses a single chronological list and no category groups.
+- The monthly bill defaults to the current natural month, uses a single month picker, and keeps the existing category-grouped response presentation.
 
 ## Async and resilience
 

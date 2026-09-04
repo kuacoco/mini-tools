@@ -1,15 +1,59 @@
-<!--index.wxml 工具列表-->
+<!-- index.wxml 工具首页 -->
 <navigation-bar title="小工具" back="{{false}}" />
-<view class="page">
-	<view class="header">
-		<text class="title">小工具</text>
-		<text class="subtitle">选择下方工具使用</text>
-	</view>
-	<view class="tool-list">
-		<view wx:for="{{ toolList }}" wx:key="id" class="tool-item" data-path="{{ item.path }}" bindtap="onToolTap">
-			<view class="tool-title">{{ item.title }}</view>
-			<view class="tool-desc">{{ item.desc }}</view>
-			<text class="tool-arrow">›</text>
+<scroll-view class="home-scroll" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
+	<view class="home-page">
+		<view class="home-intro">
+			<view class="intro-copy">
+				<text class="intro-kicker">MINI TOOLS</text>
+				<text class="intro-title">今天，想完成<br />什么小事？</text>
+				<text class="intro-desc">选一个工具，马上开始。</text>
+			</view>
+			<view class="toolbox-mark" aria-label="{{ toolList.length }} 个可用工具">
+				<view class="toolbox-square toolbox-square--purple"></view>
+				<view class="toolbox-square toolbox-square--yellow"></view>
+				<view class="toolbox-square toolbox-square--blue"></view>
+				<view class="toolbox-square toolbox-square--coral"></view>
+			</view>
+		</view>
+
+		<view class="tool-section-head">
+			<text class="section-title">我的工具箱</text>
+			<view class="section-note">
+				<view class="section-note-dot"></view>
+				<text>{{ toolList.length }} 个工具可用</text>
+			</view>
+		</view>
+
+		<view class="tool-grid">
+			<view
+				wx:for="{{ toolList }}"
+				wx:key="id"
+				class="tool-item tool-item--{{ item.id }}"
+				hover-class="tool-item--active"
+				hover-stay-time="80"
+				data-path="{{ item.path }}"
+				bindtap="onToolTap"
+			>
+				<view class="tool-icon">
+					<text wx:if="{{ item.id === 'spending-calendar' }}" class="tool-icon-text">账</text>
+					<text wx:elif="{{ item.id === 'budget' }}" class="tool-icon-text">¥</text>
+					<text wx:elif="{{ item.id === 'spending-bill' }}" class="tool-icon-text">单</text>
+					<text wx:elif="{{ item.id === 'course' }}" class="tool-icon-text">课</text>
+					<text wx:elif="{{ item.id === 'qing-calendar' }}" class="tool-icon-text">青</text>
+					<text wx:else class="tool-icon-text">◎</text>
+				</view>
+				<text class="tool-title">{{ item.title }}</text>
+				<text class="tool-desc">{{ item.desc }}</text>
+				<view class="tool-open">
+					<text>打开</text>
+					<text class="tool-open-arrow">↗</text>
+				</view>
+			</view>
+		</view>
+
+		<view class="home-footer">
+			<view class="footer-line"></view>
+			<text class="footer-text">把琐事交给工具，把时间留给生活</text>
 		</view>
 	</view>
-</view>
+</scroll-view>

@@ -1,5 +1,4 @@
 const { checkWhitelist, fetchFeideeTransactions } = require('../../utils/budget-storage')
-const { getCurrentDateString } = require('../../utils/course-storage')
 const { formatAmount } = require('../../utils/amount-expression')
 const { pickUniqueCategoryBg, categoryInitial } = require('../../utils/category-color')
 
@@ -15,31 +14,24 @@ function calcMonthRange(date = new Date()) {
   }
 }
 
-function calcOffsetMonthRange(offset, baseDate = new Date()) {
-  const y = baseDate.getFullYear()
-  const m = baseDate.getMonth()
-  return calcMonthRange(new Date(y, m + offset, 1))
+function getMonthValue(date = new Date()) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  return `${year}-${month}`
 }
 
-function calcShiftedMonthRangeFromDateString(dateString, offset) {
-  const source = String(dateString || '')
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(source)) {
-    return calcOffsetMonthRange(offset)
-  }
-  const [year, month] = source.split('-').map(Number)
-  return calcMonthRange(new Date(year, month - 1 + offset, 1))
+function getMonthLabel(monthValue) {
+  const [year, month] = String(monthValue || '').split('-').map(Number)
+  if (!year || !month) return ''
+  return `${year}年${month}月`
 }
 
-function inferQuickTypeByRange(startDate, endDate, today) {
-  const currentMonthRange = calcMonthRange()
-  if (startDate === today && endDate === today) return 'today'
-  if (
-    startDate === currentMonthRange.startDate &&
-    endDate === currentMonthRange.endDate
-  ) {
-    return 'month'
+function calcMonthRangeByValue(monthValue) {
+  if (!/^\d{4}-\d{2}$/.test(String(monthValue || ''))) {
+    return calcMonthRange()
   }
-  return 'custom'
+  const [year, month] = monthValue.split('-').map(Number)
+  return calcMonthRange(new Date(year, month - 1, 1))
 }
 
 function formatTransactionDate(timestamp) {
@@ -87,7 +79,8 @@ Page({
     isWhitelisted: false,
     isLoading: false,
 
-    quickType: 'today',
+    monthValue: '',
+    monthLabel: '',
     startDate: '',
     endDate: '',
 
@@ -107,7 +100,6 @@ Page({
   },
 
   onLoad(options) {
-    const today = getCurrentDateString()
     const { startDate, endDate, categoryId, categoryName } = options || {}
 
     // 如果从分类支出页跳转，使用传入的参数
@@ -118,17 +110,21 @@ Page({
       }
 
       this.setData({
-        quickType: inferQuickTypeByRange(startDate, endDate, today),
+        monthValue: String(startDate).slice(0, 7),
+        monthLabel: getMonthLabel(String(startDate).slice(0, 7)),
         startDate,
         endDate,
         categoryFilter: filter,
         categoryName: categoryName ? decodeURIComponent(categoryName) : '',
       })
     } else {
+      const monthValue = getMonthValue()
+      const currentMonthRange = calcMonthRangeByValue(monthValue)
       this.setData({
-        quickType: 'today',
-        startDate: today,
-        endDate: today,
+        monthValue,
+        monthLabel: getMonthLabel(monthValue),
+        startDate: currentMonthRange.startDate,
+        endDate: currentMonthRange.endDate,
         categoryFilter: null,
         categoryName: '',
       })
@@ -196,75 +192,17 @@ Page({
     }
   },
 
-  onQuickToday() {
-    if (this.data.quickType === 'today') return
-    const today = getCurrentDateString()
-    this.resetCollapsed()
-    this.setData({ quickType: 'today', startDate: today, endDate: today, categoryFilter: null, categoryName: '' })
-    this.loadTransactions()
-  },
-
-  onQuickMonth() {
-    if (this.data.quickType === 'month') return
-    const { startDate, endDate } = calcMonthRange()
-    this.resetCollapsed()
-    this.setData({ quickType: 'month', startDate, endDate, categoryFilter: null, categoryName: '' })
-    this.loadTransactions()
-  },
-
-  onPagePrevMonth() {
-    const { startDate, endDate } = calcShiftedMonthRangeFromDateString(
-      this.data.startDate,
-      -1
-    )
+  onMonthChange(e) {
+    const monthValue = e?.detail?.value
+    if (!monthValue || monthValue === this.data.monthValue) return
+    const { startDate, endDate } = calcMonthRangeByValue(monthValue)
     this.resetCollapsed()
     this.setData({
-      quickType: 'custom',
+      monthValue,
+      monthLabel: getMonthLabel(monthValue),
       startDate,
       endDate,
     })
-    this.loadTransactions()
-  },
-
-  onPageNextMonth() {
-    const { startDate, endDate } = calcShiftedMonthRangeFromDateString(
-      this.data.startDate,
-      1
-    )
-    this.resetCollapsed()
-    this.setData({
-      quickType: 'custom',
-      startDate,
-      endDate,
-    })
-    this.loadTransactions()
-  },
-
-  onStartDateChange(e) {
-    const nextStart = e?.detail?.value
-    if (!nextStart || nextStart === this.data.startDate) return
-    const endDate = this.data.endDate
-    if (String(nextStart) > String(endDate)) {
-      wx.showToast({ title: '开始日期不能晚于结束日期', icon: 'none' })
-      return
-    }
-
-    this.resetCollapsed()
-    this.setData({ quickType: 'custom', startDate: nextStart })
-    this.loadTransactions()
-  },
-
-  onEndDateChange(e) {
-    const nextEnd = e?.detail?.value
-    if (!nextEnd || nextEnd === this.data.endDate) return
-    const startDate = this.data.startDate
-    if (String(startDate) > String(nextEnd)) {
-      wx.showToast({ title: '结束日期不能早于开始日期', icon: 'none' })
-      return
-    }
-
-    this.resetCollapsed()
-    this.setData({ quickType: 'custom', endDate: nextEnd })
     this.loadTransactions()
   },
 

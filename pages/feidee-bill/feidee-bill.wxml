@@ -2,65 +2,32 @@
 
 <view class="bill-page">
 	<scroll-view class="bill-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
-		<view class="bill-top-card">
-			<view class="hero-row">
-				<view class="hero-copy">
-					<text class="hero-kicker">SPENDING DETAIL</text>
-					<text class="range-title">选择日期区间</text>
-					<text class="hero-subtitle">{{ startDate }} 至 {{ endDate }}</text>
+		<view class="bill-head">
+			<picker mode="date" fields="month" value="{{ monthValue }}" bindchange="onMonthChange">
+				<view class="month-picker-trigger">
+					<text class="month-picker-label">账单月份</text>
+					<view class="month-picker-value-row">
+						<text class="month-picker-value">{{ monthLabel }}</text>
+						<text class="month-picker-arrow">⌄</text>
+					</view>
 				</view>
-				<view class="summary-chip">
-					<text class="summary-chip-label">总额</text>
-					<text class="summary-chip-value">¥{{ totalAmountText }}</text>
-				</view>
+			</picker>
+			<view class="total-stamp">
+				<text class="total-stamp-label">本月支出</text>
+				<text class="total-stamp-value">¥{{ totalAmountText }}</text>
 			</view>
+		</view>
 
-			<view class="range-panel">
-				<view class="range-row">
-					<view class="range-item">
-						<text class="range-label">开始</text>
-						<picker mode="date" value="{{ startDate }}" bindchange="onStartDateChange">
-							<view class="range-value">{{ startDate }}</view>
-						</picker>
-					</view>
-					<view class="range-sep">至</view>
-					<view class="range-item">
-						<text class="range-label">结束</text>
-						<picker mode="date" value="{{ endDate }}" bindchange="onEndDateChange">
-							<view class="range-value">{{ endDate }}</view>
-						</picker>
-					</view>
-				</view>
-			</view>
-
-			<view class="control-stack">
-				<view class="control-block">
-					<text class="control-label">快捷选择</text>
-					<view class="quick-seg" role="tablist" aria-label="快捷选择">
-						<view class="quick-seg-item {{ quickType === 'today' ? 'active' : '' }}" bindtap="onQuickToday" role="tab" aria-selected="{{ quickType === 'today' }}">
-							当天
-						</view>
-						<view class="quick-seg-item {{ quickType === 'month' ? 'active' : '' }}" bindtap="onQuickMonth" role="tab" aria-selected="{{ quickType === 'month' }}">
-							当月
-						</view>
-					</view>
-				</view>
-
-				<view class="control-block">
-					<text class="control-label">月度翻页</text>
-					<view class="month-pager">
-						<view class="month-pager-btn" bindtap="onPagePrevMonth">‹ 上个月</view>
-						<view class="month-pager-btn" bindtap="onPageNextMonth">下个月 ›</view>
-					</view>
-				</view>
-			</view>
+		<view class="ledger-caption">
+			<text class="ledger-title">消费账单</text>
+			<text class="ledger-subtitle">按消费分类整理</text>
 		</view>
 
 		<!-- 分类过滤标签 -->
 		<view wx:if="{{ categoryFilter && categoryName }}" class="filter-tag-shell">
 			<view class="filter-tag">
 				<text class="filter-tag-name">{{ categoryName }}</text>
-				<view class="filter-tag-close" bindtap="onClearCategoryFilter">✕</view>
+				<view class="filter-tag-close" bindtap="onClearCategoryFilter" aria-label="清除分类筛选">✕</view>
 			</view>
 		</view>
 
@@ -68,7 +35,7 @@
 			<view class="bill-list">
 				<view class="bill-body-card">
 					<view class="card-placeholder">
-						<text class="placeholder-text">加载中...</text>
+						<text class="placeholder-text">正在整理本月消费...</text>
 					</view>
 				</view>
 			</view>
@@ -90,8 +57,8 @@
 			<view wx:else class="bill-list">
 				<view class="bill-body-card">
 					<view class="empty-card">
-						<text class="empty-title">该分类暂无消费记录</text>
-						<text class="empty-desc">可尝试调整日期区间</text>
+						<text class="empty-title">该分类本月暂无消费记录</text>
+						<text class="empty-desc">切换月份可查看其他账单</text>
 					</view>
 				</view>
 			</view>
@@ -102,8 +69,8 @@
 			<view class="bill-list">
 				<view class="bill-body-card">
 					<view class="empty-card">
-						<text class="empty-title">该区间暂无消费记录</text>
-						<text class="empty-desc">可尝试调整日期区间</text>
+						<text class="empty-title">本月暂无消费记录</text>
+						<text class="empty-desc">切换月份可查看其他账单</text>
 					</view>
 				</view>
 			</view>
@@ -113,7 +80,7 @@
 			<sticky-section wx:for="{{ sections }}" wx:key="key" wx:for-item="section" wx:for-index="sectionIndex">
 				<sticky-header>
 					<view class="sheet-cat-shell {{ section.collapsed ? 'collapsed' : '' }}">
-						<view class="sheet-cat" data-key="{{ section.key }}" bindtap="onToggleCategory">
+						<view class="sheet-cat" hover-class="sheet-cat--active" hover-stay-time="80" data-key="{{ section.key }}" bindtap="onToggleCategory">
 							<view class="sheet-cat-icon" style="background-color: {{ section.catIconBg }}">
 								<text class="sheet-cat-icon-text">{{ section.catInitial }}</text>
 							</view>
