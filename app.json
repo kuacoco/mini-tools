@@ -1,6 +1,8 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/expense-calendar/expense-calendar",
+    "pages/expense-calendar-detail/expense-calendar-detail",
     "pages/budget/budget",
     "pages/feidee-bill/feidee-bill",
     "pages/category-expense/category-expense",

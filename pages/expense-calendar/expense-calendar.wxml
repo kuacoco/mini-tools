@@ -1,0 +1,74 @@
+<navigation-bar title="消费日历" home-url="/pages/index/index" background="#f4fbf7" color="#173f3d" />
+
+<view class="spending-calendar-page">
+  <scroll-view class="calendar-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
+    <view class="calendar-content">
+      <view class="month-control-row">
+        <picker mode="date" fields="month" value="{{ monthKey }}" bindchange="onMonthChange">
+          <view class="month-picker" hover-class="month-picker--active" hover-stay-time="80">
+            <text class="month-picker-label">消费月份</text>
+            <view class="month-picker-value-row">
+              <text class="month-picker-value">{{ monthLabel }}</text>
+              <text class="month-picker-arrow">⌄</text>
+            </view>
+          </view>
+        </picker>
+      </view>
+
+      <view class="ledger-hero">
+        <view class="ledger-hero-copy">
+          <text class="ledger-kicker">MONTHLY SPEND</text>
+          <text class="ledger-title">每天的消费，落在这一页</text>
+          <text class="ledger-caption">色块越深，代表当天支出越高</text>
+        </view>
+        <view class="ledger-total">
+          <text class="ledger-total-label">本月支出</text>
+          <text class="ledger-total-value">¥{{ monthTotalText }}</text>
+        </view>
+      </view>
+
+      <view class="calendar-shell">
+        <view class="calendar-meta-row">
+          <text class="calendar-meta-title">日消费刻度</text>
+          <text class="calendar-meta-note">{{ activeDays }} 天有记录</text>
+        </view>
+
+        <view class="week-header">
+          <text wx:for="{{ weekDays }}" wx:key="*this" class="week-label">{{ item }}</text>
+        </view>
+
+        <view class="month-grid">
+          <view wx:for="{{ calendarRows }}" wx:for-item="weekRow" wx:key="rowKey" class="calendar-week-row">
+            <view
+              wx:for="{{ weekRow.cells }}"
+              wx:for-item="dayCell"
+              wx:key="key"
+              class="day-cell {{ dayCell.isPlaceholder ? 'is-placeholder' : '' }} tone-{{ dayCell.intensity }} {{ dayCell.isToday ? 'is-today' : '' }} {{ dayCell.isWeekEnd ? 'is-week-end' : '' }}"
+              data-date="{{ dayCell.date }}"
+              bindtap="onTapDay"
+              hover-class="day-cell--pressed"
+              hover-stay-time="70"
+            >
+              <block wx:if="{{ !dayCell.isPlaceholder }}">
+                <text class="day-number">{{ dayCell.day }}</text>
+                <text class="day-amount">¥{{ dayCell.amountText }}</text>
+              </block>
+            </view>
+          </view>
+        </view>
+
+        <view wx:if="{{ isLoading }}" class="calendar-status is-loading">
+          <text>正在汇总本月消费…</text>
+        </view>
+        <view wx:elif="{{ loadError }}" class="calendar-status is-error">
+          <text>{{ loadError }}</text>
+        </view>
+      </view>
+
+      <view class="calendar-hint">
+        <text class="calendar-hint-dot">●</text>
+        <text>点按任意日期，查看当天每一笔消费</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

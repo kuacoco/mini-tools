@@ -15,6 +15,7 @@ const {
   getSubscribeCount,
 } = require('../../utils/budget-storage')
 const { formatAmount } = require('../../utils/amount-expression')
+const { isPrivilegedUser } = require('../../utils/privileged-user')
 const {
   getMonthLabel,
   getOffsetMonthKey,
@@ -47,9 +48,6 @@ function summarizeBudgetList(list, monthKey) {
     remainText: formatAmount(remain),
   }
 }
-
-/** 与云函数 adminCrud / syncFeideeBudget 侧管理员 openId 一致；仅本地比较，不再走 checkWhitelist / isAdmin */
-const BUDGET_PRIVILEGED_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
 
 const SWIPE_EDIT_WIDTH = 82
 const SWIPE_DELETE_WIDTH = 82
@@ -210,23 +208,7 @@ Page({
   },
 
   async applyBudgetFeatureFlags() {
-    let privileged = false
-    try {
-      if (wx.cloud && wx.cloud.callFunction) {
-        const res = await wx.cloud.callFunction({
-          name: 'budgetCrud',
-          data: { action: 'getOpenId', payload: {} },
-        })
-        const result = res && res.result ? res.result : {}
-        const openId =
-          result.success && result.data && result.data.openId
-            ? String(result.data.openId)
-            : ''
-        privileged = openId === BUDGET_PRIVILEGED_OPENID
-      }
-    } catch (err) {
-      privileged = false
-    }
+    const privileged = await isPrivilegedUser()
     this.setData({
       isWhitelisted: privileged,
       isAdminUser: privileged,

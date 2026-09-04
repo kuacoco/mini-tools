@@ -1,0 +1,43 @@
+<navigation-bar title="日消费明细" home-url="/pages/expense-calendar/expense-calendar" background="#f8fcfa" color="#173f3d" />
+
+<view class="day-ledger-page">
+  <scroll-view class="detail-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
+    <view class="detail-content">
+      <view class="detail-hero">
+        <text class="detail-kicker">DAILY LEDGER</text>
+        <text class="detail-date">{{ dateTitle }}</text>
+        <view class="detail-total-row">
+          <text class="detail-total-label">当天支出</text>
+          <text class="detail-total-value">¥{{ totalAmountText }}</text>
+        </view>
+      </view>
+
+      <view class="detail-section-head">
+        <text class="detail-section-title">消费流水</text>
+        <text class="detail-section-note">按飞笛返回顺序</text>
+      </view>
+
+      <view wx:if="{{ isLoading }}" class="detail-state">
+        <text>正在读取当天流水…</text>
+      </view>
+      <view wx:elif="{{ loadError }}" class="detail-state is-error">
+        <text>{{ loadError }}</text>
+      </view>
+      <view wx:elif="{{ !transactions.length }}" class="detail-state">
+        <text class="detail-empty-title">这一天还没有消费记录</text>
+        <text class="detail-empty-copy">换一个日期看看</text>
+      </view>
+      <view wx:else class="transaction-list">
+        <view wx:for="{{ transactions }}" wx:key="rowKey" class="transaction-row {{ item.isLast ? 'is-last' : '' }}">
+          <view class="transaction-time">
+            <text class="transaction-clock">{{ item.timeText }}</text>
+          </view>
+          <view class="transaction-main">
+            <text class="transaction-remark">{{ item.remark || '未填写备注' }}</text>
+          </view>
+          <text class="transaction-amount">-¥{{ item.amountText }}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

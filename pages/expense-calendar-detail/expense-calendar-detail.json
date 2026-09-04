@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "navigation-bar": "/components/navigation-bar/index"
+  },
+  "navigationBarTitleText": "日消费明细",
+  "disableScroll": true,
+  "renderer": "skyline"
+}
