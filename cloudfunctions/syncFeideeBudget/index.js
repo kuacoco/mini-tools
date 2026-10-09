@@ -76,7 +76,7 @@ function fetchFeideeData(config, timeRange) {
       },
       json: true,
       body: {
-        group: { group_by: 'CATEGORY_FIRST', show_all: true },
+        group: { group_by: 'CATEGORY_SECOND', show_all: true },
         query: {
           account_ids: config.accountIds ? config.accountIds.split(',').map(s => s.trim()) : [],
           start_time: timeRange.start_time,
@@ -104,18 +104,22 @@ function fetchFeideeData(config, timeRange) {
  * 解析飞笛返回数据，提取分类和金额
  */
 function parseFeideeData(data) {
-  return (data || [])
-    .filter((item) => {
-      const expense = item.metric_data?.find((m) => m.key === 'EXPENSE')
-      return expense && expense.value !== '0.00'
-    })
-    .map((item) => {
-      const expense = item.metric_data.find((m) => m.key === 'EXPENSE')
-      return {
-        category: item.group_name,
-        amount: Number(expense.value),
-      }
-    })
+  const records = []
+
+  for (const parent of data || []) {
+    for (const child of parent.children || []) {
+      const expense = child.metric_data?.find((m) => m.key === 'EXPENSE')
+      const amount = Number(expense?.value)
+      if (!expense || !Number.isFinite(amount) || amount <= 0) continue
+
+      records.push({
+        category: child.group_name,
+        amount,
+      })
+    }
+  }
+
+  return records
 }
 
 /**
