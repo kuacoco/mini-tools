@@ -4,6 +4,7 @@ const {
   addBudgetItem,
   updateUsedAmount,
   updateBudgetItem,
+  renameParentCategory,
   deleteBudgetItem,
   mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,
@@ -47,6 +48,51 @@ function summarizeBudgetList(list, monthKey) {
     totalUsedText: formatAmount(totalUsed),
     remainText: formatAmount(remain),
   }
+}
+
+function buildBudgetGroups(list) {
+  const groupMap = new Map()
+  ;(list || []).forEach((item) => {
+    const parentName = String(item.parentCategoryName || '').trim()
+    if (!parentName) return
+    const key = `name:${parentName}`
+    if (!groupMap.has(key)) {
+      groupMap.set(key, {
+        key,
+        name: parentName,
+        sourceName: item.parentCategorySourceName || '',
+        items: [],
+        totalAmount: 0,
+        usedAmount: 0,
+      })
+    }
+    const group = groupMap.get(key)
+    if (!group.sourceName && item.parentCategorySourceName) {
+      group.sourceName = item.parentCategorySourceName
+    }
+    group.items.push(item)
+    group.totalAmount += Number(item.totalAmount || 0)
+    group.usedAmount += Number(item.usedAmount || 0)
+  })
+
+  return Array.from(groupMap.values()).map((group, index) => {
+    const remain = group.totalAmount - group.usedAmount
+    const rawPercent =
+      group.totalAmount <= 0 ? 0 : (group.usedAmount / group.totalAmount) * 100
+    const percent = Math.max(0, Math.min(100, rawPercent))
+    const color = COLOR_PALETTE[index % COLOR_PALETTE.length]
+    return {
+      ...group,
+      totalText: formatAmount(group.totalAmount),
+      usedText: formatAmount(group.usedAmount),
+      remainText: formatAmount(remain),
+      percentText: `${Math.round(rawPercent)}%`,
+      barWidth: `${percent}%`,
+      barColor: color.main,
+      trackColor: color.light,
+      isOver: remain < 0,
+    }
+  })
 }
 
 const SWIPE_EDIT_WIDTH = 82
@@ -104,6 +150,7 @@ Page({
     monthPickerItems: [],
     currentPickerIndex: 0,
     budgetList: [],
+    budgetGroups: [],
     /** 上月 / 当月 / 下月 汇总，供 summary-card 内 swiper 滑动 */
     summarySwipe: [],
     swiperSummaryIndex: 1,
@@ -123,12 +170,17 @@ Page({
     addPopupClosing: false,
     addPopupMode: 'add',
     addPopupTitle: '新增预算项',
+    addParentName: '',
     addName: '',
     addTotalAmount: '',
     addAmountFormula: '',
     addKeyboardReset: 0,
     addInitialExpression: '0',
     editingBudgetId: '',
+    showParentPopup: false,
+    parentPopupClosing: false,
+    editingParentOldName: '',
+    editingParentName: '',
     showUsedPopup: false,
     usedPopupClosing: false,
     usedItemId: '',
@@ -171,6 +223,7 @@ Page({
     if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
     if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
     if (this.copyPopupTimer) clearTimeout(this.copyPopupTimer)
+    if (this.parentPopupTimer) clearTimeout(this.parentPopupTimer)
     this.autoSyncedMonthKey = ''
   },
 
@@ -272,8 +325,6 @@ Page({
       summarizeBudgetList(listNext, nextKey),
     ]
 
-    let totalBudget = 0
-    let totalUsed = 0
     const decorated = listCurr.map((item, index) => {
       const total = Number(item.totalAmount || 0)
       const used = Number(item.usedAmount || 0)
@@ -281,8 +332,6 @@ Page({
       const percent = Math.max(0, Math.min(100, rawPercent))
       const remain = total - used
       const color = COLOR_PALETTE[index % COLOR_PALETTE.length]
-      totalBudget += total
-      totalUsed += used
       return {
         ...item,
         usedText: formatAmount(used),
@@ -297,6 +346,7 @@ Page({
       }
     })
 
+    const budgetGroups = buildBudgetGroups(decorated)
     const prevCenter = this._lastSummaryCenterMonthKey
     const monthChanged = prevCenter !== monthKey
     this._lastSummaryCenterMonthKey = monthKey
@@ -320,10 +370,12 @@ Page({
       const remainDaysWithToday = Math.max(0, daysInMonth - dayOfMonth + 1)
       const remainDaysWithoutToday = Math.max(0, daysInMonth - dayOfMonth)
       const dailyBudget = dayOfMonth * Number(this.data.dailyFoodBudget || 0) // 截止今天的食品酒水预算
-      // 从 budgetList 中找食品酒水项
-      const foodItem = decorated.find((item) => item.name === '食品酒水')
-      const foodUsed = foodItem ? Number(foodItem.usedAmount || 0) : 0
-      const foodTotal = foodItem ? Number(foodItem.totalAmount || 0) : 0
+      // 一级分类不单独存储，食品酒水额度由所属二级预算项汇总。
+      const foodGroup = budgetGroups.find(
+        (group) => group.sourceName === '食品酒水' || group.name === '食品酒水'
+      )
+      const foodUsed = foodGroup ? Number(foodGroup.usedAmount || 0) : 0
+      const foodTotal = foodGroup ? Number(foodGroup.totalAmount || 0) : 0
       const dailyRemain = dailyBudget - foodUsed // 剩余额度
       const foodCategoryRemain = foodTotal - foodUsed
       showDailyTip = true
@@ -342,6 +394,7 @@ Page({
 
     const patch = {
       budgetList: decorated,
+      budgetGroups,
       monthLabel: getMonthLabel(monthKey),
       summarySwipe,
       swiperSummaryIndex: 1,
@@ -400,6 +453,7 @@ Page({
       addPopupClosing: false,
       addPopupMode: 'add',
       addPopupTitle: '新增预算项',
+      addParentName: '',
       addName: '',
       addTotalAmount: '0',
       addAmountFormula: '',
@@ -446,6 +500,10 @@ Page({
       this.closeUsedPopup()
       return
     }
+    if (this.data.showParentPopup) {
+      this.closeParentPopup()
+      return
+    }
     if (this.data.showAddPopup) {
       this.closeAddPopup()
     }
@@ -458,11 +516,20 @@ Page({
     this.setData({ addName: e.detail.value })
   },
 
+  onAddParentNameInput(e) {
+    this.setData({ addParentName: e.detail.value })
+  },
+
   async onSaveBudgetItem() {
     vibrateLight()
     const mode = this.data.addPopupMode
+    const parentCategoryName = (this.data.addParentName || '').trim()
     const name = (this.data.addName || '').trim()
     const total = Number(this.data.addTotalAmount)
+    if (!parentCategoryName) {
+      wx.showToast({ title: '请输入一级分类', icon: 'none' })
+      return
+    }
     if (!name) {
       wx.showToast({ title: '请输入预算名称', icon: 'none' })
       return
@@ -474,11 +541,13 @@ Page({
     try {
       if (mode === 'edit' && this.data.editingBudgetId) {
         await updateBudgetItem(this.data.monthKey, this.data.editingBudgetId, {
+          parentCategoryName,
           name,
           totalAmount: Number(total.toFixed(2)),
         })
       } else {
         await addBudgetItem(this.data.monthKey, {
+          parentCategoryName,
           name,
           totalAmount: Number(total.toFixed(2)),
         })
@@ -589,6 +658,7 @@ Page({
       addPopupClosing: false,
       addPopupMode: 'edit',
       addPopupTitle: '编辑预算项',
+      addParentName: item.parentCategoryName,
       addName: item.name,
       addTotalAmount: addInitial,
       addAmountFormula: '',
@@ -597,6 +667,43 @@ Page({
       editingBudgetId: id,
     })
     this.resetAllOffsets()
+  },
+
+  onEditParentCategory(e) {
+    const { key } = e.currentTarget.dataset
+    const group = this.data.budgetGroups.find((item) => item.key === key)
+    if (!group) return
+    if (this.parentPopupTimer) clearTimeout(this.parentPopupTimer)
+    this.setData({
+      showParentPopup: true,
+      parentPopupClosing: false,
+      editingParentOldName: group.name,
+      editingParentName: group.name,
+    })
+  },
+
+  onParentNameInput(e) {
+    this.setData({ editingParentName: e.detail.value })
+  },
+
+  async onSaveParentCategory() {
+    const nextName = String(this.data.editingParentName || '').trim()
+    if (!nextName) {
+      wx.showToast({ title: '请输入一级分类名称', icon: 'none' })
+      return
+    }
+    try {
+      const result = await renameParentCategory(
+        this.data.monthKey,
+        this.data.editingParentOldName,
+        nextName
+      )
+      this.closeParentPopup()
+      await this.refreshBudgetList()
+      wx.showToast({ title: `已更新${result.updated || 0}项`, icon: 'success' })
+    } catch (err) {
+      wx.showToast({ title: err.message || '更新失败', icon: 'none' })
+    }
   },
 
   onDeleteBudgetAction(e) {
@@ -777,12 +884,27 @@ Page({
       if (resetForm) {
         nextData.addPopupMode = 'add'
         nextData.addPopupTitle = '新增预算项'
+        nextData.addParentName = ''
         nextData.addName = ''
         nextData.addTotalAmount = '0'
         nextData.addAmountFormula = ''
         nextData.editingBudgetId = ''
       }
       this.setData(nextData)
+    }, POPUP_ANIMATION_MS)
+  },
+
+  closeParentPopup() {
+    if (!this.data.showParentPopup) return
+    if (this.parentPopupTimer) clearTimeout(this.parentPopupTimer)
+    this.setData({ parentPopupClosing: true })
+    this.parentPopupTimer = setTimeout(() => {
+      this.setData({
+        showParentPopup: false,
+        parentPopupClosing: false,
+        editingParentOldName: '',
+        editingParentName: '',
+      })
     }, POPUP_ANIMATION_MS)
   },
 
@@ -885,7 +1007,10 @@ Page({
       if (item.offsetX !== 0) return { ...item, offsetX: 0 }
       return item
     })
-    this.setData({ budgetList: nextList })
+    this.setData({
+      budgetList: nextList,
+      budgetGroups: buildBudgetGroups(nextList),
+    })
   },
 
   resetAllOffsets() {
@@ -895,7 +1020,10 @@ Page({
       ...item,
       offsetX: 0,
     }))
-    this.setData({ budgetList: nextList })
+    this.setData({
+      budgetList: nextList,
+      budgetGroups: buildBudgetGroups(nextList),
+    })
   },
 
   noop() { },

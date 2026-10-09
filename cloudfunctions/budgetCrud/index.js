@@ -9,6 +9,7 @@ const WHITELIST_COLLECTION = 'budget_whitelist'
 const _ = db.command
 const DAILY_FOOD_BUDGET_CONFIG_KEY = 'dailyFoodBudget'
 const DEFAULT_DAILY_FOOD_BUDGET = 50
+const OCR_PARENT_CATEGORY_NAME = '图片导入'
 
 function normalizeName(name) {
   return String(name || '')
@@ -49,6 +50,10 @@ async function listByMonth({ monthKey }, openid) {
   const list = (res.data || []).map((item) => ({
     id: item._id,
     name: item.name,
+    categoryId: item.categoryId || '',
+    parentCategoryId: item.parentCategoryId || '',
+    parentCategoryName: item.parentCategoryName || '',
+    parentCategorySourceName: item.parentCategorySourceName || '',
     totalAmount: Number(item.totalAmount || 0),
     usedAmount: Number(item.usedAmount || 0),
     createdAt: item.createdAt || 0,
@@ -61,10 +66,15 @@ async function upsertItem(payload, openid) {
   const monthKey = payload.monthKey
   ensureMonthKey(monthKey)
   const name = String(payload.name || '').trim()
+  const parentCategoryName = String(payload.parentCategoryName || '').trim()
   const normalized = normalizeName(name)
+  const parentNormalized = normalizeName(parentCategoryName)
   const totalAmount = normalizeAmount(payload.totalAmount)
   if (!name || !normalized) {
     throw new Error('预算项名称不能为空')
+  }
+  if (!parentCategoryName || !parentNormalized) {
+    throw new Error('一级分类名称不能为空')
   }
   if (totalAmount === null || totalAmount < 0) {
     throw new Error('预算金额不合法')
@@ -72,6 +82,17 @@ async function upsertItem(payload, openid) {
 
   const used = normalizeAmount(payload.usedAmount)
   const now = Date.now()
+  const monthRes = await db.collection(COLLECTION).where({ openid, monthKey }).get()
+  const monthList = monthRes.data || []
+  const matchedParent = monthList.find(
+    (item) =>
+      normalizeName(item.parentCategoryName) === parentNormalized &&
+      item.parentCategoryId
+  )
+  const parentCategoryId = matchedParent ? matchedParent.parentCategoryId : ''
+  const parentCategorySourceName = matchedParent
+    ? matchedParent.parentCategorySourceName || ''
+    : ''
   if (payload.id) {
     const doc = await getOwnedDocById(payload.id, openid)
     if (!doc) throw new Error('预算项不存在')
@@ -79,6 +100,9 @@ async function upsertItem(payload, openid) {
       data: {
         name,
         nameNormalized: normalized,
+        parentCategoryId,
+        parentCategoryName,
+        parentCategoryNameNormalized: parentNormalized,
         totalAmount,
         updatedAt: now,
       },
@@ -88,6 +112,10 @@ async function upsertItem(payload, openid) {
       item: {
         id: item._id,
         name: item.name,
+        categoryId: item.categoryId || '',
+        parentCategoryId: item.parentCategoryId || '',
+        parentCategoryName: item.parentCategoryName || '',
+        parentCategorySourceName: item.parentCategorySourceName || '',
         totalAmount: Number(item.totalAmount || 0),
         usedAmount: Number(item.usedAmount || 0),
         createdAt: item.createdAt || now,
@@ -101,6 +129,11 @@ async function upsertItem(payload, openid) {
     monthKey,
     name,
     nameNormalized: normalized,
+    categoryId: '',
+    parentCategoryId,
+    parentCategoryName,
+    parentCategoryNameNormalized: parentNormalized,
+    parentCategorySourceName,
     totalAmount,
     usedAmount: used === null ? 0 : used,
     createdAt: now,
@@ -111,12 +144,52 @@ async function upsertItem(payload, openid) {
     item: {
       id: addRes._id,
       name,
+      categoryId: '',
+      parentCategoryId,
+      parentCategoryName,
+      parentCategorySourceName,
       totalAmount: createData.totalAmount,
       usedAmount: createData.usedAmount,
       createdAt: now,
       updatedAt: now,
     },
   }
+}
+
+async function renameParentCategory(payload, openid) {
+  const monthKey = payload.monthKey
+  ensureMonthKey(monthKey)
+  const oldName = String(payload.oldName || '').trim()
+  const nextName = String(payload.nextName || '').trim()
+  const nextNormalized = normalizeName(nextName)
+  if (!nextName || !nextNormalized) {
+    throw new Error('一级分类名称不能为空')
+  }
+
+  const res = await db.collection(COLLECTION).where({ openid, monthKey }).get()
+  const oldNormalized = normalizeName(oldName)
+  const conflict =
+    nextNormalized !== oldNormalized &&
+    (res.data || []).some(
+      (item) => normalizeName(item.parentCategoryName) === nextNormalized
+    )
+  if (conflict) throw new Error('一级分类名称已存在')
+  const matched = (res.data || []).filter(
+    (item) => normalizeName(item.parentCategoryName) === oldNormalized
+  )
+  if (!matched.length) throw new Error('一级分类不存在')
+
+  const now = Date.now()
+  for (const item of matched) {
+    await db.collection(COLLECTION).doc(item._id).update({
+      data: {
+        parentCategoryName: nextName,
+        parentCategoryNameNormalized: nextNormalized,
+        updatedAt: now,
+      },
+    })
+  }
+  return { updated: matched.length }
 }
 
 async function updateUsedAmount(payload, openid) {
@@ -183,7 +256,7 @@ async function mergeFromOcr(payload, openid) {
   const existingList = existingRes.data || []
   const existingMap = new Map()
   for (const doc of existingList) {
-    const key = doc.nameNormalized || normalizeName(doc.name)
+    const key = `${normalizeName(doc.parentCategoryName)}:${doc.nameNormalized || normalizeName(doc.name)}`
     if (!key || existingMap.has(key)) continue
     existingMap.set(key, doc)
   }
@@ -192,9 +265,12 @@ async function mergeFromOcr(payload, openid) {
   let updated = 0
   let skipped = 0
   const now = Date.now()
+  const parentCategoryNameNormalized = normalizeName(OCR_PARENT_CATEGORY_NAME)
   for (const item of cleanRecords) {
     const normalizedName = normalizeName(item.category)
-    const existingDoc = existingMap.get(normalizedName)
+    const existingDoc = existingMap.get(
+      `${parentCategoryNameNormalized}:${normalizedName}`
+    )
     if (existingDoc) {
       await db.collection(COLLECTION).doc(existingDoc._id).update({
         data: {
@@ -215,6 +291,11 @@ async function mergeFromOcr(payload, openid) {
         monthKey,
         name: item.category,
         nameNormalized: normalizedName,
+        categoryId: '',
+        parentCategoryId: '',
+        parentCategoryName: OCR_PARENT_CATEGORY_NAME,
+        parentCategoryNameNormalized,
+        parentCategorySourceName: '',
         totalAmount: item.amount,
         usedAmount: item.amount,
         createdAt: now,
@@ -337,7 +418,9 @@ async function copyFromMonth(payload, openid) {
     .get()
   const targetMap = new Map()
   for (const doc of targetRes.data || []) {
-    const key = doc.nameNormalized || normalizeName(doc.name)
+    const key = doc.categoryId
+      ? `id:${doc.categoryId}`
+      : `name:${normalizeName(doc.parentCategoryName)}:${doc.nameNormalized || normalizeName(doc.name)}`
     if (key) targetMap.set(key, doc)
   }
 
@@ -348,7 +431,10 @@ async function copyFromMonth(payload, openid) {
 
   for (const src of sourceList) {
     const normalizedName = src.nameNormalized || normalizeName(src.name)
-    if (targetMap.has(normalizedName)) {
+    const sourceKey = src.categoryId
+      ? `id:${src.categoryId}`
+      : `name:${normalizeName(src.parentCategoryName)}:${normalizedName}`
+    if (targetMap.has(sourceKey)) {
       skipped += 1
       continue
     }
@@ -360,6 +446,12 @@ async function copyFromMonth(payload, openid) {
         monthKey: targetMonthKey,
         name: src.name,
         nameNormalized: normalizedName,
+        categoryId: src.categoryId || '',
+        parentCategoryId: src.parentCategoryId || '',
+        parentCategoryName: src.parentCategoryName || '',
+        parentCategoryNameNormalized:
+          src.parentCategoryNameNormalized || normalizeName(src.parentCategoryName),
+        parentCategorySourceName: src.parentCategorySourceName || '',
         totalAmount: Number(src.totalAmount || 0),
         usedAmount: 0,
         createdAt,
@@ -389,6 +481,9 @@ exports.main = async (event) => {
         break
       case 'updateUsedAmount':
         data = await updateUsedAmount(payload, OPENID)
+        break
+      case 'renameParentCategory':
+        data = await renameParentCategory(payload, OPENID)
         break
       case 'deleteItem':
         data = await deleteItem(payload, OPENID)

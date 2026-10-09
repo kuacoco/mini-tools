@@ -34,6 +34,7 @@ async function getMonthBudgetList(monthKey) {
 async function addBudgetItem(monthKey, payload) {
   const data = await callBudgetCrud('upsertItem', {
     monthKey,
+    parentCategoryName: payload.parentCategoryName,
     name: payload.name,
     totalAmount: Number(payload.totalAmount),
     usedAmount: Number(payload.usedAmount || 0),
@@ -53,8 +54,17 @@ async function updateBudgetItem(monthKey, id, payload) {
   await callBudgetCrud('upsertItem', {
     monthKey,
     id,
+    parentCategoryName: payload.parentCategoryName,
     name: payload.name,
     totalAmount: Number(payload.totalAmount),
+  })
+}
+
+async function renameParentCategory(monthKey, oldName, nextName) {
+  return callBudgetCrud('renameParentCategory', {
+    monthKey,
+    oldName,
+    nextName,
   })
 }
 
@@ -307,6 +317,7 @@ module.exports = {
   addBudgetItem,
   updateUsedAmount,
   updateBudgetItem,
+  renameParentCategory,
   deleteBudgetItem,
   mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,

@@ -1,10 +1,18 @@
 <navigation-bar title="预算看板" />
 <view class="budget-page">
+	<view class="page-glow page-glow-left"></view>
+	<view class="page-glow page-glow-right"></view>
 	<scroll-view class="budget-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
 		<sticky-section>
 			<sticky-header>
 				<view class="budget-sticky-header">
 					<view class="summary-card">
+						<view class="summary-decoration summary-decoration-one"></view>
+						<view class="summary-decoration summary-decoration-two"></view>
+						<view class="summary-topline">
+							<text class="summary-kicker">MONTHLY BUDGET</text>
+							<text class="summary-swipe-hint">左右滑动切换月份</text>
+						</view>
 						<view class="month-row">
 							<view class="month-switch" bindtap="onSummarySwipePrev">
 								<image class="month-switch-icon" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
@@ -21,18 +29,26 @@
 						<view class="summary-swiper-mount" wx:for="{{ [summarySwiperKey] }}" wx:key="*this">
 							<swiper class="summary-swiper" current="{{ swiperSummaryIndex }}" duration="300" easing-function="easeOutCubic" bindchange="onSummarySwiperChange">
 								<swiper-item wx:for="{{ summarySwipe }}" wx:for-item="sum" wx:key="monthKey">
-									<view class="summary-grid">
-										<view class="summary-item">
-											<text class="summary-label">总预算</text>
-											<text class="summary-value">¥{{ sum.totalBudgetText }}</text>
+									<view class="summary-overview">
+										<view class="summary-primary">
+											<text class="summary-label">本月总预算</text>
+											<text class="summary-primary-value">¥{{ sum.totalBudgetText }}</text>
 										</view>
-										<view class="summary-item">
-											<text class="summary-label">已使用</text>
-											<text class="summary-value">¥{{ sum.totalUsedText }}</text>
-										</view>
-										<view class="summary-item">
-											<text class="summary-label">剩余</text>
-											<text class="summary-value">¥{{ sum.remainText }}</text>
+										<view class="summary-side">
+											<view class="summary-side-item">
+												<view class="summary-side-dot used"></view>
+												<view>
+													<text class="summary-side-label">已使用</text>
+													<text class="summary-side-value">¥{{ sum.totalUsedText }}</text>
+												</view>
+											</view>
+											<view class="summary-side-item">
+												<view class="summary-side-dot remain"></view>
+												<view>
+													<text class="summary-side-label">可用余额</text>
+													<text class="summary-side-value">¥{{ sum.remainText }}</text>
+												</view>
+											</view>
 										</view>
 									</view>
 								</swiper-item>
@@ -44,42 +60,88 @@
 
 			<view wx:if="{{ showDailyTip }}" class="daily-tip">
 				<view class="daily-tip-text">
-					<text class="daily-tip-line">预算 ¥{{ dailyBudgetText }}，剩余 ¥{{ dailyRemainText }}</text>
-					<text class="daily-tip-line">剩余平均：今日 ¥{{ foodCategoryAvgWithTodayText }}/日，明日 ¥{{ foodCategoryAvgWithoutTodayText }}/日</text>
+					<view class="daily-tip-badge">食品酒水</view>
+					<view class="daily-tip-body">
+						<text class="daily-tip-line daily-tip-main">截至今日预算 ¥{{ dailyBudgetText }}，剩余 ¥{{ dailyRemainText }}</text>
+						<text class="daily-tip-line">日均可用：含今日 ¥{{ foodCategoryAvgWithTodayText }} · 从明日 ¥{{ foodCategoryAvgWithoutTodayText }}</text>
+					</view>
 				</view>
 			</view>
 
 			<view class="budget-list-content">
-				<view wx:if="{{ !budgetList.length }}" class="empty-card">
+				<view wx:if="{{ !budgetGroups.length }}" class="empty-card">
 					<text class="empty-title">本月还没有预算项</text>
 					<text class="empty-desc">点击下方 + 添加第一条预算</text>
 				</view>
 
-				<view wx:for="{{ budgetList }}" wx:key="id" class="swipe-row">
-					<view class="swipe-action edit" data-id="{{ item.id }}" bindtap="onEditBudgetAction">编辑</view>
-					<view class="swipe-action delete" data-id="{{ item.id }}" bindtap="onDeleteBudgetAction">删除</view>
-					<view
-						class="budget-item"
-						style="transform: translateX({{ item.offsetX }}px);"
-						data-id="{{ item.id }}"
-						catchtap="onBudgetTap"
-						bindtouchstart="onItemTouchStart"
-						bindtouchmove="onItemTouchMove"
-						bindtouchend="onItemTouchEnd"
-						bindtouchcancel="onItemTouchEnd"
-					>
-						<view class="item-header">
-							<text class="item-name">{{ item.name }}</text>
-							<text class="item-percent">{{ item.percentText }}</text>
+				<view wx:for="{{ budgetGroups }}" wx:for-item="group" wx:key="key" class="budget-group">
+					<view class="group-summary">
+						<view class="group-title-row">
+							<view class="group-identity">
+								<view class="group-accent" style="background: {{ group.barColor }}"></view>
+								<view class="group-title-copy">
+									<text class="group-eyebrow">一级分类 · {{ group.items.length }} 项</text>
+									<text class="group-name">{{ group.name }}</text>
+								</view>
+							</view>
+							<view class="group-edit" data-key="{{ group.key }}" bindtap="onEditParentCategory">重命名</view>
 						</view>
-						<view class="amount-row">
-							<text>已用 ¥{{ item.usedText }} / 预算 ¥{{ item.totalText }}</text>
+						<view class="group-metrics">
+							<view class="group-metric">
+								<text class="group-metric-label">预算</text>
+								<text class="group-metric-value">¥{{ group.totalText }}</text>
+							</view>
+							<view class="group-metric">
+								<text class="group-metric-label">已使用</text>
+								<text class="group-metric-value">¥{{ group.usedText }}</text>
+							</view>
+							<view class="group-metric group-metric-last">
+								<text class="group-metric-label">{{ group.isOver ? '超支' : '剩余' }}</text>
+								<text class="group-metric-value {{ group.isOver ? 'over' : '' }}">¥{{ group.remainText }}</text>
+							</view>
 						</view>
-						<view class="progress-track" style="background: {{ item.trackColor }}">
-							<view class="progress-fill" style="width: {{ item.barWidth }}; background: {{ item.barColor }}"></view>
+						<view class="group-progress-row">
+							<view class="progress-track group-progress" style="background: {{ group.trackColor }}">
+								<view class="progress-fill" style="width: {{ group.barWidth }}; background: {{ group.barColor }}"></view>
+							</view>
+							<text class="group-percent">{{ group.percentText }}</text>
 						</view>
-						<view class="remain-row {{ item.isOver ? 'over' : '' }}">
-							{{ item.isOver ? '已超支' : '剩余' }} ¥{{ item.remainText }}
+					</view>
+
+					<view class="group-children">
+						<view class="children-heading">
+							<text class="children-heading-title">二级预算明细</text>
+							<text class="children-heading-hint">点击可调整已使用额度</text>
+						</view>
+						<view wx:for="{{ group.items }}" wx:for-item="child" wx:key="id" class="swipe-row child-swipe-row">
+							<view class="swipe-action edit" data-id="{{ child.id }}" bindtap="onEditBudgetAction">编辑</view>
+							<view class="swipe-action delete" data-id="{{ child.id }}" bindtap="onDeleteBudgetAction">删除</view>
+							<view
+								class="budget-item child-budget-item"
+								style="transform: translateX({{ child.offsetX }}px);"
+								data-id="{{ child.id }}"
+								catchtap="onBudgetTap"
+								bindtouchstart="onItemTouchStart"
+								bindtouchmove="onItemTouchMove"
+								bindtouchend="onItemTouchEnd"
+								bindtouchcancel="onItemTouchEnd"
+							>
+								<view class="item-header">
+									<view class="child-name-wrap">
+										<view class="child-dot" style="background: {{ child.barColor }}"></view>
+										<text class="item-name">{{ child.name }}</text>
+									</view>
+									<text class="child-remain {{ child.isOver ? 'over' : '' }}">{{ child.isOver ? '超支' : '剩余' }} ¥{{ child.remainText }}</text>
+								</view>
+								<view class="amount-row">
+									<text>预算 ¥{{ child.totalText }}</text>
+									<text>已用 ¥{{ child.usedText }}</text>
+									<text>{{ child.percentText }}</text>
+								</view>
+								<view class="progress-track" style="background: {{ child.trackColor }}">
+									<view class="progress-fill" style="width: {{ child.barWidth }}; background: {{ child.barColor }}"></view>
+								</view>
+							</view>
 						</view>
 					</view>
 				</view>
@@ -114,22 +176,44 @@
 				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit"/></view>
 			</view>
 			<view class="popup-content">
+					<view class="popup-item">
+						<text class="popup-label">一级分类</text>
+						<input wx:if="{{ addPopupMode === 'add' }}" class="popup-input" placeholder="例如：食品酒水" maxlength="20" value="{{ addParentName }}" bindinput="onAddParentNameInput" />
+						<view wx:else class="popup-static-value">{{ addParentName }}</view>
+					</view>
+					<view class="popup-item">
+						<text class="popup-label">二级预算项</text>
+						<input class="popup-input" placeholder="例如：早午晚餐" maxlength="20" value="{{ addName }}" bindinput="onAddNameInput" />
+					</view>
+					<view class="popup-item">
+						<text class="popup-label">预算金额</text>
+						<view class="used-input">¥ {{ addTotalAmount }}</view>
+						<view wx:if="{{ addAmountFormula }}" class="calc-formula">{{ addAmountFormula }}</view>
+					</view>
+					<amount-keyboard
+						primaryButtonText="{{ addPopupMode === 'edit' ? '保存修改' : '保存预算项' }}"
+						initialReset="{{ addKeyboardReset }}"
+						initialExpression="{{ addInitialExpression }}"
+						bindchange="onAddKeyboardChange"
+						bindprimary="onSaveBudgetItem"
+					/>
+			</view>
+		</view>
+	</view>
+
+	<view wx:if="{{ showParentPopup }}" class="popup-mask {{ parentPopupClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup">
+		<view class="popup-sheet" catchtap="noop">
+			<view class="popup-head">
+				<text class="popup-title">编辑一级分类</text>
+				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit"/></view>
+			</view>
+			<view class="popup-content">
 				<view class="popup-item">
-					<text class="popup-label">预算项名称</text>
-					<input class="popup-input" placeholder="例如：餐饮 / 交通 / 娱乐" maxlength="20" value="{{ addName }}" bindinput="onAddNameInput" />
+					<text class="popup-label">一级分类名称</text>
+					<input class="popup-input" maxlength="20" value="{{ editingParentName }}" bindinput="onParentNameInput" />
 				</view>
-				<view class="popup-item">
-					<text class="popup-label">预算金额</text>
-					<view class="used-input">¥ {{ addTotalAmount }}</view>
-					<view wx:if="{{ addAmountFormula }}" class="calc-formula">{{ addAmountFormula }}</view>
-				</view>
-				<amount-keyboard
-					primaryButtonText="{{ addPopupMode === 'edit' ? '保存修改' : '保存预算项' }}"
-					initialReset="{{ addKeyboardReset }}"
-					initialExpression="{{ addInitialExpression }}"
-					bindchange="onAddKeyboardChange"
-					bindprimary="onSaveBudgetItem"
-				/>
+				<view class="parent-edit-hint">保存后会同步修改该分类下全部二级预算项的一级分类名称</view>
+				<view class="popup-copy-btn" bindtap="onSaveParentCategory">保存修改</view>
 			</view>
 		</view>
 	</view>

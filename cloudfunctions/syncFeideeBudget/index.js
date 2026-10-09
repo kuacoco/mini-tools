@@ -114,6 +114,9 @@ function parseFeideeData(data) {
 
       records.push({
         category: child.group_name,
+        categoryId: child.group_id || '',
+        parentCategoryId: parent.group_id || '',
+        parentCategoryName: parent.group_name || '',
         amount,
       })
     }
@@ -143,20 +146,31 @@ async function mergeBudgetItems(monthKey, openid, records) {
     return { created: 0, updated: 0, skipped: 0 }
   }
 
-  // 合并同名分类
+  // 同一父分类下合并同名二级分类，优先使用飞笛分类 ID 作为稳定键。
   const mergedMap = new Map()
   for (const record of records) {
     const category = String(record.category || '').trim()
     const normalizedName = normalizeName(category)
+    const parentCategoryName = String(record.parentCategoryName || '').trim()
+    const parentNormalizedName = normalizeName(parentCategoryName)
     const amount = Number(record.amount)
-    if (!normalizedName || Number.isNaN(amount) || amount < 0) continue
+    if (!normalizedName || !parentNormalizedName || Number.isNaN(amount) || amount < 0) continue
+    const mergeKey = record.categoryId
+      ? `id:${record.categoryId}`
+      : `name:${parentNormalizedName}:${normalizedName}`
 
-    if (!mergedMap.has(normalizedName)) {
-      mergedMap.set(normalizedName, { category, amount })
+    if (!mergedMap.has(mergeKey)) {
+      mergedMap.set(mergeKey, {
+        category,
+        categoryId: record.categoryId || '',
+        parentCategoryId: record.parentCategoryId || '',
+        parentCategoryName,
+        amount,
+      })
     } else {
-      const old = mergedMap.get(normalizedName)
+      const old = mergedMap.get(mergeKey)
       old.amount = Number((old.amount + amount).toFixed(2))
-      mergedMap.set(normalizedName, old)
+      mergedMap.set(mergeKey, old)
     }
   }
 
@@ -171,11 +185,20 @@ async function mergeBudgetItems(monthKey, openid, records) {
     .where({ openid, monthKey })
     .get()
   const existingList = existingRes.data || []
-  const existingMap = new Map()
+  const existingByCategoryId = new Map()
+  const existingByCompositeName = new Map()
+  const parentDisplayNameById = new Map()
   for (const doc of existingList) {
-    const key = doc.nameNormalized || normalizeName(doc.name)
-    if (!key || existingMap.has(key)) continue
-    existingMap.set(key, doc)
+    const nameKey = doc.nameNormalized || normalizeName(doc.name)
+    const parentNameKey =
+      doc.parentCategoryNameNormalized || normalizeName(doc.parentCategoryName)
+    if (doc.categoryId) existingByCategoryId.set(doc.categoryId, doc)
+    if (nameKey && parentNameKey) {
+      existingByCompositeName.set(`${parentNameKey}:${nameKey}`, doc)
+    }
+    if (doc.parentCategoryId && doc.parentCategoryName) {
+      parentDisplayNameById.set(doc.parentCategoryId, doc.parentCategoryName)
+    }
   }
 
   let created = 0
@@ -185,16 +208,27 @@ async function mergeBudgetItems(monthKey, openid, records) {
 
   for (const item of cleanRecords) {
     const normalizedName = normalizeName(item.category)
-    const existingDoc = existingMap.get(normalizedName)
+    const sourceParentNormalized = normalizeName(item.parentCategoryName)
+    const existingDoc =
+      (item.categoryId && existingByCategoryId.get(item.categoryId)) ||
+      existingByCompositeName.get(`${sourceParentNormalized}:${normalizedName}`)
+    const parentCategoryName =
+      parentDisplayNameById.get(item.parentCategoryId) || item.parentCategoryName
+    const parentCategoryNameNormalized = normalizeName(parentCategoryName)
 
     if (existingDoc) {
-      // 更新已使用额度
+      // 更新已使用额度；已经建立的自定义名称不被后续同步覆盖。
       await db
         .collection(BUDGET_COLLECTION)
         .doc(existingDoc._id)
         .update({
           data: {
             usedAmount: item.amount,
+            categoryId: existingDoc.categoryId || item.categoryId,
+            parentCategoryId:
+              existingDoc.parentCategoryId || item.parentCategoryId,
+            parentCategorySourceName:
+              existingDoc.parentCategorySourceName || item.parentCategoryName,
             updatedAt: now,
           },
         })
@@ -214,6 +248,11 @@ async function mergeBudgetItems(monthKey, openid, records) {
         monthKey,
         name: item.category,
         nameNormalized: normalizedName,
+        categoryId: item.categoryId,
+        parentCategoryId: item.parentCategoryId,
+        parentCategoryName,
+        parentCategoryNameNormalized,
+        parentCategorySourceName: item.parentCategoryName,
         totalAmount: item.amount,
         usedAmount: item.amount,
         createdAt: now,
