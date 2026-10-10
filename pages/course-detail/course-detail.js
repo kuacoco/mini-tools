@@ -57,10 +57,10 @@ Page({
     remainClasses: 0,
     percentText: '0%',
     barWidth: '0%',
-    barColor: '#2dd4bf',
-    trackColor: '#ccfbf1',
+    barColor: '#f07891',
+    trackColor: '#ffe6ec',
     firstChar: '',
-    avatarColor: '#2dd4bf',
+    avatarColor: 'linear-gradient(145deg, #ff91a6, #e85f7d)',
     checkinLogs: [],
     loadError: '',
     weekDays: WEEKDAYS,
@@ -74,6 +74,7 @@ Page({
     calendarDaysSwipe: [[], [], []],
     swiperMonthIndex: 1,
     calendarSwiperKey: 0,
+    pageReady: false,
   },
 
   onLoad(options) {
@@ -99,7 +100,7 @@ Page({
     })
 
     if (!courseId) {
-      this.setData({ loadError: '缺少课程信息' })
+      this.setData({ loadError: '缺少课程信息', pageReady: true })
       return
     }
     this.loadDetail()
@@ -152,7 +153,10 @@ Page({
 
   async loadDetail() {
     const { courseId, shareToken, isViewerMode } = this.data
-    if (!courseId) return
+    if (!courseId) {
+      this.setData({ pageReady: true })
+      return
+    }
 
     this._courseCheckinDateList = []
 
@@ -166,6 +170,7 @@ Page({
     } catch (err) {
       this.setData({
         loadError: (err && err.message) ? err.message : '加载失败',
+        pageReady: true,
       })
       return
     }
@@ -173,7 +178,7 @@ Page({
     list.sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
     const course = list.find(c => c.id === courseId)
     if (!course) {
-      this.setData({ loadError: '课程不存在或已删除' })
+      this.setData({ loadError: '课程不存在或已删除', pageReady: true })
       return
     }
 
@@ -223,8 +228,9 @@ Page({
       barColor: color.main,
       trackColor: color.light,
       firstChar: (course.courseName || '').charAt(0) || '课',
-      avatarColor: color.main,
+      avatarColor: color.avatar || color.main,
       checkinLogs,
+      pageReady: true,
       ...swipe,
     }
     if (monthChanged) {

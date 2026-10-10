@@ -34,6 +34,14 @@ function calcMonthRangeByValue(monthValue) {
   return calcMonthRange(new Date(year, month - 1, 1))
 }
 
+function getOffsetMonthValue(monthValue, offset) {
+  const source = /^\d{4}-\d{2}$/.test(String(monthValue || ''))
+    ? monthValue
+    : getMonthValue()
+  const [year, month] = source.split('-').map(Number)
+  return getMonthValue(new Date(year, month - 1 + offset, 1))
+}
+
 function formatTransactionDate(timestamp) {
   if (!timestamp) return ''
   const d = new Date(timestamp)
@@ -88,11 +96,13 @@ Page({
     totalAmountText: '0',
 
     sections: [],
+    rawTransactions: [],
     collapsedMap: {},
 
     // 分类过滤模式
     categoryFilter: null,
     categoryName: '',
+    pageReady: false,
   },
 
   resetCollapsed() {
@@ -132,13 +142,17 @@ Page({
   },
 
   async onShow() {
-    await this.checkWhitelistPermission()
-    if (!this.data.isWhitelisted) {
-      wx.showToast({ title: '该功能仅限白名单用户使用', icon: 'none' })
-      setTimeout(() => wx.navigateBack(), 500)
-      return
+    try {
+      await this.checkWhitelistPermission()
+      if (!this.data.isWhitelisted) {
+        wx.showToast({ title: '该功能仅限白名单用户使用', icon: 'none' })
+        setTimeout(() => wx.navigateBack(), 500)
+        return
+      }
+      await this.loadTransactions()
+    } finally {
+      if (!this.data.pageReady) this.setData({ pageReady: true })
     }
-    await this.loadTransactions()
   },
 
   async checkWhitelistPermission() {
@@ -192,9 +206,8 @@ Page({
     }
   },
 
-  onMonthChange(e) {
-    const monthValue = e?.detail?.value
-    if (!monthValue || monthValue === this.data.monthValue) return
+  switchMonthByOffset(offset) {
+    const monthValue = getOffsetMonthValue(this.data.monthValue, offset)
     const { startDate, endDate } = calcMonthRangeByValue(monthValue)
     this.resetCollapsed()
     this.setData({
@@ -204,6 +217,14 @@ Page({
       endDate,
     })
     this.loadTransactions()
+  },
+
+  onPrevMonth() {
+    this.switchMonthByOffset(-1)
+  },
+
+  onNextMonth() {
+    this.switchMonthByOffset(1)
   },
 
   onToggleCategory(e) {

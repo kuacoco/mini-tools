@@ -1,0 +1,21 @@
+<view
+  wx:if="{{ visible }}"
+  class="page-loader {{ leaving ? 'is-leaving' : '' }}"
+  catchtouchmove="noop"
+>
+  <view class="loader-glow loader-glow--left"></view>
+  <view class="loader-glow loader-glow--right"></view>
+  <view class="loader-content">
+    <view class="loader-mark" aria-label="正在打开{{ label }}">
+      <view class="loader-square loader-square--pink"></view>
+      <view class="loader-square loader-square--yellow"></view>
+      <view class="loader-square loader-square--blue"></view>
+      <view class="loader-square loader-square--purple"></view>
+    </view>
+    <text class="loader-label">{{ label }}</text>
+    <text class="loader-hint">正在准备页面</text>
+    <view class="loader-track">
+      <view class="loader-progress"></view>
+    </view>
+  </view>
+</view>

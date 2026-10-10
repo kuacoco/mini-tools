@@ -1,24 +1,46 @@
 <navigation-bar title="课程详情" />
+<page-loader label="课程详情" ready="{{ pageReady }}" />
 <view class="detail-page">
+	<view class="page-glow page-glow--left"></view>
+	<view class="page-glow page-glow--right"></view>
 	<scroll-view wx:if="{{ !loadError }}" class="detail-scroll" scroll-y="true" enhanced show-scrollbar="{{ false }}">
 		<view class="top-placeholder"></view>
 		<view class="hero-card">
-			<view class="hero-top">
+			<view class="hero-decoration hero-decoration--one"></view>
+			<view class="hero-decoration hero-decoration--two"></view>
+			<view class="hero-kicker-row">
+				<text class="hero-kicker">COURSE OVERVIEW</text>
+				<text class="hero-mode">{{ isViewerMode ? '只读查看' : '持续积累' }}</text>
+			</view>
+			<view class="hero-main">
 				<view class="hero-avatar" style="background: {{ avatarColor }}">
 					<text class="hero-char">{{ firstChar }}</text>
 				</view>
 				<view class="hero-text">
 					<text class="hero-name">{{ courseName }}</text>
-					<view class="hero-stats-row">
-						<text class="hero-stat">{{ usedClasses }} / {{ totalClasses }} 课时</text>
-						<text class="hero-stat-sep">·</text>
-						<text class="hero-stat hero-stat--muted">剩余 {{ remainClasses }}</text>
-					</view>
+					<text class="hero-subtitle">每一次记录，都是稳稳向前的一步</text>
+				</view>
+			</view>
+			<view class="hero-stats-grid">
+				<view class="hero-stat-card">
+					<text class="hero-stat-label">总课时</text>
+					<text class="hero-stat-value">{{ totalClasses }}</text>
+				</view>
+				<view class="hero-stat-card">
+					<text class="hero-stat-label">已消课时</text>
+					<text class="hero-stat-value">{{ usedClasses }}</text>
+				</view>
+				<view class="hero-stat-card hero-stat-card--active">
+					<text class="hero-stat-label">剩余课时</text>
+					<text class="hero-stat-value">{{ remainClasses }}</text>
 				</view>
 			</view>
 			<view class="hero-progress-wrap">
 				<view class="hero-progress-head">
-					<text class="hero-progress-label">消课进度</text>
+					<view class="hero-progress-title">
+						<view class="hero-progress-dot" style="background: {{ barColor }}"></view>
+						<text class="hero-progress-label">课程完成进度</text>
+					</view>
 					<text class="hero-percent">{{ percentText }}</text>
 				</view>
 				<view class="progress-track" style="background: {{ trackColor }}">
@@ -47,16 +69,32 @@
 		/>
 
 		<view class="section">
-			<text class="section-title">打卡记录</text>
-			<view wx:if="{{ !checkinLogs.length }}" class="log-empty">
-				<text class="log-empty-text">暂无打卡记录</text>
+			<view class="section-head">
+				<view class="section-title-wrap">
+					<text class="section-kicker">CHECK-IN HISTORY</text>
+					<text class="section-title">打卡记录</text>
+				</view>
+				<view class="log-count">
+					<text class="log-count-value">{{ checkinLogs.length }}</text>
+					<text class="log-count-unit">次</text>
+				</view>
 			</view>
-			<view wx:for="{{ checkinLogs }}" wx:key="id" class="log-row">
-				<view class="log-dot" style="background: {{ barColor }}"></view>
+			<view wx:if="{{ !checkinLogs.length }}" class="log-empty">
+				<view class="log-empty-icon">✓</view>
+				<text class="log-empty-title">还没有打卡记录</text>
+				<text class="log-empty-text">完成消课后，记录会出现在这里</text>
+			</view>
+			<view wx:for="{{ checkinLogs }}" wx:key="id" class="log-row {{ index === checkinLogs.length - 1 ? 'log-row--last' : '' }}">
+				<view class="log-marker">
+					<view class="log-dot" style="background: {{ barColor }}">✓</view>
+					<view wx:if="{{ index !== checkinLogs.length - 1 }}" class="log-line"></view>
+				</view>
 				<view class="log-body">
 					<text class="log-date">{{ item.displayDate }}</text>
 					<text wx:if="{{ item.note }}" class="log-note">{{ item.note }}</text>
+					<text wx:else class="log-note log-note--empty">完成一次课程打卡</text>
 				</view>
+				<text class="log-status">已完成</text>
 			</view>
 		</view>
 		<view class="bottom-placeholder"></view>

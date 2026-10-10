@@ -1,11 +1,10 @@
 <navigation-bar title="预算看板" />
+<page-loader label="预算看板" ready="{{ pageReady }}" />
 <view class="budget-page">
 	<view class="page-glow page-glow-left"></view>
 	<view class="page-glow page-glow-right"></view>
 	<scroll-view class="budget-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
-		<sticky-section>
-			<sticky-header>
-				<view class="budget-sticky-header">
+		<view class="budget-header">
 					<view class="summary-card">
 						<view class="summary-decoration summary-decoration-one"></view>
 						<view class="summary-decoration summary-decoration-two"></view>
@@ -55,8 +54,7 @@
 							</swiper>
 						</view>
 					</view>
-				</view>
-			</sticky-header>
+		</view>
 
 			<view wx:if="{{ showDailyTip }}" class="daily-tip">
 				<view class="daily-tip-text">
@@ -150,7 +148,6 @@
 					<text class="budget-footer-text">订阅 × {{ subscribeCount }}</text>
 				</view>
 			</view>
-		</sticky-section>
 	</scroll-view>
 
 	<view wx:if="{{ showFabMenu }}" class="fab-mask {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup"></view>

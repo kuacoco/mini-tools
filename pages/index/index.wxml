@@ -1,30 +1,37 @@
-<!-- index.wxml 工具首页 -->
 <navigation-bar title="小工具" back="{{false}}" />
 <scroll-view class="home-scroll" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
 	<view class="home-page">
-		<view class="home-intro">
-			<view class="intro-copy">
-				<text class="intro-kicker">MINI TOOLS</text>
-				<text class="intro-title">今天，想完成<br />什么小事？</text>
-				<text class="intro-desc">选一个工具，马上开始。</text>
+		<view class="page-glow page-glow--left"></view>
+		<view class="page-glow page-glow--right"></view>
+
+		<view class="tool-section-intro">
+			<view class="intro-orbit intro-orbit--top"></view>
+			<view class="intro-orbit intro-orbit--bottom"></view>
+			<view class="tool-section-copy">
+				<text class="tool-section-kicker">MY TOOLBOX</text>
+				<text class="tool-section-title">我的工具箱</text>
+				<view class="tool-section-meta">
+					<view class="tool-section-meta-dot"></view>
+					<text>{{ toolList.length }} 个工具随时可用</text>
+				</view>
+				<view class="tool-capability-list">
+					<text wx:if="{{ toolList.length > 3 }}" class="tool-capability tool-capability--pink">消费</text>
+					<text wx:if="{{ toolList.length > 3 }}" class="tool-capability tool-capability--yellow">预算</text>
+					<text class="tool-capability tool-capability--blue">课程</text>
+					<text class="tool-capability tool-capability--green">日程</text>
+				</view>
 			</view>
-			<view class="toolbox-mark" aria-label="{{ toolList.length }} 个可用工具">
-				<view class="toolbox-square toolbox-square--purple"></view>
-				<view class="toolbox-square toolbox-square--yellow"></view>
-				<view class="toolbox-square toolbox-square--blue"></view>
-				<view class="toolbox-square toolbox-square--coral"></view>
+			<view class="toolbox-mark-wrap">
+				<view class="toolbox-mark" aria-label="{{ toolList.length }} 个可用工具">
+					<view class="toolbox-square toolbox-square--pink"></view>
+					<view class="toolbox-square toolbox-square--yellow"></view>
+					<view class="toolbox-square toolbox-square--blue"></view>
+					<view class="toolbox-square toolbox-square--purple"></view>
+				</view>
 			</view>
 		</view>
 
-		<view class="tool-section-head">
-			<text class="section-title">我的工具箱</text>
-			<view class="section-note">
-				<view class="section-note-dot"></view>
-				<text>{{ toolList.length }} 个工具可用</text>
-			</view>
-		</view>
-
-		<view class="tool-grid">
+		<view class="tool-grid tool-grid--count-{{ toolList.length }}">
 			<view
 				wx:for="{{ toolList }}"
 				wx:key="id"
@@ -34,26 +41,30 @@
 				data-path="{{ item.path }}"
 				bindtap="onToolTap"
 			>
-				<view class="tool-icon">
-					<text wx:if="{{ item.id === 'spending-calendar' }}" class="tool-icon-text">账</text>
-					<text wx:elif="{{ item.id === 'budget' }}" class="tool-icon-text">¥</text>
-					<text wx:elif="{{ item.id === 'spending-bill' }}" class="tool-icon-text">单</text>
-					<text wx:elif="{{ item.id === 'course' }}" class="tool-icon-text">课</text>
-					<text wx:elif="{{ item.id === 'qing-calendar' }}" class="tool-icon-text">青</text>
-					<text wx:else class="tool-icon-text">◎</text>
+				<view class="tool-card-head">
+					<text class="tool-title">{{ item.title }}</text>
+					<view class="tool-open">
+						<image class="tool-open-arrow" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
+					</view>
 				</view>
-				<text class="tool-title">{{ item.title }}</text>
 				<text class="tool-desc">{{ item.desc }}</text>
-				<view class="tool-open">
-					<text>打开</text>
-					<text class="tool-open-arrow">↗</text>
+				<view class="tool-card-mark">
+					<view class="tool-card-mark-fill"></view>
 				</view>
 			</view>
 		</view>
 
-		<view class="home-footer">
-			<view class="footer-line"></view>
-			<text class="footer-text">把琐事交给工具，把时间留给生活</text>
+		<view class="home-footer-card">
+			<view class="footer-color-stack" aria-hidden="true">
+				<view class="footer-color footer-color--pink"></view>
+				<view class="footer-color footer-color--yellow"></view>
+				<view class="footer-color footer-color--blue"></view>
+			</view>
+			<view class="footer-copy">
+				<text class="footer-kicker">LITTLE THINGS, MADE EASY</text>
+				<text class="footer-title">把琐事交给工具，把时间留给生活</text>
+			</view>
+			<view class="footer-spark">✦</view>
 		</view>
 	</view>
 </scroll-view>

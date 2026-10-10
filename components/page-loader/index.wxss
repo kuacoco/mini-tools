@@ -1,0 +1,206 @@
+.page-loader {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(160deg, #fbfaff 0%, #f5f2ff 56%, #f7f9ff 100%);
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: center center;
+  transition:
+    opacity 440ms cubic-bezier(0.22, 0.72, 0.28, 1),
+    transform 480ms cubic-bezier(0.22, 0.72, 0.28, 1);
+  will-change: opacity, transform;
+}
+
+.page-loader.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(1.018);
+}
+
+.loader-glow {
+  position: absolute;
+  width: 520rpx;
+  height: 520rpx;
+  border-radius: 50%;
+  pointer-events: none;
+  transition:
+    opacity 420ms ease,
+    transform 520ms cubic-bezier(0.22, 0.72, 0.28, 1);
+  will-change: opacity, transform;
+}
+
+.loader-glow--left {
+  top: -270rpx;
+  left: -290rpx;
+  background: radial-gradient(circle, rgba(194, 177, 249, 0.52), rgba(194, 177, 249, 0));
+}
+
+.loader-glow--right {
+  right: -300rpx;
+  bottom: -260rpx;
+  background: radial-gradient(circle, rgba(249, 185, 210, 0.42), rgba(249, 185, 210, 0));
+}
+
+.loader-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 300rpx;
+  flex-direction: column;
+  transform: translateY(-14rpx);
+  transition:
+    opacity 300ms ease,
+    transform 440ms cubic-bezier(0.22, 0.72, 0.28, 1);
+  will-change: opacity, transform;
+}
+
+.page-loader.is-leaving .loader-content {
+  opacity: 0;
+  transform: translateY(-34rpx) scale(0.96);
+}
+
+.page-loader.is-leaving .loader-glow--left {
+  opacity: 0;
+  transform: translate(-36rpx, -28rpx) scale(1.12);
+}
+
+.page-loader.is-leaving .loader-glow--right {
+  opacity: 0;
+  transform: translate(36rpx, 28rpx) scale(1.12);
+}
+
+.loader-mark {
+  position: relative;
+  width: 116rpx;
+  height: 116rpx;
+  border: 8rpx solid rgba(255, 255, 255, 0.82);
+  border-radius: 34rpx;
+  background: rgba(241, 237, 251, 0.88);
+  box-shadow: 0 18rpx 46rpx rgba(74, 58, 126, 0.16);
+  box-sizing: border-box;
+  animation: loader-mark-in 480ms cubic-bezier(0.22, 0.72, 0.28, 1) both;
+}
+
+.loader-square {
+  position: absolute;
+  width: 35rpx;
+  height: 35rpx;
+  border-radius: 11rpx;
+  opacity: 0;
+  animation: loader-square-in 360ms cubic-bezier(0.2, 0.8, 0.25, 1.15) forwards;
+}
+
+.loader-square--pink {
+  top: 14rpx;
+  left: 14rpx;
+  background: #f17391;
+  animation-delay: 70ms;
+}
+
+.loader-square--yellow {
+  top: 14rpx;
+  right: 14rpx;
+  background: #f5b83e;
+  animation-delay: 125ms;
+}
+
+.loader-square--blue {
+  bottom: 14rpx;
+  left: 14rpx;
+  background: #55a6e9;
+  animation-delay: 180ms;
+}
+
+.loader-square--purple {
+  right: 14rpx;
+  bottom: 14rpx;
+  background: #9274ef;
+  animation-delay: 235ms;
+}
+
+.loader-label {
+  margin-top: 27rpx;
+  color: #3b3b52;
+  font-size: 31rpx;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.loader-hint {
+  margin-top: 9rpx;
+  color: #9a97aa;
+  font-size: 19rpx;
+}
+
+.loader-track {
+  position: relative;
+  width: 142rpx;
+  height: 6rpx;
+  margin-top: 24rpx;
+  overflow: hidden;
+  border-radius: 999rpx;
+  background: rgba(136, 117, 202, 0.12);
+}
+
+.loader-track::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -46rpx;
+  width: 42rpx;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0));
+  content: '';
+  animation: loader-shimmer 1050ms 620ms ease-in-out infinite;
+}
+
+.loader-progress {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f17391, #f5b83e 35%, #55a6e9 68%, #9274ef);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: loader-progress 560ms 50ms cubic-bezier(0.2, 0.72, 0.2, 1) forwards;
+}
+
+@keyframes loader-mark-in {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx) rotate(-7deg) scale(0.88);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(3deg) scale(1);
+  }
+}
+
+@keyframes loader-square-in {
+  from {
+    opacity: 0;
+    transform: translateY(12rpx) scale(0.6);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes loader-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes loader-shimmer {
+  from { transform: translateX(0); }
+  to { transform: translateX(188rpx); }
+}

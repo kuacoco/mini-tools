@@ -28,24 +28,24 @@ const MAX_COMPRESSED_IMAGE_SIZE = 500 * 1024
 const WEEK_DAYS = ['日', '一', '二', '三', '四', '五', '六']
 
 const COLOR_PALETTE = [
-  '#E97E7E',
-  '#EE8D6C',
-  '#F39E63',
-  '#F6B35E',
-  '#F2C65F',
-  '#E5CD66',
-  '#D2C96A',
-  '#B9C66E',
-  '#9FC474',
-  '#86BF7D',
-  '#72BA8A',
-  '#67B69B',
-  '#64B3AB',
-  '#69AFC0',
-  '#75A9D1',
-  '#869FDC',
-  '#9A95DA',
-  '#B58DD2',
+  '#F07891',
+  '#E9AC32',
+  '#56A7EA',
+  '#9276F2',
+  '#22CDB6',
+  '#D85C8C',
+  '#58BC78',
+  '#B178DF',
+  '#42B6C2',
+  '#657DE5',
+  '#FF8A65',
+  '#DDBA32',
+  '#68C7A4',
+  '#F497B6',
+  '#7BC4F0',
+  '#A895F5',
+  '#E98C45',
+  '#73B66B',
 ]
 
 function vibrateLight() {
@@ -394,6 +394,7 @@ Page({
     thisShareCalendarName: '',
     thisShareCalendarIcon: '',
     thisShareToken: '',
+    pageReady: false,
   },
 
   async onLoad(options) {
@@ -435,6 +436,7 @@ Page({
     await this.bootstrapShareRecords()
     await this.refreshCalendarData()
     this.scrollToMonth(monthKey, false)
+    this.setData({ pageReady: true })
   },
 
   onUnload() {

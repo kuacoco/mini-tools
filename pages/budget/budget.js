@@ -196,6 +196,7 @@ Page({
     showCopyPopup: false,
     copyPopupClosing: false,
     copySourceMonthIndex: 0,
+    pageReady: false,
   },
 
   onLoad() {
@@ -228,27 +229,31 @@ Page({
   },
 
   async onShow() {
-    await Promise.all([this.applyBudgetFeatureFlags(), this.loadBudgetTipConfig()])
-    // await this.checkWhitelistPermission()
-    // await this.checkAdminPermission()
+    try {
+      await Promise.all([this.applyBudgetFeatureFlags(), this.loadBudgetTipConfig()])
+      // await this.checkWhitelistPermission()
+      // await this.checkAdminPermission()
 
-    // // 获取订阅次数
-    // if (this.data.isWhitelisted) {
-    //   await this.fetchSubscribeCount()
-    // }
+      // // 获取订阅次数
+      // if (this.data.isWhitelisted) {
+      //   await this.fetchSubscribeCount()
+      // }
 
-    await this.refreshBudgetList()
+      await this.refreshBudgetList()
 
-    // 页面加载完成后（onShow）自动同步一次
-    // 避免用户反复进页面时对同一月份重复触发同步
-    // if (
-    //   this.data.isWhitelisted &&
-    //   this.data.monthKey &&
-    //   this.autoSyncedMonthKey !== this.data.monthKey
-    // ) {
-    //   const ok = await this.startFeideeSync({ auto: true })
-    //   if (ok) this.autoSyncedMonthKey = this.data.monthKey
-    // }
+      // 页面加载完成后（onShow）自动同步一次
+      // 避免用户反复进页面时对同一月份重复触发同步
+      // if (
+      //   this.data.isWhitelisted &&
+      //   this.data.monthKey &&
+      //   this.autoSyncedMonthKey !== this.data.monthKey
+      // ) {
+      //   const ok = await this.startFeideeSync({ auto: true })
+      //   if (ok) this.autoSyncedMonthKey = this.data.monthKey
+      // }
+    } finally {
+      if (!this.data.pageReady) this.setData({ pageReady: true })
+    }
   },
 
   async fetchSubscribeCount() {

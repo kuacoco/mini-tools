@@ -4,8 +4,11 @@
 		<text class="nav-title-arrow {{ showCalendarDropdown ? 'is-open' : '' }}">▾</text>
 	</view>
 </navigation-bar>
+<page-loader label="青青日历" ready="{{ pageReady }}" />
 
 <view class="calendar-page">
+	<view class="page-glow page-glow--left"></view>
+	<view class="page-glow page-glow--right"></view>
 	<view wx:if="{{ showCalendarDropdown }}" class="calendar-dropdown-mask" bindtap="onCloseCalendarDropdown">
 		<view class="calendar-dropdown-panel" catchtap="noop">
 			<view class="calendar-option">
@@ -59,7 +62,11 @@
 		<list-view class="calendar-list">
 			<view wx:for="{{ monthSections }}" wx:for-item="month" wx:key="monthKey" class="month-card" id="month-{{ month.monthKey }}">
 				<view class="month-head">
-					<text class="month-title">{{ month.label }}</text>
+					<view class="month-head-copy">
+						<text class="month-kicker">MONTHLY CALENDAR</text>
+						<text class="month-title">{{ month.label }}</text>
+					</view>
+					<text class="month-hint">点击日期查看日程</text>
 				</view>
 				<view class="calendar-header">
 					<text class="calendar-weekday" wx:for="{{ weekDays }}" wx:for-item="weekday" wx:key="*this">{{ weekday }}</text>
@@ -98,7 +105,10 @@
 	</scroll-view>
 
 	<view class="fab-left">
-		<view class="today-btn" bindtap="onGoToday">今天</view>
+		<view class="today-btn" bindtap="onGoToday">
+			<view class="today-btn-dot"></view>
+			<text class="today-btn-text">今天</text>
+		</view>
 	</view>
 	<view class="fab-right">
 		<view class="add-btn" bindtap="onOpenAddPopup">

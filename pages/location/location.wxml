@@ -1,4 +1,5 @@
 <navigation-bar title="定位" />
+<page-loader label="定位拾取" ready="{{ pageReady }}" />
 <view class="location-page">
 	<view class="content-card">
 		<view class="label">经度</view>

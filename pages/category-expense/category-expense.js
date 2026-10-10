@@ -61,6 +61,7 @@ Page({
 
     sections: [],
     collapsedMap: {},
+    pageReady: false,
   },
 
   resetCollapsed() {
@@ -68,20 +69,24 @@ Page({
   },
 
   async onLoad() {
-    const { startDate, endDate } = calcMonthRange()
-    this.setData({
-      quickType: 'month',
-      startDate,
-      endDate,
-    })
+    try {
+      const { startDate, endDate } = calcMonthRange()
+      this.setData({
+        quickType: 'month',
+        startDate,
+        endDate,
+      })
 
-    await this.checkWhitelistPermission()
-    if (!this.data.isWhitelisted) {
-      wx.showToast({ title: '该功能仅限白名单用户使用', icon: 'none' })
-      setTimeout(() => wx.navigateBack(), 500)
-      return
+      await this.checkWhitelistPermission()
+      if (!this.data.isWhitelisted) {
+        wx.showToast({ title: '该功能仅限白名单用户使用', icon: 'none' })
+        setTimeout(() => wx.navigateBack(), 500)
+        return
+      }
+      await this.loadCategoryExpense()
+    } finally {
+      this.setData({ pageReady: true })
     }
-    await this.loadCategoryExpense()
   },
 
   async onShow() {

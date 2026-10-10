@@ -4,7 +4,10 @@
 		<text class="nav-title-arrow {{ showRecordDropdown ? 'is-open' : '' }}">▾</text>
 	</view>
 </navigation-bar>
+<page-loader label="消课记录" ready="{{ pageReady }}" />
 <view class="course-page">
+	<view class="page-glow page-glow--left"></view>
+	<view class="page-glow page-glow--right"></view>
 	<view wx:if="{{ showRecordDropdown }}" class="record-dropdown-mask" bindtap="onCloseRecordDropdown">
 		<view class="record-dropdown-panel" catchtap="noop">
 			<view class="record-option {{ !isViewerMode ? 'active' : '' }}" data-type="self" bindtap="onSelectRecordOption">
@@ -44,7 +47,18 @@
 		/>
 
 		<view class="course-list-content">
+			<view class="section-heading">
+				<view class="section-heading-copy">
+					<text class="section-kicker">COURSE TRACKER</text>
+					<text class="section-title">{{ isViewerMode ? '课程记录' : '我的课程' }}</text>
+				</view>
+				<view class="section-count">
+					<text class="section-count-value">{{ courseList.length }}</text>
+					<text class="section-count-unit">门课程</text>
+				</view>
+			</view>
 			<view wx:if="{{ !courseList.length }}" class="empty-card">
+				<view class="empty-icon">＋</view>
 				<text class="empty-title">{{ isViewerMode ? '对方暂无课程' : '还没有添加课程' }}</text>
 				<text class="empty-desc" wx:if="{{ !isViewerMode }}">点击下方 + 添加第一个课程</text>
 			</view>
@@ -84,11 +98,26 @@
 						</block>
 						<view class="item-info">
 							<view class="item-header">
-								<view class="item-used-row">
+								<view class="item-title-block">
 									<text class="item-name">{{ item.courseName }}</text>
-									<text class="item-used">{{ item.usedClasses }}/{{ item.totalClasses }}</text>
+									<text class="item-status">{{ item.checkedToday ? '选中日期已完成' : (isViewerMode ? '课程进行中' : '点击头像完成消课') }}</text>
 								</view>
-								<text class="item-subtitle">剩余 {{ item.remainClasses }} 课时</text>
+								<view class="remain-pill">
+									<text class="remain-label">剩余</text>
+									<text class="remain-value">{{ item.remainClasses }}</text>
+								</view>
+							</view>
+							<view class="course-stats">
+								<view class="course-stat">
+									<text class="course-stat-label">已消课时</text>
+									<text class="course-stat-value">{{ item.usedClasses }}</text>
+								</view>
+								<view class="course-stat-divider"></view>
+								<view class="course-stat">
+									<text class="course-stat-label">总课时</text>
+									<text class="course-stat-value">{{ item.totalClasses }}</text>
+								</view>
+								<text class="progress-percent">{{ item.percentText }}</text>
 							</view>
 							<view class="progress-track" style="background: {{ item.trackColor }}">
 								<view class="progress-fill" style="width: {{ item.barWidth }}; background: {{ item.barColor }}"></view>
@@ -111,7 +140,10 @@
 		<view class="popup-sheet" catchtap="noop">
 			<view class="popup-handle"></view>
 			<view class="popup-head">
-				<text class="popup-title">{{ addPopupTitle }}</text>
+				<view class="popup-title-wrap">
+					<text class="popup-kicker">COURSE SETTINGS</text>
+					<text class="popup-title">{{ addPopupTitle }}</text>
+				</view>
 				<view class="popup-close" bindtap="onClosePopup">
 					<image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" />
 				</view>

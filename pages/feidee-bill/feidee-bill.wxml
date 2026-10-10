@@ -1,53 +1,76 @@
 <navigation-bar title="消费账单" />
+<page-loader label="消费账单" ready="{{ pageReady }}" />
 
 <view class="bill-page">
+	<view class="page-glow page-glow--left"></view>
+	<view class="page-glow page-glow--right"></view>
 	<scroll-view class="bill-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
-		<view class="bill-head">
-			<picker mode="date" fields="month" value="{{ monthValue }}" bindchange="onMonthChange">
-				<view class="month-picker-trigger">
-					<text class="month-picker-label">账单月份</text>
-					<view class="month-picker-value-row">
-						<text class="month-picker-value">{{ monthLabel }}</text>
-						<text class="month-picker-arrow">⌄</text>
+		<view class="summary-card">
+			<view class="summary-decoration summary-decoration--one"></view>
+			<view class="summary-decoration summary-decoration--two"></view>
+			<view class="summary-topline">
+				<text class="summary-kicker">MONTHLY BILL</text>
+				<view class="month-shortcuts">
+					<view class="month-shortcut-btn" bindtap="onPrevMonth">
+						<image class="month-shortcut-arrow" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
+						<text class="month-shortcut-text">上月</text>
+					</view>
+					<view class="month-shortcut-btn" bindtap="onNextMonth">
+						<text class="month-shortcut-text">下月</text>
+						<image class="month-shortcut-arrow" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
 					</view>
 				</view>
-			</picker>
-			<view class="total-stamp">
-				<text class="total-stamp-label">本月支出</text>
-				<text class="total-stamp-value">¥{{ totalAmountText }}</text>
+			</view>
+
+			<view class="summary-amount">
+				<text class="summary-label">{{ categoryFilter ? monthLabel + ' · 筛选分类支出' : monthLabel + '总支出' }}</text>
+				<text class="summary-value"><text class="summary-symbol">¥</text>{{ totalAmountText }}</text>
+			</view>
+
+			<view class="summary-footer">
+				<view class="summary-footer-dot"></view>
+				<text class="summary-footer-text">{{ categoryFilter ? '当前仅展示所选二级分类' : '账单已按消费分类整理' }}</text>
 			</view>
 		</view>
 
-		<view class="ledger-caption">
-			<text class="ledger-title">消费账单</text>
-			<text class="ledger-subtitle">按消费分类整理</text>
+		<view wx:if="{{ categoryFilter && categoryName }}" class="filter-card">
+			<view class="filter-icon">筛</view>
+			<view class="filter-copy">
+				<text class="filter-label">当前分类</text>
+				<text class="filter-name">{{ categoryName }}</text>
+			</view>
+			<view class="filter-clear" bindtap="onClearCategoryFilter" aria-label="清除分类筛选">
+				<text class="filter-clear-text">清除</text>
+				<image class="filter-clear-icon" src="/pages/statics/close.svg" mode="aspectFit" />
+			</view>
 		</view>
 
-		<!-- 分类过滤标签 -->
-		<view wx:if="{{ categoryFilter && categoryName }}" class="filter-tag-shell">
-			<view class="filter-tag">
-				<text class="filter-tag-name">{{ categoryName }}</text>
-				<view class="filter-tag-close" bindtap="onClearCategoryFilter" aria-label="清除分类筛选">✕</view>
+		<view class="list-heading">
+			<view class="list-heading-copy">
+				<text class="list-kicker">TRANSACTION LEDGER</text>
+				<text class="list-title">{{ categoryFilter ? '消费明细' : '账单明细' }}</text>
+			</view>
+			<view class="list-count">
+				<text class="list-count-value">{{ categoryFilter ? rawTransactions.length : sections.length }}</text>
+				<text class="list-count-unit">{{ categoryFilter ? '笔记录' : '个分类' }}</text>
 			</view>
 		</view>
 
 		<block wx:if="{{ isLoading }}">
 			<view class="bill-list">
 				<view class="bill-body-card">
-					<view class="card-placeholder">
-						<text class="placeholder-text">正在整理本月消费...</text>
-					</view>
+					<view class="loading-mark"></view>
+					<text class="placeholder-text">正在整理本月消费...</text>
 				</view>
 			</view>
 		</block>
 
 		<block wx:elif="{{ categoryFilter && rawTransactions }}">
-			<!-- 分类过滤模式：直接显示交易列表 -->
-			<view wx:if="{{ rawTransactions.length }}" class="sheet-rows-shell">
+			<view wx:if="{{ rawTransactions.length }}" class="transaction-card">
 				<view class="sheet-rows">
 					<view wx:for="{{ rawTransactions }}" wx:key="id" class="sheet-row">
+						<view class="transaction-date-badge">{{ item.dateText }}</view>
 						<view class="row-left">
-							<text class="sheet-date">{{ item.dateText }}</text>
 							<text class="sheet-remark">{{ item.remark || '无备注' }}</text>
 						</view>
 						<text class="sheet-amt">{{ item.amountText }}</text>
@@ -55,65 +78,57 @@
 				</view>
 			</view>
 			<view wx:else class="bill-list">
-				<view class="bill-body-card">
-					<view class="empty-card">
-						<text class="empty-title">该分类本月暂无消费记录</text>
-						<text class="empty-desc">切换月份可查看其他账单</text>
-					</view>
+				<view class="bill-body-card empty-card">
+					<view class="empty-icon">¥</view>
+					<text class="empty-title">该分类本月暂无消费记录</text>
+					<text class="empty-desc">切换月份可查看其他账单</text>
 				</view>
 			</view>
-			<view class="bill-list-bottom-space" />
+			<view class="bill-list-bottom-space"></view>
 		</block>
 
 		<block wx:elif="{{ !sections.length }}">
 			<view class="bill-list">
-				<view class="bill-body-card">
-					<view class="empty-card">
-						<text class="empty-title">本月暂无消费记录</text>
-						<text class="empty-desc">切换月份可查看其他账单</text>
-					</view>
+				<view class="bill-body-card empty-card">
+					<view class="empty-icon">¥</view>
+					<text class="empty-title">本月暂无消费记录</text>
+					<text class="empty-desc">切换月份可查看其他账单</text>
 				</view>
 			</view>
 		</block>
 
 		<block wx:else>
-			<sticky-section wx:for="{{ sections }}" wx:key="key" wx:for-item="section" wx:for-index="sectionIndex">
-				<sticky-header>
-					<view class="sheet-cat-shell {{ section.collapsed ? 'collapsed' : '' }}">
-						<view class="sheet-cat" hover-class="sheet-cat--active" hover-stay-time="80" data-key="{{ section.key }}" bindtap="onToggleCategory">
-							<view class="sheet-cat-icon" style="background-color: {{ section.catIconBg }}">
-								<text class="sheet-cat-icon-text">{{ section.catInitial }}</text>
-							</view>
-							<view class="sheet-cat-mid">
-								<text class="sheet-cat-name">{{ section.name }}</text>
-								<text class="sheet-cat-count">({{ section.count }})</text>
-							</view>
-							<view class="sheet-cat-right">
-								<text class="sheet-cat-total">¥{{ section.totalText }}</text>
-								<text class="sheet-cat-arrow {{ section.collapsed ? 'collapsed' : '' }}">›</text>
-							</view>
+			<view wx:for="{{ sections }}" wx:key="key" wx:for-item="section" class="bill-group">
+				<view class="sheet-cat" hover-class="sheet-cat--active" hover-stay-time="80" data-key="{{ section.key }}" bindtap="onToggleCategory">
+					<view class="sheet-cat-icon" style="background-color: {{ section.catIconBg }}">
+						<text class="sheet-cat-icon-text">{{ section.catInitial }}</text>
+					</view>
+					<view class="sheet-cat-mid">
+						<text class="sheet-cat-name">{{ section.name }}</text>
+						<text class="sheet-cat-count">{{ section.count }} 笔消费</text>
+					</view>
+					<view class="sheet-cat-right">
+						<text class="sheet-cat-total">¥{{ section.totalText }}</text>
+						<view class="sheet-cat-arrow-wrap">
+							<text class="sheet-cat-arrow {{ section.collapsed ? 'collapsed' : '' }}">›</text>
 						</view>
 					</view>
-				</sticky-header>
+				</view>
 
-				<list-view wx:if="{{ !section.collapsed }}">
-					<view class="sheet-rows-shell">
-						<view class="sheet-rows">
-							<view wx:for="{{ section.items }}" wx:for-item="tx" wx:key="id" class="sheet-row">
-								<view class="row-left">
-									<text class="sheet-date">{{ tx.dateText }}</text>
-									<text class="sheet-remark">{{ tx.remark || '无备注' }}</text>
-								</view>
-								<text class="sheet-amt">{{ tx.amountText }}</text>
+				<view wx:if="{{ !section.collapsed }}" class="sheet-rows-shell">
+					<view class="sheet-rows">
+						<view wx:for="{{ section.items }}" wx:for-item="tx" wx:key="id" class="sheet-row">
+							<view class="transaction-date-badge">{{ tx.dateText }}</view>
+							<view class="row-left">
+								<text class="sheet-remark">{{ tx.remark || '无备注' }}</text>
 							</view>
+							<text class="sheet-amt">{{ tx.amountText }}</text>
 						</view>
 					</view>
-				</list-view>
+				</view>
+			</view>
 
-				<view wx:if="{{ sectionIndex !== sections.length - 1 }}" class="sheet-group-gap" />
-			</sticky-section>
-
-			<view class="bill-list-bottom-space" />
+			<view class="bill-list-bottom-space"></view>
 		</block>
 	</scroll-view>
 </view>

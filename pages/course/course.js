@@ -122,6 +122,7 @@ Page({
     /** 进入页时未配置过分享展示名则弹窗；已写入 SHARE_DISPLAY_STORAGE_KEY 则不再弹 */
     showShareNickPopup: false,
     shareNickInputValue: '',
+    pageReady: false,
   },
 
   async onLoad(options) {
@@ -157,6 +158,7 @@ Page({
     }
 
     await this.loadMonthData(monthKey)
+    this.setData({ pageReady: true })
 
     if (!isViewerMode) {
       const saved = readShareDisplayFromStorage()
@@ -265,7 +267,7 @@ Page({
         isEmpty: remain <= 0,
         offsetX: 0,
         firstChar: (item.courseName || '').charAt(0),
-        avatarColor: color.main,
+        avatarColor: color.avatar || color.main,
         checkedToday,
       }
     })

@@ -9,6 +9,7 @@ Page({
     latitudeText: "--",
     longitudeText: "--",
     hasLocation: false,
+    pageReady: false,
   },
 
   onLoad() {
@@ -39,7 +40,7 @@ Page({
         });
       })
       .finally(() => {
-        this.setData({ loading: false });
+        this.setData({ loading: false, pageReady: true });
       });
   },
 

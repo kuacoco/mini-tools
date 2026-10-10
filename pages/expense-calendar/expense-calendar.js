@@ -31,6 +31,14 @@ function formatMonthLabel(monthKey) {
   return `${year}年${Number(month)}月`
 }
 
+function getOffsetMonthKey(monthKey, offset) {
+  const source = /^\d{4}-\d{2}$/.test(String(monthKey || ''))
+    ? monthKey
+    : getMonthKey()
+  const [year, month] = source.split('-').map(Number)
+  return getMonthKey(new Date(year, month - 1 + offset, 1))
+}
+
 function getDateKey(timestamp) {
   const date = new Date(Number(timestamp || 0))
   if (Number.isNaN(date.getTime())) return ''
@@ -86,10 +94,7 @@ function buildCalendarCells(monthKey, spendMap) {
     cells.push({ key: `placeholder-end-${cells.length}`, isPlaceholder: true })
   }
 
-  return cells.map((cell, index) => ({
-    ...cell,
-    isWeekEnd: (index + 1) % 7 === 0,
-  }))
+  return cells
 }
 
 function buildCalendarRows(monthKey, spendMap) {
@@ -118,6 +123,7 @@ Page({
     calendarRows: [],
     isLoading: false,
     loadError: '',
+    pageReady: false,
   },
 
   onLoad() {
@@ -132,6 +138,7 @@ Page({
   async onShow() {
     const allowed = await isPrivilegedUser()
     if (!allowed) {
+      this.setData({ pageReady: true })
       wx.showToast({ title: '暂无此工具的使用权限', icon: 'none' })
       setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 450)
       return
@@ -145,7 +152,10 @@ Page({
     const requestId = (this._requestId || 0) + 1
     this._requestId = requestId
     const { monthKey } = this.data
-    if (!isMonthKey(monthKey)) return
+    if (!isMonthKey(monthKey)) {
+      this.setData({ pageReady: true })
+      return
+    }
 
     this.setData({
       isLoading: true,
@@ -171,7 +181,7 @@ Page({
       if (requestId !== this._requestId) return
       this.setData({ loadError: err && err.message ? err.message : '本月消费数据加载失败' })
     } finally {
-      if (requestId === this._requestId) this.setData({ isLoading: false })
+      if (requestId === this._requestId) this.setData({ isLoading: false, pageReady: true })
     }
   },
 
@@ -180,6 +190,20 @@ Page({
     if (!isMonthKey(monthKey) || monthKey === this.data.monthKey) return
     this.setData({ monthKey, monthLabel: formatMonthLabel(monthKey) })
     this.loadMonthTransactions()
+  },
+
+  switchMonthByOffset(offset) {
+    const monthKey = getOffsetMonthKey(this.data.monthKey, offset)
+    this.setData({ monthKey, monthLabel: formatMonthLabel(monthKey) })
+    this.loadMonthTransactions()
+  },
+
+  onPrevMonth() {
+    this.switchMonthByOffset(-1)
+  },
+
+  onNextMonth() {
+    this.switchMonthByOffset(1)
   },
 
   onTapDay(e) {

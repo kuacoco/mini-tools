@@ -25,11 +25,13 @@ Page({
     transactions: [],
     isLoading: false,
     loadError: '',
+    pageReady: false,
   },
 
   onLoad(options) {
     const date = options && options.date ? String(options.date) : ''
     if (!isValidDate(date)) {
+      this.setData({ pageReady: true })
       wx.showToast({ title: '日期参数无效', icon: 'none' })
       setTimeout(() => wx.navigateBack(), 300)
       return
@@ -41,6 +43,7 @@ Page({
     if (!this.data.date) return
     const allowed = await isPrivilegedUser()
     if (!allowed) {
+      this.setData({ pageReady: true })
       wx.showToast({ title: '暂无此工具的使用权限', icon: 'none' })
       setTimeout(() => wx.reLaunch({ url: '/pages/index/index' }), 450)
       return
@@ -73,7 +76,7 @@ Page({
       if (requestId !== this._requestId) return
       this.setData({ loadError: err && err.message ? err.message : '当天消费明细加载失败' })
     } finally {
-      if (requestId === this._requestId) this.setData({ isLoading: false })
+      if (requestId === this._requestId) this.setData({ isLoading: false, pageReady: true })
     }
   },
 })

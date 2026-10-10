@@ -1,5 +1,12 @@
 <view class="checkin-calendar">
 	<view class="calendar-card">
+		<view class="calendar-topline">
+			<view class="calendar-title-wrap">
+				<text class="calendar-kicker">CHECK-IN</text>
+				<text class="calendar-heading">消课日历</text>
+			</view>
+			<text class="calendar-swipe-hint">左右滑动切月</text>
+		</view>
 		<view class="month-row">
 			<view class="month-switch" bindtap="onPrevMonth">
 				<image class="month-switch-icon" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
@@ -48,7 +55,15 @@
 	</view>
 
 	<view class="selected-date-bar">
-		<text class="selected-date-value">{{ selectedDateDisplay }}</text>
-		<text wx:if="{{ selectedDate !== todayDateString }}" class="today-btn" bindtap="onGoToToday">回今天</text>
+		<view class="selected-date-icon">日</view>
+		<view class="selected-date-copy">
+			<text class="selected-date-label">当前查看日期</text>
+			<text class="selected-date-value">{{ selectedDateDisplay }}</text>
+		</view>
+		<view wx:if="{{ selectedDate !== todayDateString }}" class="today-btn" bindtap="onGoToToday">
+			<text class="today-btn-text">回今天</text>
+			<text class="today-btn-arrow">›</text>
+		</view>
+		<view wx:else class="today-badge">今天</view>
 	</view>
 </view>

@@ -13,6 +13,9 @@
     "pages/location/location",
     "pages/admin/admin"
   ],
+  "usingComponents": {
+    "page-loader": "/components/page-loader/index"
+  },
   "permission": {
     "scope.userLocation": {
       "desc": "你的位置信息将用于小程序位置接口的效果展示"
