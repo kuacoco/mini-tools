@@ -12,7 +12,7 @@ Component({
     },
     background: {
       type: String,
-      value: 'transparent',
+      value: '#f7f5ff',
     },
     color: {
       type: String,

@@ -1,4 +1,4 @@
-<navigation-bar title="定位" />
+<navigation-bar title="定位" background="transparent" />
 <page-loader label="定位拾取" ready="{{ pageReady }}" />
 <view class="location-page">
 	<view class="content-card">

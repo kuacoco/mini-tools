@@ -1,5 +1,5 @@
-<view class="navigation-bar" style="background: {{background}};">
-	<view class="navigation-bar__inner {{ios ? 'ios' : 'android'}}" style="margin-top: {{statusBarHeight}}px; color: {{color}};">
+<view class="navigation-bar" style="padding-top: {{statusBarHeight}}px; background: {{background}};">
+	<view class="navigation-bar__inner {{ios ? 'ios' : 'android'}}" style="color: {{color}};">
 		<view class="navigation-bar__left" style="width: {{sideWidth}}px;">
 			<block wx:if="{{back}}">
 				<view class="navigation-bar__buttons" bindtap="back" hover-class="navigation-bar__buttons--active" hover-stay-time="70">
