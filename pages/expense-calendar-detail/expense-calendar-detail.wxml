@@ -64,7 +64,7 @@
 					</view>
 					<view class="transaction-main">
 						<text class="transaction-remark">{{ item.remark || '未填写备注' }}</text>
-						<text class="transaction-status">消费支出</text>
+						<text class="transaction-status">{{ item.categoryText }}</text>
 					</view>
 					<text class="transaction-amount">-¥{{ item.amountText }}</text>
 				</view>

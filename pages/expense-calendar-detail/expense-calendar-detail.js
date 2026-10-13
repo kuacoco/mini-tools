@@ -66,6 +66,7 @@ Page({
         rowKey: `${item.id || 'transaction'}-${index}`,
         amountText: formatAmount(item.amount),
         timeText: formatTransactionTime(item.transaction_time),
+        categoryText: String(item.category || '').trim() || '未分类',
         isLast: index === rawTransactions.length - 1,
       }))
       this.setData({
