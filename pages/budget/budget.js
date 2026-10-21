@@ -731,6 +731,63 @@ Page({
     })
   },
 
+  onClearBudgetItems() {
+    this.closeFabMenu({ afterClose: () => this.confirmClearBudgetItems() })
+  },
+
+  async confirmClearBudgetItems() {
+    if (this.clearingBudgetItems) return
+    this.clearingBudgetItems = true
+    const monthKey = this.data.monthKey
+    const preservedNames = new Set(['烟酒茶', '早午晚餐', '水果零食', '买菜'])
+    let deleted = 0
+    let started = false
+    try {
+      wx.showLoading({ title: '正在检查预算', mask: true })
+      const list = await getMonthBudgetList(monthKey)
+      const targets = list.filter((item) => !preservedNames.has(String(item.name || '').trim()))
+      wx.hideLoading()
+      if (!targets.length) {
+        wx.showToast({ title: '没有可删除的预算项', icon: 'none' })
+        return
+      }
+      const result = await wx.showModal({
+        title: '一键删除预算',
+        content: `将删除 ${getMonthLabel(monthKey)}的 ${targets.length} 个预算项，保留烟酒茶、早午晚餐、水果零食、买菜。删除后不可恢复，确认继续？`,
+        confirmText: '确认删除',
+        confirmColor: '#d06d7f',
+      })
+      if (!result.confirm) return
+      started = true
+      wx.showLoading({ title: '正在删除预算', mask: true })
+      for (const item of targets) {
+        await deleteBudgetItem(monthKey, item.id)
+        deleted += 1
+      }
+      wx.hideLoading()
+      await this.refreshBudgetList()
+      wx.showToast({ title: `已删除 ${deleted} 项`, icon: 'success' })
+    } catch (err) {
+      wx.hideLoading()
+      if (started) {
+        try {
+          await this.refreshBudgetList()
+        } catch (refreshError) {
+          console.error('刷新预算失败', refreshError)
+        }
+      }
+      wx.showModal({
+        title: started ? '删除未完成' : '获取预算失败',
+        content: started
+          ? `已删除 ${deleted} 项，其余预算项未删除，请刷新后重试。`
+          : '无法获取预算列表，请稍后重试。',
+        showCancel: false,
+      })
+    } finally {
+      this.clearingBudgetItems = false
+    }
+  },
+
   onImportBudgetByImage() {
     this.closeFabMenu({
       afterClose: () => this.startImageImport(),

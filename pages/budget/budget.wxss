@@ -4,6 +4,10 @@ page {
   flex-direction: column;
 }
 
+.fab-menu-item.fab-menu-item-danger {
+  color: #c45f73;
+}
+
 .budget-page {
   position: relative;
   flex: 1;

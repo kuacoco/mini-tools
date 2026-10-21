@@ -168,6 +168,7 @@
 			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSubscribeNotification">订阅通知</view> -->
 			<view wx:if="{{ isAdminUser }}" class="fab-menu-item" bindtap="onGoToAdmin">配置管理</view>
 			<view class="fab-menu-item" bindtap="onOpenCopyPopup">复制预算</view>
+			<view class="fab-menu-item fab-menu-item-danger" bindtap="onClearBudgetItems">一键删除预算</view>
 			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算项</view>
 		</view>
 		<view class="add-btn {{ showFabMenu && !fabMenuClosing ? 'is-active' : '' }}" bindtap="onToggleFabMenu">
