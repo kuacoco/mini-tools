@@ -70,7 +70,7 @@
 							wx:for="{{ weekRow.cells }}"
 							wx:for-item="dayCell"
 							wx:key="key"
-							class="day-cell {{ dayCell.isPlaceholder ? 'is-placeholder' : '' }} tone-{{ dayCell.intensity }} {{ dayCell.isToday ? 'is-today' : '' }}"
+							class="day-cell {{ dayCell.isPlaceholder ? 'is-placeholder' : '' }} tone-{{ dayCell.intensity }}"
 							data-date="{{ dayCell.date }}"
 							bindtap="onTapDay"
 							hover-class="day-cell--pressed"

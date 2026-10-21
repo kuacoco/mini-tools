@@ -58,10 +58,19 @@
 
 			<view wx:if="{{ showDailyTip }}" class="daily-tip">
 				<view class="daily-tip-text">
-					<view class="daily-tip-badge">食品酒水</view>
+					<view class="daily-tip-heading">
+						<text class="daily-tip-category">食品酒水</text>
+						<text class="daily-tip-caption">日均可用</text>
+					</view>
 					<view class="daily-tip-body">
-						<text class="daily-tip-line daily-tip-main">截至今日预算 ¥{{ dailyBudgetText }}，剩余 ¥{{ dailyRemainText }}</text>
-						<text class="daily-tip-line">日均可用：含今日 ¥{{ foodCategoryAvgWithTodayText }} · 从明日 ¥{{ foodCategoryAvgWithoutTodayText }}</text>
+						<view class="daily-tip-metric">
+							<text class="daily-tip-label">含今日</text>
+							<text class="daily-tip-value">¥{{ foodCategoryAvgWithTodayText }}</text>
+						</view>
+						<view class="daily-tip-metric daily-tip-metric-next">
+							<text class="daily-tip-label">从明日</text>
+							<text class="daily-tip-value">¥{{ foodCategoryAvgWithoutTodayText }}</text>
+						</view>
 					</view>
 				</view>
 			</view>

@@ -68,7 +68,6 @@ function buildCalendarCells(monthKey, spendMap) {
   const { year, month, firstWeekday, daysInMonth } = getMonthMeta(monthKey)
   const amounts = Object.keys(spendMap || {}).map((key) => Number(spendMap[key] || 0))
   const maxAmount = amounts.length ? Math.max(...amounts) : 0
-  const today = getDateKey(Date.now())
   const cells = []
 
   for (let i = 0; i < firstWeekday; i += 1) {
@@ -85,7 +84,6 @@ function buildCalendarCells(monthKey, spendMap) {
       amount,
       amountText: formatAmount(amount),
       intensity: getIntensity(amount, maxAmount),
-      isToday: date === today,
       isPlaceholder: false,
     })
   }

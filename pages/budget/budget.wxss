@@ -68,34 +68,59 @@ page {
   backdrop-filter: blur(18rpx);
 }
 
-.daily-tip-badge {
+.daily-tip-heading {
   flex: none;
-  padding: 10rpx 14rpx;
-  border-radius: 12rpx;
-  background: linear-gradient(135deg, #7165b3, #9482d4);
-  color: #fff;
-  font-size: 21rpx;
+  padding-right: 24rpx;
+}
+
+.daily-tip-category {
+  display: block;
+  color: #625394;
+  font-size: 23rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 18rpx rgba(104, 88, 171, 0.2);
+  line-height: 1.5;
+}
+
+.daily-tip-caption {
+  display: block;
+  margin-top: 4rpx;
+  color: #9290a6;
+  font-size: 20rpx;
 }
 
 .daily-tip-body {
+  display: flex;
+  flex: 1;
   min-width: 0;
-  margin-left: 18rpx;
+  padding-left: 24rpx;
+  border-left: 1rpx solid #ebe7f4;
 }
 
-.daily-tip-line {
+.daily-tip-metric {
+  flex: 1;
+  min-width: 0;
+}
+
+.daily-tip-metric-next {
+  margin-left: 16rpx;
+}
+
+.daily-tip-label {
   display: block;
-  color: #8b8da2;
-  font-size: 22rpx;
-  line-height: 1.55;
+  color: #9290a6;
+  font-size: 20rpx;
+  line-height: 1.5;
 }
 
-.daily-tip-main {
-  margin-bottom: 2rpx;
-  color: #3e405a;
-  font-size: 24rpx;
+.daily-tip-value {
+  display: block;
+  margin-top: 4rpx;
+  color: #625394;
+  font-size: 30rpx;
   font-weight: 600;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
 }
 
 .summary-card {
