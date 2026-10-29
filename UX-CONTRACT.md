@@ -14,7 +14,7 @@
 |---|---|---|---|
 | Permission model | `utils/privileged-user.js` fixed `PRIVILEGED_OPENID` comparison | Existing implemented product rule | 2026-09-04 |
 | Transaction data | `cloudfunctions/feideeTransactions/index.js` | Cloud-function API contract | 2026-09-04 |
-| External data access | `cloudfunctions/feideeTransactions/index.js` whitelist check | Server authorization | 2026-09-04 |
+| External data access | Fixed OpenID checks in `feideeTransactions`, `feideeCategoryExpense`, `syncFeideeBudget`, and `ocrBudgetImport` | Server authorization | 2026-10-29 |
 
 ## Visual contract
 
@@ -35,7 +35,7 @@
 
 | Operation | Trigger | Pending | Success destination | Failure recovery | Source ref |
 |---|---|---|---|---|---|
-| Open privileged tool | Home entry for 消费日历 / 预算看板 / 消费账单 | No entry until permission result | Corresponding tool | All three entries remain hidden for non-privileged users | `utils/privileged-user.js` |
+| Open privileged tool | Home 飞迪账单 section: 消费日历 / 消费账单 / 分类支出 / 预算看板 | Section hidden until permission result | Corresponding tool, through shared `onToolTap` | Entire section remains hidden for non-privileged users; 生活工具 remains available | `utils/privileged-user.js`, `pages/index/index.js` |
 | Change month | Native month picker | Stable empty calendar grid | Same calendar, refreshed total and day amounts | Inline error | `feideeTransactions` query |
 | Change bill month | Native month picker (`fields=month`) | Stable bill-list footprint | Same page, refreshed category groups and total | Toast and empty state | `fetchFeideeTransactions` |
 | Open day | Tap calendar date | None | Day ledger | Day ledger shows inline error | Existing transaction API |
@@ -43,7 +43,7 @@
 
 ## Navigation and responsive behavior
 
-- Direct route denial returns to the tool list; this is UX containment, while cloud-function whitelist checks remain the data boundary.
+- Direct route denial returns to the tool list; this is UX containment, while cloud-function fixed OpenID checks remain the data boundary. Whitelist administration and its API actions are removed. Only the budget page offers manual sync for the current month. Timer/bulk sync, notification subscriptions and counter APIs are removed; historical database records are untouched. Account configuration remains in admin, while budget configuration and sync controls are removed from admin. Existing public budget-tip reads retain their stored-value/default behavior.
 - A calendar day is always tappable, including zero-spend dates.
 - The detail page uses a single chronological list and no category groups.
 - The monthly bill defaults to the current natural month, uses a single month picker, and keeps the existing category-grouped response presentation.

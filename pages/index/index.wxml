@@ -15,8 +15,8 @@
 					<text>{{ toolList.length }} 个工具随时可用</text>
 				</view>
 				<view class="tool-capability-list">
-					<text wx:if="{{ toolList.length > 3 }}" class="tool-capability tool-capability--pink">消费</text>
-					<text wx:if="{{ toolList.length > 3 }}" class="tool-capability tool-capability--yellow">预算</text>
+					<text wx:if="{{ toolGroups.length > 1 }}" class="tool-capability tool-capability--pink">消费</text>
+					<text wx:if="{{ toolGroups.length > 1 }}" class="tool-capability tool-capability--yellow">预算</text>
 					<text class="tool-capability tool-capability--blue">课程</text>
 					<text class="tool-capability tool-capability--green">日程</text>
 				</view>
@@ -31,15 +31,22 @@
 			</view>
 		</view>
 
-		<view class="tool-grid tool-grid--count-{{ toolList.length }}">
+		<view wx:for="{{ toolGroups }}" wx:for-item="group" wx:key="id" class="tool-group tool-group--{{ group.id }}">
+			<view wx:if="{{ group.id === 'feidee' }}" class="folder-tab">
+				<view class="folder-tab-dot" aria-hidden="true"></view>
+				<text>{{ group.title }}</text>
+			</view>
+		<view class="tool-grid tool-grid--{{ group.id }}">
 			<view
-				wx:for="{{ toolList }}"
+				wx:for="{{ group.items }}"
 				wx:key="id"
 				class="tool-item tool-item--{{ item.id }}"
 				hover-class="tool-item--active"
 				hover-stay-time="80"
 				data-path="{{ item.path }}"
 				bindtap="onToolTap"
+				aria-role="button"
+				aria-label="{{ item.title }}"
 			>
 				<view class="tool-card-head">
 					<text class="tool-title">{{ item.title }}</text>
@@ -52,6 +59,7 @@
 					<view class="tool-card-mark-fill"></view>
 				</view>
 			</view>
+		</view>
 		</view>
 
 		<view class="home-footer-card">

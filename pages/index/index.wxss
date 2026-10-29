@@ -205,6 +205,101 @@ page {
   justify-content: space-between;
 }
 
+.tool-group {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 28rpx;
+}
+
+.tool-group--feidee {
+  margin-top: 86rpx;
+  margin-bottom: 40rpx;
+  padding: 26rpx 18rpx 10rpx;
+  border: 1rpx solid #e6e0ff;
+  border-radius: 0 30rpx 30rpx 30rpx;
+  background: linear-gradient(155deg, #f0ecff, #faf8ff);
+  box-shadow: 0 14rpx 28rpx rgba(68, 55, 108, 0.08);
+}
+
+.folder-tab {
+  position: absolute;
+  bottom: 100%;
+  left: -1rpx;
+  display: flex;
+  align-items: center;
+  min-height: 54rpx;
+  padding: 0 32rpx 0 24rpx;
+  border: 1rpx solid #e6e0ff;
+  border-bottom: 0;
+  border-radius: 22rpx 30rpx 0 0;
+  background: #f0ecff;
+  color: #30327b;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+
+.folder-tab-dot {
+  width: 12rpx;
+  height: 12rpx;
+  margin-right: 14rpx;
+  border-radius: 50%;
+  background: #8c83d7;
+}
+
+.tool-group--feidee .tool-group-heading {
+  margin-bottom: 20rpx;
+}
+
+.tool-group--feidee .tool-group-desc {
+  margin-top: 0;
+}
+
+.tool-group--feidee .tool-group-count {
+  padding: 7rpx 12rpx;
+  border-radius: 12rpx;
+  background: #e6e0ff;
+  color: #30327b;
+}
+
+.tool-grid--feidee .tool-item {
+  border-radius: 22rpx;
+  box-shadow: 0 5rpx 0 rgba(255, 255, 255, 0.85), 0 10rpx 16rpx rgba(68, 55, 108, 0.05);
+}
+
+.tool-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 4rpx 24rpx;
+}
+
+.tool-group-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-group-title {
+  display: block;
+  color: #30327b;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.tool-group-desc {
+  display: block;
+  margin-top: 8rpx;
+  color: #64657d;
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.tool-group-count {
+  flex: none;
+  margin-left: 18rpx;
+  color: #64657d;
+  font-size: 21rpx;
+}
+
 .tool-item {
   position: relative;
   display: flex;
@@ -250,26 +345,18 @@ page {
 .tool-item:nth-child(4) { animation-delay: 195ms; }
 .tool-item:nth-child(5) { animation-delay: 250ms; }
 .tool-item:nth-child(6) { animation-delay: 305ms; }
+.tool-item:nth-child(7) { animation-delay: 360ms; }
 
-.tool-grid--count-6 .tool-item:nth-child(1) { width: calc(56% - 9rpx); }
-.tool-grid--count-6 .tool-item:nth-child(2) { width: calc(44% - 9rpx); }
-.tool-grid--count-6 .tool-item:nth-child(3) { width: calc(44% - 9rpx); }
-.tool-grid--count-6 .tool-item:nth-child(4) { width: calc(56% - 9rpx); }
-.tool-grid--count-6 .tool-item:nth-child(5) { width: calc(52% - 9rpx); }
-.tool-grid--count-6 .tool-item:nth-child(6) { width: calc(48% - 9rpx); }
-
-.tool-grid--count-3 .tool-item:nth-child(1),
-.tool-grid--count-3 .tool-item:nth-child(2) {
-  width: calc((100% - 18rpx) / 2);
-}
-
-.tool-grid--count-3 .tool-item:nth-child(3) {
-  width: 100%;
-  min-height: 178rpx;
-}
+.tool-grid--feidee .tool-item:nth-child(1),
+.tool-grid--feidee .tool-item:nth-child(4) { width: calc(54% - 9rpx); }
+.tool-grid--feidee .tool-item:nth-child(2),
+.tool-grid--feidee .tool-item:nth-child(3) { width: calc(46% - 9rpx); }
+.tool-grid--life .tool-item:nth-child(1) { width: calc(54% - 9rpx); }
+.tool-grid--life .tool-item:nth-child(2) { width: calc(46% - 9rpx); }
 
 .tool-item--spending-calendar { background: linear-gradient(145deg, #ffdce6, #fff1f5); }
 .tool-item--spending-bill { background: linear-gradient(145deg, #ece4ff, #f8f4ff); }
+.tool-item--category-expense { background: linear-gradient(145deg, #d4f0f5, #eefbfc); }
 .tool-item--budget { background: linear-gradient(145deg, #ffe9b8, #fff7df); }
 .tool-item--course { background: linear-gradient(145deg, #dcecff, #f0f6ff); }
 .tool-item--qing-calendar { background: linear-gradient(145deg, #d8f6ef, #effcf9); }
@@ -361,6 +448,7 @@ page {
 .tool-item--active .tool-card-mark-fill { width: 62rpx; }
 
 .tool-item--spending-bill .tool-card-mark-fill { background: #967ce7; }
+.tool-item--category-expense .tool-card-mark-fill { background: #55b4c4; }
 .tool-item--budget .tool-card-mark-fill { background: #efb740; }
 .tool-item--course .tool-card-mark-fill { background: #62a6e9; }
 .tool-item--qing-calendar .tool-card-mark-fill { background: #42bea8; }

@@ -10,13 +10,8 @@ const {
   syncBudgetFromFeidee,
   copyBudgetFromMonth,
   getPublicBudgetConfig,
-  // checkWhitelist,
-  // isAdmin,
-  incrementSubscribe,
-  getSubscribeCount,
 } = require('../../utils/budget-storage')
 const { formatAmount } = require('../../utils/amount-expression')
-const { isPrivilegedUser } = require('../../utils/privileged-user')
 const {
   getMonthLabel,
   getOffsetMonthKey,
@@ -169,7 +164,7 @@ Page({
     showAddPopup: false,
     addPopupClosing: false,
     addPopupMode: 'add',
-    addPopupTitle: '新增预算项',
+    addPopupTitle: '新增预算',
     addParentName: '',
     addName: '',
     addTotalAmount: '',
@@ -190,10 +185,12 @@ Page({
     usedAmountFormula: '',
     usedKeyboardReset: 0,
     usedInitialExpression: '0',
-    isWhitelisted: false,
-    isAdminUser: false,
-    subscribeCount: 0,
     showCopyPopup: false,
+    showDeletePopup: false,
+    deleteBudgetItems: [],
+    deleteSelectedCount: 0,
+    deleteMonthKey: '',
+    deleteMonthLabel: '',
     copyPopupClosing: false,
     copySourceMonthIndex: 0,
     pageReady: false,
@@ -225,52 +222,16 @@ Page({
     if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
     if (this.copyPopupTimer) clearTimeout(this.copyPopupTimer)
     if (this.parentPopupTimer) clearTimeout(this.parentPopupTimer)
-    this.autoSyncedMonthKey = ''
   },
 
   async onShow() {
     try {
-      await Promise.all([this.applyBudgetFeatureFlags(), this.loadBudgetTipConfig()])
-      // await this.checkWhitelistPermission()
-      // await this.checkAdminPermission()
-
-      // // 获取订阅次数
-      // if (this.data.isWhitelisted) {
-      //   await this.fetchSubscribeCount()
-      // }
-
+      await this.loadBudgetTipConfig()
       await this.refreshBudgetList()
 
-      // 页面加载完成后（onShow）自动同步一次
-      // 避免用户反复进页面时对同一月份重复触发同步
-      // if (
-      //   this.data.isWhitelisted &&
-      //   this.data.monthKey &&
-      //   this.autoSyncedMonthKey !== this.data.monthKey
-      // ) {
-      //   const ok = await this.startFeideeSync({ auto: true })
-      //   if (ok) this.autoSyncedMonthKey = this.data.monthKey
-      // }
     } finally {
       if (!this.data.pageReady) this.setData({ pageReady: true })
     }
-  },
-
-  async fetchSubscribeCount() {
-    try {
-      const { count } = await getSubscribeCount()
-      this.setData({ subscribeCount: count })
-    } catch (err) {
-      console.error('获取订阅次数失败:', err)
-    }
-  },
-
-  async applyBudgetFeatureFlags() {
-    const privileged = await isPrivilegedUser()
-    this.setData({
-      isWhitelisted: privileged,
-      isAdminUser: privileged,
-    })
   },
 
   async loadBudgetTipConfig() {
@@ -287,24 +248,6 @@ Page({
       this.setData({ dailyFoodBudget: DEFAULT_DAILY_FOOD_BUDGET })
     }
   },
-
-  // async checkWhitelistPermission() {
-  //   try {
-  //     const isWhitelisted = await checkWhitelist()
-  //     this.setData({ isWhitelisted })
-  //   } catch (err) {
-  //     this.setData({ isWhitelisted: false })
-  //   }
-  // },
-
-  // async checkAdminPermission() {
-  //   try {
-  //     const isAdminUser = await isAdmin()
-  //     this.setData({ isAdminUser })
-  //   } catch (err) {
-  //     this.setData({ isAdminUser: false })
-  //   }
-  // },
 
   async refreshBudgetList() {
     const { monthKey } = this.data
@@ -457,7 +400,7 @@ Page({
       showAddPopup: true,
       addPopupClosing: false,
       addPopupMode: 'add',
-      addPopupTitle: '新增预算项',
+      addPopupTitle: '新增预算',
       addParentName: '',
       addName: '',
       addTotalAmount: '0',
@@ -739,48 +682,85 @@ Page({
     if (this.clearingBudgetItems) return
     this.clearingBudgetItems = true
     const monthKey = this.data.monthKey
-    const preservedNames = new Set(['烟酒茶', '早午晚餐', '水果零食', '买菜'])
-    let deleted = 0
-    let started = false
+    const preservedNames = new Set(['烟酒茶', '早午晚餐', '水果零食', '买菜', '软件服务'])
     try {
-      wx.showLoading({ title: '正在检查预算', mask: true })
+      wx.showLoading({ title: '正在获取预算', mask: true })
       const list = await getMonthBudgetList(monthKey)
-      const targets = list.filter((item) => !preservedNames.has(String(item.name || '').trim()))
-      wx.hideLoading()
-      if (!targets.length) {
-        wx.showToast({ title: '没有可删除的预算项', icon: 'none' })
+      if (!list.length) {
+        wx.showToast({ title: '当前月份没有预算项', icon: 'none' })
         return
       }
-      const result = await wx.showModal({
-        title: '一键删除预算',
-        content: `将删除 ${getMonthLabel(monthKey)}的 ${targets.length} 个预算项，保留烟酒茶、早午晚餐、水果零食、买菜。删除后不可恢复，确认继续？`,
-        confirmText: '确认删除',
-        confirmColor: '#d06d7f',
+      const items = list.map((item) => ({
+        ...item,
+        checked: !preservedNames.has(String(item.name || '').trim()),
+      }))
+      this.setData({
+        showDeletePopup: true,
+        deleteMonthKey: monthKey,
+        deleteMonthLabel: getMonthLabel(monthKey),
+        deleteBudgetItems: items,
+        deleteSelectedCount: items.filter((item) => item.checked).length,
       })
-      if (!result.confirm) return
-      started = true
+    } catch (err) {
+      wx.showToast({ title: '获取预算失败，请稍后重试', icon: 'none' })
+    } finally {
+      wx.hideLoading()
+      this.clearingBudgetItems = false
+    }
+  },
+
+  onDeleteBudgetSelectionChange(e) {
+    if (this.clearingBudgetItems) return
+    const selected = new Set(e.detail.value)
+    const items = this.data.deleteBudgetItems.map((item) => ({
+      ...item,
+      checked: selected.has(item.id),
+    }))
+    this.setData({
+      deleteBudgetItems: items,
+      deleteSelectedCount: items.filter((item) => item.checked).length,
+    })
+  },
+
+  onCloseDeletePopup() {
+    if (this.clearingBudgetItems) return
+    this.setData({ showDeletePopup: false, deleteBudgetItems: [], deleteSelectedCount: 0 })
+  },
+
+  async onConfirmDeleteBudgetItems() {
+    if (this.clearingBudgetItems) return
+    const targets = (this.data.deleteBudgetItems || []).filter((item) => item.checked)
+    if (!targets.length) return
+    this.clearingBudgetItems = true
+    const monthKey = this.data.deleteMonthKey
+    let deleted = 0
+    try {
       wx.showLoading({ title: '正在删除预算', mask: true })
       for (const item of targets) {
         await deleteBudgetItem(monthKey, item.id)
         deleted += 1
       }
+      this.setData({ showDeletePopup: false, deleteBudgetItems: [], deleteSelectedCount: 0 })
       wx.hideLoading()
       await this.refreshBudgetList()
       wx.showToast({ title: `已删除 ${deleted} 项`, icon: 'success' })
     } catch (err) {
       wx.hideLoading()
-      if (started) {
-        try {
-          await this.refreshBudgetList()
-        } catch (refreshError) {
-          console.error('刷新预算失败', refreshError)
-        }
+      const remaining = this.data.deleteBudgetItems.filter(
+        (item) => !targets.slice(0, deleted).some((target) => target.id === item.id)
+      )
+      this.setData({
+        deleteBudgetItems: remaining,
+        deleteSelectedCount: remaining.filter((item) => item.checked).length,
+      })
+      try {
+        await this.refreshBudgetList()
+      } catch (refreshError) {
+        console.error('刷新预算失败', refreshError)
       }
       wx.showModal({
-        title: started ? '删除未完成' : '获取预算失败',
-        content: started
-          ? `已删除 ${deleted} 项，其余预算项未删除，请刷新后重试。`
-          : '无法获取预算列表，请稍后重试。',
+        title: '删除未完成',
+        content: `已删除 ${deleted} 项，请检查剩余预算项后重试。`,
         showCancel: false,
       })
     } finally {
@@ -805,49 +785,6 @@ Page({
       afterClose: () => {
         wx.navigateTo({ url: '/pages/admin/admin' })
       },
-    })
-  },
-
-  onGoToCategoryExpense() {
-    this.closeFabMenu({
-      afterClose: () => {
-        wx.navigateTo({ url: '/pages/category-expense/category-expense' })
-      },
-    })
-  },
-
-  onSubscribeNotification() {
-    // 先关闭菜单状态（不等待动画），然后立即请求订阅
-    // requestSubscribeMessage 必须在用户点击事件的同步调用栈中执行
-    this.setData({
-      showFabMenu: false,
-      fabMenuClosing: false,
-    })
-    if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
-
-    wx.requestSubscribeMessage({
-      tmplIds: ['4y6KFyJZRdinp_2g6qrNK3bdKWwrGs9VFrrUHbRJNb0'],
-      success: async (res) => {
-        const accepted = res['4y6KFyJZRdinp_2g6qrNK3bdKWwrGs9VFrrUHbRJNb0'] === 'accept'
-        if (accepted) {
-          // 增加订阅次数
-          try {
-            await incrementSubscribe()
-            const newCount = this.data.subscribeCount + 1
-            this.setData({ subscribeCount: newCount })
-          } catch (err) {
-            console.error('增加订阅次数失败:', err)
-          }
-        }
-        wx.showToast({
-          title: accepted ? '订阅成功' : '已取消订阅',
-          icon: 'none'
-        })
-      },
-      fail: (err) => {
-        console.error('订阅消息授权失败:', err)
-        wx.showToast({ title: '订阅失败', icon: 'none' })
-      }
     })
   },
 
@@ -945,7 +882,7 @@ Page({
       }
       if (resetForm) {
         nextData.addPopupMode = 'add'
-        nextData.addPopupTitle = '新增预算项'
+        nextData.addPopupTitle = '新增预算'
         nextData.addParentName = ''
         nextData.addName = ''
         nextData.addTotalAmount = '0'

@@ -8,6 +8,69 @@ page {
   color: #c45f73;
 }
 
+.delete-budget-hint {
+  margin: 12rpx 0 20rpx;
+  color: #9290a6;
+  font-size: 23rpx;
+}
+
+.delete-budget-list {
+  height: 48vh;
+}
+
+.delete-budget-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 4rpx;
+  border-bottom: 1rpx solid #ebe7f4;
+}
+
+.delete-budget-copy {
+  flex: 1;
+  min-width: 0;
+  margin-left: 16rpx;
+}
+
+.delete-budget-name,
+.delete-budget-parent {
+  display: block;
+  overflow-wrap: break-word;
+}
+
+.delete-budget-name {
+  color: #3e405a;
+  font-size: 28rpx;
+}
+
+.delete-budget-parent {
+  margin-top: 6rpx;
+  color: #9290a6;
+  font-size: 22rpx;
+}
+
+.delete-budget-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+
+.delete-budget-actions button {
+  flex: 1;
+  margin: 0;
+  font-size: 27rpx;
+  border-radius: 18rpx;
+}
+
+.delete-budget-cancel {
+  background: #efedf5;
+  color: #625394;
+}
+
+.delete-budget-confirm {
+  background: #c45f73;
+  color: #fff;
+}
+
 .budget-page {
   position: relative;
   flex: 1;

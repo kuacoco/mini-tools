@@ -7,10 +7,5 @@
     "wx-server-sdk": "~2.6.3",
     "request": "^2.88.2"
   },
-  "cloudfunctionRoot": "./",
-  "permissions": {
-    "openapi": [
-      "subscribeMessage.send"
-    ]
-  }
+  "cloudfunctionRoot": "./"
 }

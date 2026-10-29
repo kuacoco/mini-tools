@@ -4,18 +4,11 @@ const tencentcloud = require('tencentcloud-sdk-nodejs')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
-const WHITELIST_COLLECTION = 'budget_whitelist'
+const PRIVILEGED_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
 
-async function checkWhitelistPermission() {
-  const { OPENID } = cloud.getWXContext()
-  const res = await db
-    .collection(WHITELIST_COLLECTION)
-    .where({ openid: OPENID })
-    .limit(1)
-    .get()
-  if (!res.data || res.data.length === 0) {
-    throw new Error('该功能仅限白名单用户使用')
-  }
+async function checkFeaturePermission() {
+  const { OPENID: openid } = cloud.getWXContext()
+  if (openid !== PRIVILEGED_OPENID) throw new Error('暂无使用权限')
 }
 
 function parseAmountText(input) {
@@ -226,7 +219,7 @@ async function requestOcrLines(fileID) {
 exports.main = async (event) => {
   const fileID = event.fileID
   try {
-    await checkWhitelistPermission()
+    await checkFeaturePermission()
     const lines = await requestOcrLines(fileID)
     const records = dedupeRecords(parseRecordsFromLines(lines))
 

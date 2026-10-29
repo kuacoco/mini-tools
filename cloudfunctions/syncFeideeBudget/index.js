@@ -5,20 +5,9 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const CONFIG_COLLECTION = 'budget_config'
-const WHITELIST_COLLECTION = 'budget_whitelist'
 const BUDGET_COLLECTION = 'budget_items'
 const _ = db.command
 const ADMIN_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
-
-/**
- * 获取所有白名单用户
- */
-async function getAllWhitelistUsers() {
-  const res = await db
-    .collection(WHITELIST_COLLECTION)
-    .get()
-  return (res.data || []).map(item => item.openid)
-}
 
 /**
  * 从云数据库获取飞笛配置
@@ -288,152 +277,15 @@ async function syncUserMonth(openid, monthKey) {
 }
 
 /**
- * 发送订阅消息通知
- */
-async function sendSyncNotification(openid, status, stats, errorMessage) {
-  const templateId = '4y6KFyJZRdinp_2g6qrNK3bdKWwrGs9VFrrUHbRJNb0'
-  const now = new Date()
-  const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-
-  let resultText = ''
-  let remarkText = ''
-
-  if (status === 'success') {
-    resultText = '同步成功'
-    remarkText = `新增${stats?.created || 0}项，更新${stats?.updated || 0}项`
-  } else if (status === 'skipped') {
-    resultText = '跳过同步'
-    remarkText = errorMessage || '未配置飞笛账号'
-  } else {
-    resultText = '同步失败'
-    remarkText = errorMessage || '未知错误'
-  }
-
-  try {
-    await cloud.openapi.subscribeMessage.send({
-      touser: openid,
-      page: '/pages/budget/budget',
-      templateId: templateId,
-      data: {
-        thing1: { value: '飞笛预算同步' },
-        phrase2: { value: resultText },
-        time3: { value: timeStr },
-        thing6: { value: remarkText.slice(0, 20) }
-      }
-    })
-    console.log(`通知发送成功: ${openid.slice(-8)}`)
-    // 发送成功后消费订阅次数
-    await consumeSubscribeCount(openid)
-  } catch (err) {
-    console.error(`通知发送失败: ${openid.slice(-8)}`, err.message)
-  }
-}
-
-/**
- * 消费订阅次数
- */
-async function consumeSubscribeCount(openid) {
-  try {
-    const res = await db
-      .collection(WHITELIST_COLLECTION)
-      .where({ openid })
-      .limit(1)
-      .get()
-    if (!res.data || res.data.length === 0) {
-      return { count: 0, consumed: false }
-    }
-    const doc = res.data[0]
-    const currentCount = Number(doc.subscribeCount || 0)
-    if (currentCount <= 0) {
-      console.log(`订阅次数不足: ${openid.slice(-8)}`)
-      return { count: 0, consumed: false }
-    }
-    await db.collection(WHITELIST_COLLECTION).doc(doc._id).update({
-      data: {
-        subscribeCount: _.inc(-1),
-        updatedAt: Date.now(),
-      },
-    })
-    console.log(`订阅次数已消费: ${openid.slice(-8)}, 剩余 ${currentCount - 1}`)
-    return { count: currentCount - 1, consumed: true }
-  } catch (err) {
-    console.error(`消费订阅次数失败: ${openid.slice(-8)}`, err.message)
-    return { count: 0, consumed: false }
-  }
-}
-
-/**
- * 定时触发：同步所有白名单用户
- */
-async function handleTimerTrigger() {
-  const now = new Date()
-  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-
-  const users = await getAllWhitelistUsers()
-  const results = {
-    total: users.length,
-    success: 0,
-    failed: 0,
-    skipped: 0,
-    details: []
-  }
-
-  for (const openid of users) {
-    try {
-      const result = await syncUserMonth(openid, monthKey)
-      if (result.success) {
-        results.success += 1
-        results.details.push({
-          openid: openid.slice(-8),
-          status: 'success',
-          stats: result.data
-        })
-        // 发送成功通知
-        await sendSyncNotification(openid, 'success', result.data)
-      } else {
-        results.skipped += 1
-        results.details.push({
-          openid: openid.slice(-8),
-          status: 'skipped',
-          message: result.message
-        })
-        // 发送跳过通知
-        await sendSyncNotification(openid, 'skipped', null, result.message)
-      }
-    } catch (err) {
-      results.failed += 1
-      results.details.push({
-        openid: openid.slice(-8),
-        status: 'failed',
-        message: err.message
-      })
-      // 发送失败通知
-      await sendSyncNotification(openid, 'failed', null, err.message)
-    }
-  }
-
-  console.log('定时同步完成:', JSON.stringify(results))
-  return results
-}
-
-/**
  * 用户手动触发：同步当前用户
  */
 async function handleUserTrigger(openid, monthKey) {
-  // 检查白名单权限
-  const res = await db
-    .collection(WHITELIST_COLLECTION)
-    .where({ openid })
-    .limit(1)
-    .get()
-  if (!res.data || res.data.length === 0) {
-    throw new Error('该功能仅限白名单用户使用')
-  }
+  if (openid !== ADMIN_OPENID) throw new Error('暂无使用权限')
 
   return await syncUserMonth(openid, monthKey)
 }
 
-exports.main = async (event) => {
+exports.main = async (event = {}) => {
   const ctx = cloud.getWXContext()
   const { OPENID, SOURCE } = ctx
 
@@ -444,20 +296,8 @@ exports.main = async (event) => {
   }))
 
   try {
-    if (SOURCE === 'wx_trigger') {
-      console.log('syncFeideeBudget timer trigger detected')
-      const results = await handleTimerTrigger()
-      return { success: true, data: results }
-    }
-
-    // 管理员手动触发同步所有用户
-    if (event.action === 'syncAll') {
-      // 检查管理员权限
-      if (OPENID !== ADMIN_OPENID) {
-        throw new Error('无权限执行此操作')
-      }
-      const results = await handleTimerTrigger()
-      return { success: true, data: results }
+    if (SOURCE === 'wx_trigger' || event.action) {
+      throw new Error('仅支持预算看板手动同步')
     }
 
     // 用户手动触发
@@ -468,6 +308,7 @@ exports.main = async (event) => {
     }
 
     const result = await handleUserTrigger(OPENID, monthKey)
+    if (!result.success) throw new Error(result.message || '同步失败')
     return { success: true, data: result.data }
   } catch (err) {
     return {

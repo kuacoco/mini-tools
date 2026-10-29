@@ -1,4 +1,4 @@
-const { checkWhitelist, fetchFeideeTransactions } = require('../../utils/budget-storage')
+const { fetchFeideeTransactions } = require('../../utils/budget-storage')
 const { formatAmount } = require('../../utils/amount-expression')
 const { pickUniqueCategoryBg, categoryInitial } = require('../../utils/category-color')
 
@@ -82,9 +82,11 @@ function buildCategorySections(list, collapsedMap) {
   return sections
 }
 
+const { isPrivilegedUser } = require('../../utils/privileged-user')
+
 Page({
   data: {
-    isWhitelisted: false,
+    isPrivileged: false,
     isLoading: false,
 
     monthValue: '',
@@ -143,9 +145,9 @@ Page({
 
   async onShow() {
     try {
-      await this.checkWhitelistPermission()
-      if (!this.data.isWhitelisted) {
-        wx.showToast({ title: '该功能仅限白名单用户使用', icon: 'none' })
+      await this.checkFeaturePermission()
+      if (!this.data.isPrivileged) {
+        wx.showToast({ title: '暂无使用权限', icon: 'none' })
         setTimeout(() => wx.navigateBack(), 500)
         return
       }
@@ -155,12 +157,12 @@ Page({
     }
   },
 
-  async checkWhitelistPermission() {
+  async checkFeaturePermission() {
     try {
-      const ok = await checkWhitelist()
-      this.setData({ isWhitelisted: Boolean(ok) })
+      const ok = await isPrivilegedUser()
+      this.setData({ isPrivileged: Boolean(ok) })
     } catch (err) {
-      this.setData({ isWhitelisted: false })
+      this.setData({ isPrivileged: false })
     }
   },
 

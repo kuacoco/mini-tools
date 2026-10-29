@@ -5,7 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const CONFIG_COLLECTION = 'budget_config'
-const WHITELIST_COLLECTION = 'budget_whitelist'
+const PRIVILEGED_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
 
 /** 北京时间相对 UTC 的偏移（毫秒） */
 const BEIJING_UTC_OFFSET_MS = 8 * 60 * 60 * 1000
@@ -41,15 +41,8 @@ function normalizeAccountIds(accountIdsRaw) {
     .filter(Boolean)
 }
 
-async function checkWhitelistPermission(openid) {
-  const res = await db
-    .collection(WHITELIST_COLLECTION)
-    .where({ openid })
-    .limit(1)
-    .get()
-  if (!res.data || res.data.length === 0) {
-    throw new Error('该功能仅限白名单用户使用')
-  }
+async function checkFeaturePermission(openid) {
+  if (openid !== PRIVILEGED_OPENID) throw new Error('暂无使用权限')
 }
 
 async function getFeideeConfig(userId) {
@@ -182,7 +175,7 @@ exports.main = async (event) => {
       throw new Error('开始日期不能晚于结束日期')
     }
 
-    await checkWhitelistPermission(OPENID)
+    await checkFeaturePermission(OPENID)
 
     const config = await getFeideeConfig(OPENID)
     if (!config || !config.authorization || !config.tradingEntity) {

@@ -152,24 +152,18 @@
 						</view>
 					</view>
 				</view>
-
-				<view wx:if="{{ isWhitelisted && subscribeCount > 0 }}" class="budget-footer">
-					<text class="budget-footer-text">订阅 × {{ subscribeCount }}</text>
-				</view>
 			</view>
 	</scroll-view>
 
 	<view wx:if="{{ showFabMenu }}" class="fab-mask {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup"></view>
 	<view class="fab-wrap">
 		<view wx:if="{{ showFabMenu }}" class="fab-menu {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}">
-			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSyncFromFeidee">同步数据</view>
-			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onGoToCategoryExpense">分类支出</view>
-			<!-- <view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view>
-			<view wx:if="{{ isWhitelisted }}" class="fab-menu-item" bindtap="onSubscribeNotification">订阅通知</view> -->
-			<view wx:if="{{ isAdminUser }}" class="fab-menu-item" bindtap="onGoToAdmin">配置管理</view>
+			<view class="fab-menu-item" bindtap="onSyncFromFeidee">同步数据</view>
+			<!-- <view class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view> -->
+			<view class="fab-menu-item fab-menu-item-danger" bindtap="onClearBudgetItems">删除预算</view>
 			<view class="fab-menu-item" bindtap="onOpenCopyPopup">复制预算</view>
-			<view class="fab-menu-item fab-menu-item-danger" bindtap="onClearBudgetItems">一键删除预算</view>
-			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算项</view>
+			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算</view>
+			<view class="fab-menu-item" bindtap="onGoToAdmin">配置管理</view>
 		</view>
 		<view class="add-btn {{ showFabMenu && !fabMenuClosing ? 'is-active' : '' }}" bindtap="onToggleFabMenu">
 			<image class="add-btn-icon" src="/pages/statics/plus.svg" mode="aspectFit" />
@@ -244,6 +238,31 @@
 				bindchange="onUsedKeyboardChange"
 				bindprimary="onSaveUsedAmount"
 			/>
+		</view>
+	</view>
+
+	<view wx:if="{{ showDeletePopup }}" class="popup-mask" bindtap="onCloseDeletePopup">
+		<view class="popup-sheet" catchtap="noop">
+			<view class="popup-head">
+				<text class="popup-title">选择要删除的预算项</text>
+				<view class="popup-close" bindtap="onCloseDeletePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit" /></view>
+			</view>
+			<view class="delete-budget-hint">{{ deleteMonthLabel }} · 已选 {{ deleteSelectedCount }} 项，删除后不可恢复</view>
+			<scroll-view scroll-y class="delete-budget-list">
+				<checkbox-group bindchange="onDeleteBudgetSelectionChange">
+					<label wx:for="{{ deleteBudgetItems }}" wx:key="id" class="delete-budget-row">
+						<checkbox value="{{ item.id }}" checked="{{ item.checked }}" color="#c45f73" />
+						<view class="delete-budget-copy">
+							<text class="delete-budget-name">{{ item.name }}</text>
+							<text class="delete-budget-parent">{{ item.parentCategoryName }}</text>
+						</view>
+					</label>
+				</checkbox-group>
+			</scroll-view>
+			<view class="delete-budget-actions">
+				<button class="delete-budget-cancel" bindtap="onCloseDeletePopup">取消</button>
+				<button class="delete-budget-confirm" disabled="{{ !deleteSelectedCount }}" bindtap="onConfirmDeleteBudgetItems">确认删除（{{ deleteSelectedCount }}）</button>
+			</view>
 		</view>
 	</view>
 

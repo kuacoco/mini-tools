@@ -4,10 +4,8 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const CONFIG_COLLECTION = 'budget_config'
-const WHITELIST_COLLECTION = 'budget_whitelist'
 const ADMIN_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
 const DAILY_FOOD_BUDGET_CONFIG_KEY = 'dailyFoodBudget'
-const DEFAULT_DAILY_FOOD_BUDGET = 50
 
 async function checkPermission(openid) {
   if (openid !== ADMIN_OPENID) {
@@ -93,100 +91,8 @@ async function deleteFeideeConfig(payload) {
   return { ok: true }
 }
 
-function normalizeNonNegativeNumber(value, fieldName) {
-  const num = Number(value)
-  if (!Number.isFinite(num) || num < 0) {
-    throw new Error(`${fieldName} 不合法`)
-  }
-  return Number(num.toFixed(2))
-}
-
-async function getSystemConfig() {
-  const res = await db.collection(CONFIG_COLLECTION)
-    .where({ configKey: DAILY_FOOD_BUDGET_CONFIG_KEY })
-    .limit(1)
-    .get()
-  const doc = res.data && res.data.length > 0 ? res.data[0] : null
-  return {
-    dailyFoodBudget: doc ? Number(doc.value || 0) : DEFAULT_DAILY_FOOD_BUDGET
-  }
-}
-
-async function updateSystemConfig(payload) {
-  const dailyFoodBudget = normalizeNonNegativeNumber(
-    payload.dailyFoodBudget,
-    '食品酒水日预算'
-  )
-  const now = Date.now()
-  const data = {
-    configKey: DAILY_FOOD_BUDGET_CONFIG_KEY,
-    value: dailyFoodBudget,
-    updatedAt: now
-  }
-  const res = await db.collection(CONFIG_COLLECTION)
-    .where({ configKey: DAILY_FOOD_BUDGET_CONFIG_KEY })
-    .limit(1)
-    .get()
-  const doc = res.data && res.data.length > 0 ? res.data[0] : null
-  if (doc) {
-    await db.collection(CONFIG_COLLECTION).doc(doc._id).update({ data })
-  } else {
-    data.createdAt = now
-    await db.collection(CONFIG_COLLECTION).add({ data })
-  }
-  return { ok: true, dailyFoodBudget }
-}
-
 async function checkAdminPermission(openid) {
   return { isAdmin: openid === ADMIN_OPENID }
-}
-
-async function listWhitelist() {
-  const res = await db.collection(WHITELIST_COLLECTION)
-    .orderBy('createdAt', 'desc')
-    .get()
-  const list = (res.data || []).map(item => ({
-    id: item._id,
-    openid: item.openid,
-    nickname: item.nickname || '',
-    createdAt: item.createdAt || 0
-  }))
-  return { list }
-}
-
-async function addWhitelist(payload, openid) {
-  const targetOpenid = String(payload.openid || '').trim()
-  const nickname = String(payload.nickname || '').trim()
-  if (!targetOpenid) {
-    throw new Error('openid 不能为空')
-  }
-  // 检查是否已存在
-  const existRes = await db.collection(WHITELIST_COLLECTION)
-    .where({ openid: targetOpenid })
-    .limit(1)
-    .get()
-  if (existRes.data && existRes.data.length > 0) {
-    throw new Error('该用户已在白名单中')
-  }
-  const now = Date.now()
-  const addRes = await db.collection(WHITELIST_COLLECTION).add({
-    data: {
-      openid: targetOpenid,
-      nickname,
-      createdAt: now,
-      createdBy: openid
-    }
-  })
-  return { id: addRes._id, openid: targetOpenid, nickname, createdAt: now }
-}
-
-async function removeWhitelist(payload) {
-  const id = payload.id
-  if (!id) {
-    throw new Error('id 不能为空')
-  }
-  await db.collection(WHITELIST_COLLECTION).doc(id).remove()
-  return { ok: true }
 }
 
 exports.main = async (event) => {
@@ -214,26 +120,6 @@ exports.main = async (event) => {
       case 'deleteFeideeConfig':
         await checkPermission(OPENID)
         data = await deleteFeideeConfig(payload || {})
-        break
-      case 'getSystemConfig':
-        await checkPermission(OPENID)
-        data = await getSystemConfig()
-        break
-      case 'updateSystemConfig':
-        await checkPermission(OPENID)
-        data = await updateSystemConfig(payload || {})
-        break
-      case 'listWhitelist':
-        await checkPermission(OPENID)
-        data = await listWhitelist()
-        break
-      case 'addWhitelist':
-        await checkPermission(OPENID)
-        data = await addWhitelist(payload || {}, OPENID)
-        break
-      case 'removeWhitelist':
-        await checkPermission(OPENID)
-        data = await removeWhitelist(payload || {})
         break
       default:
         throw new Error('不支持的 action')

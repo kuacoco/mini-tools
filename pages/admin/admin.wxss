@@ -5,15 +5,6 @@
   box-sizing: border-box;
 }
 
-.loading-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200rpx;
-  color: #888;
-  font-size: 28rpx;
-}
-
 .admin-content {
   padding-bottom: 40rpx;
 }
@@ -87,16 +78,7 @@
   font-size: 28rpx;
 }
 
-.config-item {
-  margin-bottom: 24rpx;
-}
 
-.config-label {
-  display: block;
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 12rpx;
-}
 
 .config-textarea {
   width: 100%;
@@ -109,77 +91,14 @@
   box-sizing: border-box;
 }
 
-.save-btn {
-  width: 100%;
-  height: 88rpx;
-  background: linear-gradient(135deg, #d06d7f 0%, #b86dd0 100%);
-  color: #ffffff;
-  font-size: 32rpx;
-  font-weight: 500;
-  border-radius: 44rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  margin-top: 16rpx;
-}
 
-.save-btn.is-disabled {
-  opacity: 0.6;
-}
 
-.save-btn::after {
-  border: none;
-}
 
-/* 白名单列表 */
+/* 空状态 */
 .empty-tip {
   text-align: center;
   padding: 40rpx 0;
   color: #999;
-  font-size: 28rpx;
-}
-
-.whitelist-list {
-  margin-top: 8rpx;
-}
-
-.whitelist-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.whitelist-item:last-child {
-  border-bottom: none;
-}
-
-.whitelist-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.whitelist-name {
-  display: block;
-  font-size: 30rpx;
-  color: #333;
-  margin-bottom: 8rpx;
-}
-
-.whitelist-openid {
-  display: block;
-  font-size: 24rpx;
-  color: #999;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.whitelist-action {
-  padding: 12rpx 24rpx;
-  color: #d06d7f;
   font-size: 28rpx;
 }
 
@@ -277,36 +196,4 @@
 .popup-btn.confirm {
   background: linear-gradient(135deg, #d06d7f 0%, #b86dd0 100%);
   color: #fff;
-}
-
-/* 同步操作 */
-.sync-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16rpx 0;
-}
-
-.sync-btn {
-  width: 100%;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #8fb6f9 0%, #7fcad1 100%);
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 500;
-  border-radius: 44rpx;
-}
-
-.sync-btn.is-disabled {
-  opacity: 0.6;
-}
-
-.sync-hint {
-  margin-top: 16rpx;
-  font-size: 24rpx;
-  color: #999;
-  text-align: center;
 }

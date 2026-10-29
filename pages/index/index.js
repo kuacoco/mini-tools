@@ -2,10 +2,10 @@ const { isPrivilegedUser } = require('../../utils/privileged-user')
 
 const PRIVILEGED_TOOL_LIST = [
   {
-    id: 'spending-calendar',
-    title: '消费日历',
-    desc: '以月历查看每日消费，点按日期查看流水',
-    path: '/pages/expense-calendar/expense-calendar',
+    id: 'budget',
+    title: '预算看板',
+    desc: '按自然月追踪预算使用进度，支持快速录入',
+    path: '/pages/budget/budget',
   },
   {
     id: 'spending-bill',
@@ -14,10 +14,16 @@ const PRIVILEGED_TOOL_LIST = [
     path: '/pages/feidee-bill/feidee-bill',
   },
   {
-    id: 'budget',
-    title: '预算看板',
-    desc: '按自然月追踪预算使用进度，支持快速录入',
-    path: '/pages/budget/budget',
+    id: 'category-expense',
+    title: '分类支出',
+    desc: '按分类查看支出分布，展开查看消费明细',
+    path: '/pages/category-expense/category-expense',
+  },
+  {
+    id: 'spending-calendar',
+    title: '消费日历',
+    desc: '以月历查看每日消费，点按日期查看流水',
+    path: '/pages/expense-calendar/expense-calendar',
   },
 ]
 
@@ -45,6 +51,7 @@ const BASE_TOOL_LIST = [
 Page({
   data: {
     toolList: BASE_TOOL_LIST,
+    toolGroups: [{ id: 'life', title: '生活工具', desc: '课程、日程与日常小事', items: BASE_TOOL_LIST }],
   },
 
   async onShow() {
@@ -52,7 +59,11 @@ Page({
     const toolList = privileged
       ? [...PRIVILEGED_TOOL_LIST, ...BASE_TOOL_LIST]
       : BASE_TOOL_LIST
-    this.setData({ toolList })
+    const toolGroups = [
+      ...(privileged ? [{ id: 'feidee', title: '随手记', desc: '从每日消费到月度预算，一起看清收支', items: PRIVILEGED_TOOL_LIST }] : []),
+      { id: 'life', title: '生活工具', desc: '课程、日程与日常小事', items: BASE_TOOL_LIST },
+    ]
+    this.setData({ toolList, toolGroups })
   },
 
   onToolTap(e) {

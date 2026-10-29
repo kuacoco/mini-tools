@@ -96,16 +96,6 @@ async function syncBudgetFromFeidee(monthKey) {
   return result.data || { created: 0, updated: 0, skipped: 0 }
 }
 
-async function checkWhitelist() {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'budgetCrud',
-    data: { action: 'checkWhitelist', payload: {} },
-  })
-  const result = res && res.result ? res.result : {}
-  return result.success && result.data && result.data.isWhitelisted === true
-}
-
 async function isAdmin() {
   ensureCloudReady()
   const res = await wx.cloud.callFunction({
@@ -155,32 +145,6 @@ async function updateFeideeConfig(userId, authorization, accountIds, tradingEnti
   return result.data
 }
 
-async function getSystemConfig() {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'adminCrud',
-    data: { action: 'getSystemConfig', payload: {} },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '获取系统配置失败')
-  }
-  return result.data || {}
-}
-
-async function updateSystemConfig(payload) {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'adminCrud',
-    data: { action: 'updateSystemConfig', payload },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '更新系统配置失败')
-  }
-  return result.data || {}
-}
-
 async function deleteFeideeConfig(id) {
   ensureCloudReady()
   const res = await wx.cloud.callFunction({
@@ -190,84 +154,6 @@ async function deleteFeideeConfig(id) {
   const result = res && res.result ? res.result : {}
   if (!result.success) {
     throw new Error(result.message || '删除配置失败')
-  }
-  return result.data
-}
-
-async function listWhitelist() {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'adminCrud',
-    data: { action: 'listWhitelist', payload: {} },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '获取白名单失败')
-  }
-  return result.data && Array.isArray(result.data.list) ? result.data.list : []
-}
-
-async function addWhitelist(openid, nickname = '') {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'adminCrud',
-    data: { action: 'addWhitelist', payload: { openid, nickname } },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '添加白名单失败')
-  }
-  return result.data
-}
-
-async function removeWhitelist(id) {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'adminCrud',
-    data: { action: 'removeWhitelist', payload: { id } },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '删除白名单失败')
-  }
-  return result.data
-}
-
-async function incrementSubscribe() {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'budgetCrud',
-    data: { action: 'incrementSubscribe', payload: {} },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '增加订阅次数失败')
-  }
-  return result.data
-}
-
-async function getSubscribeCount() {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'budgetCrud',
-    data: { action: 'getSubscribeCount', payload: {} },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    return { count: 0 }
-  }
-  return result.data || { count: 0 }
-}
-
-async function syncAllFeideeUsers() {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'syncFeideeBudget',
-    data: { action: 'syncAll' },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '同步失败')
   }
   return result.data
 }
@@ -321,20 +207,11 @@ module.exports = {
   deleteBudgetItem,
   mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,
-  checkWhitelist,
   isAdmin,
   getFeideeConfig,
   listFeideeConfig,
   updateFeideeConfig,
   deleteFeideeConfig,
-  getSystemConfig,
-  updateSystemConfig,
-  listWhitelist,
-  addWhitelist,
-  removeWhitelist,
-  incrementSubscribe,
-  getSubscribeCount,
-  syncAllFeideeUsers,
   getPublicBudgetConfig,
   fetchFeideeTransactions,
   fetchFeideeCategoryExpense,
