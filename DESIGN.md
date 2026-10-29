@@ -88,7 +88,7 @@ Every new page has one Skyline `scroll-view` owner below the shared navigation b
 
 ## Elevation & Depth
 
-The home 飞迪账单 section is an open-folder variant: a top-left raised tab owns the section title, with a lilac-to-white folder body and individually colored receipt-like task cards. Runtime owner: `.tool-group--feidee`, `.folder-tab`, and `.tool-grid--feidee .tool-item` in `pages/index/index.wxss`. The tab and body share #F0ECFF at their seam, use home-lilac borders and home-ink text, and use home-violet for the tab dot. The body ends at #FAF8FF. Keep all cards upright for readable tap targets; the paper effect comes from a restrained lower-edge shadow. Other tools retain their unenclosed section.
+The home 随手记 section is an open-folder variant: a top-left raised tab owns the section title, with a lilac-to-white folder body and individually colored receipt-like task cards. Runtime owner: `.tool-group--feidee`, `.folder-tab`, and `.tool-grid--feidee .tool-item` in `pages/index/index.wxss`. The tab and body share #F0ECFF at their seam, use home-lilac borders and home-ink text, and use home-violet for the tab dot. The body ends at #FAF8FF. Keep all cards upright for readable tap targets; the paper effect comes from a restrained lower-edge shadow. Other tools retain their unenclosed section.
 
 Thin mint borders establish structure. Shadows are soft and only lift a summary or data surface from the pale canvas. The notched card corner identifies a ledger surface; it is not used on controls.
 
@@ -102,7 +102,7 @@ The home launcher uses larger, fully rounded tiles and a four-square drawer mark
 
 ### Foundational visual states
 
-Tap targets use a brief opacity change. Today receives an amber inset ring; amount intensity is paired with the printed RMB amount. Loading, empty, and error states reserve their list/card footprint.
+Tap targets use a brief opacity change. Amount intensity is paired with the printed RMB amount; the current calendar does not draw a separate today ring. Loading, empty, and error states reserve their list/card footprint.
 
 ### Navigation and data display
 
@@ -110,9 +110,9 @@ The month selector is the platform-owned native month picker, chosen because thi
 
 ### Home tool launcher
 
-Always show the 我的工具箱 introduction card with its tool count and four-square mark. Course/schedule tags are always visible; consumption/budget tags appear with the 飞迪账单 group. With multiple groups, retain the 飞迪账单 folder tab and a plain 生活工具 heading, without section subtitles or counts. When only general tools are available, omit the redundant 生活工具 heading.
+Always show the 我的工具箱 introduction card with its tool count and four-square mark. Course/schedule tags are always visible; consumption/budget tags appear with the 随手记 group. With multiple groups, retain only the 随手记 folder tab; general tools have no separate heading, without section subtitles or counts. When only general tools are available, omit the redundant 生活工具 heading.
 
-The home route uses one Skyline scroll owner and two named sections: 飞迪账单 for the four privileged spending/budget tools, and 生活工具 for the three general tools. The spending section uses a pale white enclosure with a lilac border; its two rows alternate 54/46 and 46/54 widths. The life section starts with 54/46 widths and leaves 定位拾取 at half width. Each row reserves an 18rpx gap. Width rules belong to the semantic section, not the total number of tools. Longer labels/descriptions wrap naturally. Existing tile colors and press feedback remain canonical in `pages/index/index.wxss`; section headings use home-ink, the enclosure border uses home-lilac, and secondary labels use runtime #64657D. Permission and route behavior remain unchanged.
+The home route uses one Skyline scroll owner and two named sections: 随手记 for the four privileged spending/budget tools, and 生活工具 for the three general tools. The spending section uses a pale white enclosure with a lilac border; its two rows alternate 54/46 and 46/54 widths. The life section starts with 54/46 widths and leaves 定位拾取 at half width. Each row reserves an 18rpx gap. Width rules belong to the semantic section, not the total number of tools. Longer labels/descriptions wrap naturally. Existing tile colors and press feedback remain canonical in `pages/index/index.wxss`; section headings use home-ink, the enclosure border uses home-lilac, and secondary labels use runtime #64657D. Permission and route behavior remain unchanged.
 
 ### Monthly spending bill
 

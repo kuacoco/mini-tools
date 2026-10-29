@@ -159,7 +159,6 @@
 	<view class="fab-wrap">
 		<view wx:if="{{ showFabMenu }}" class="fab-menu {{ fabMenuClosing ? 'is-leaving' : 'is-entering' }}">
 			<view class="fab-menu-item" bindtap="onSyncFromFeidee">同步数据</view>
-			<!-- <view class="fab-menu-item" bindtap="onImportBudgetByImage">图片导入</view> -->
 			<view class="fab-menu-item fab-menu-item-danger" bindtap="onClearBudgetItems">删除预算</view>
 			<view class="fab-menu-item" bindtap="onOpenCopyPopup">复制预算</view>
 			<view class="fab-menu-item" bindtap="onOpenAddPopup">新增预算</view>

@@ -20,6 +20,5 @@ async function isPrivilegedUser() {
 }
 
 module.exports = {
-  PRIVILEGED_OPENID,
   isPrivilegedUser,
 }

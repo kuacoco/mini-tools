@@ -3,3 +3,8 @@
 !.claude/skills/
 key/
 preview-qrcode.jpg
+
+# 本地依赖、系统文件与可再生成的审计报告
+node_modules/
+.DS_Store
+premium-audit.json

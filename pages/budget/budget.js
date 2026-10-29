@@ -6,10 +6,8 @@ const {
   updateBudgetItem,
   renameParentCategory,
   deleteBudgetItem,
-  mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,
   copyBudgetFromMonth,
-  getPublicBudgetConfig,
 } = require('../../utils/budget-storage')
 const { formatAmount } = require('../../utils/amount-expression')
 const {
@@ -95,47 +93,10 @@ const SWIPE_DELETE_WIDTH = 82
 const SWIPE_OPEN_THRESHOLD = 38
 const POPUP_ANIMATION_MS = 240
 const FAB_MENU_ANIMATION_MS = 180
-const DEFAULT_DAILY_FOOD_BUDGET = 50
 
 function vibrateLight() {
   if (typeof wx === 'undefined' || !wx.vibrateShort) return
   wx.vibrateShort()
-}
-
-function chooseOneImage() {
-  return new Promise((resolve, reject) => {
-    wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sourceType: ['album', 'camera'],
-      success: (res) => {
-        const file =
-          res &&
-            Array.isArray(res.tempFiles) &&
-            res.tempFiles.length > 0
-            ? res.tempFiles[0]
-            : null
-        if (!file || !file.tempFilePath) {
-          reject(new Error('未选择图片'))
-          return
-        }
-        resolve(file.tempFilePath)
-      },
-      fail: (err) => reject(err),
-    })
-  })
-}
-
-function uploadImageToCloud(tempFilePath) {
-  const extMatch = tempFilePath.match(/\.[a-zA-Z0-9]+$/)
-  const ext = extMatch ? extMatch[0] : '.jpg'
-  const cloudPath = `budget-import/${Date.now()}_${Math.floor(
-    Math.random() * 10000
-  )}${ext}`
-  return wx.cloud.uploadFile({
-    cloudPath,
-    filePath: tempFilePath,
-  })
 }
 
 Page({
@@ -151,12 +112,8 @@ Page({
     swiperSummaryIndex: 1,
     /** 月份切换时递增，用于重建 swiper，避免回弹二次动画 */
     summarySwiperKey: 0,
-    /** 食品酒水每日预算提示 */
+    /** 食品酒水日均可用提示 */
     showDailyTip: false,
-    dailyFoodBudget: DEFAULT_DAILY_FOOD_BUDGET,
-    dailyBudgetText: '0',
-    dailyRemainText: '0',
-    foodCategoryRemainText: '0',
     foodCategoryAvgWithTodayText: '--',
     foodCategoryAvgWithoutTodayText: '--',
     showFabMenu: false,
@@ -226,26 +183,9 @@ Page({
 
   async onShow() {
     try {
-      await this.loadBudgetTipConfig()
       await this.refreshBudgetList()
-
     } finally {
       if (!this.data.pageReady) this.setData({ pageReady: true })
-    }
-  },
-
-  async loadBudgetTipConfig() {
-    try {
-      const config = await getPublicBudgetConfig()
-      const dailyFoodBudget = Number(config && config.dailyFoodBudget)
-      this.setData({
-        dailyFoodBudget:
-          Number.isFinite(dailyFoodBudget) && dailyFoodBudget >= 0
-            ? dailyFoodBudget
-            : DEFAULT_DAILY_FOOD_BUDGET,
-      })
-    } catch (err) {
-      this.setData({ dailyFoodBudget: DEFAULT_DAILY_FOOD_BUDGET })
     }
   },
 
@@ -299,12 +239,9 @@ Page({
     const monthChanged = prevCenter !== monthKey
     this._lastSummaryCenterMonthKey = monthKey
 
-    // 计算食品酒水每日预算提示（仅当月显示）
+    // 计算食品酒水日均可用提示（仅当月显示）
     const isCurrentMonth = monthKey === getCurrentMonthKey()
     let showDailyTip = false
-    let dailyBudgetText = '0'
-    let dailyRemainText = '0'
-    let foodCategoryRemainText = '0'
     let foodCategoryAvgWithTodayText = '--'
     let foodCategoryAvgWithoutTodayText = '--'
     if (isCurrentMonth) {
@@ -317,19 +254,14 @@ Page({
       ).getDate()
       const remainDaysWithToday = Math.max(0, daysInMonth - dayOfMonth + 1)
       const remainDaysWithoutToday = Math.max(0, daysInMonth - dayOfMonth)
-      const dailyBudget = dayOfMonth * Number(this.data.dailyFoodBudget || 0) // 截止今天的食品酒水预算
       // 一级分类不单独存储，食品酒水额度由所属二级预算项汇总。
       const foodGroup = budgetGroups.find(
         (group) => group.sourceName === '食品酒水' || group.name === '食品酒水'
       )
       const foodUsed = foodGroup ? Number(foodGroup.usedAmount || 0) : 0
       const foodTotal = foodGroup ? Number(foodGroup.totalAmount || 0) : 0
-      const dailyRemain = dailyBudget - foodUsed // 剩余额度
       const foodCategoryRemain = foodTotal - foodUsed
       showDailyTip = true
-      dailyBudgetText = formatAmount(dailyBudget)
-      dailyRemainText = formatAmount(dailyRemain)
-      foodCategoryRemainText = formatAmount(foodCategoryRemain)
       foodCategoryAvgWithTodayText =
         remainDaysWithToday > 0
           ? formatAmount(foodCategoryRemain / remainDaysWithToday)
@@ -347,9 +279,6 @@ Page({
       summarySwipe,
       swiperSummaryIndex: 1,
       showDailyTip,
-      dailyBudgetText,
-      dailyRemainText,
-      foodCategoryRemainText,
       foodCategoryAvgWithTodayText,
       foodCategoryAvgWithoutTodayText,
     }
@@ -768,12 +697,6 @@ Page({
     }
   },
 
-  onImportBudgetByImage() {
-    this.closeFabMenu({
-      afterClose: () => this.startImageImport(),
-    })
-  },
-
   onSyncFromFeidee() {
     this.closeFabMenu({
       afterClose: () => this.startFeideeSync(),
@@ -788,13 +711,12 @@ Page({
     })
   },
 
-  async startFeideeSync(options = {}) {
-    const { auto = false } = options
+  async startFeideeSync() {
     if (!wx.cloud || !wx.cloud.callFunction) {
       wx.showToast({ title: '请先启用云开发', icon: 'none' })
       return false
     }
-    wx.showLoading({ title: '同步中...', mask: !auto })
+    wx.showLoading({ title: '同步中...', mask: true })
     try {
       const stats = await syncBudgetFromFeidee(this.data.monthKey)
       await this.refreshBudgetList()
@@ -810,64 +732,6 @@ Page({
       wx.showToast({ title: message, icon: 'none' })
       return false
     }
-  },
-
-  async startImageImport() {
-    if (!wx.cloud || !wx.cloud.uploadFile || !wx.cloud.callFunction) {
-      wx.showToast({ title: '请先启用云开发', icon: 'none' })
-      return
-    }
-    let hideLoading = false
-    const closeLoading = () => {
-      if (!hideLoading) return
-      wx.hideLoading()
-      hideLoading = false
-    }
-    try {
-      const tempFilePath = await chooseOneImage()
-      wx.showLoading({ title: '识别中...', mask: true })
-      hideLoading = true
-      const uploadRes = await uploadImageToCloud(tempFilePath)
-      const fileID = uploadRes && uploadRes.fileID
-      if (!fileID) {
-        throw new Error('图片上传失败')
-      }
-      const ocrRes = await wx.cloud.callFunction({
-        name: 'ocrBudgetImport',
-        data: { fileID },
-      })
-      const ocrResult = ocrRes && ocrRes.result ? ocrRes.result : {}
-      if (!ocrResult.success) {
-        throw new Error(ocrResult.message || '图片识别失败')
-      }
-      const records =
-        ocrResult.data && Array.isArray(ocrResult.data.records)
-          ? ocrResult.data.records
-          : []
-      if (!records.length) {
-        throw new Error('未识别到分类金额')
-      }
-      const stats = await mergeBudgetItemsFromOcr(this.data.monthKey, records)
-      await this.refreshBudgetList()
-      closeLoading()
-      wx.showToast({
-        title: `更新${stats.updated || 0}项 新增${stats.created || 0}项`,
-        icon: 'none',
-      })
-    } catch (err) {
-      const message =
-        err && err.errMsg && err.errMsg.includes('cancel')
-          ? ''
-          : err && err.message
-            ? err.message
-            : '导入失败，请重试'
-      if (message) {
-        closeLoading()
-        wx.showToast({ title: message, icon: 'none' })
-      }
-      return
-    }
-    closeLoading()
   },
 
   closeAddPopup(options = {}) {

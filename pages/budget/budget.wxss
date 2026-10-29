@@ -300,18 +300,6 @@ page {
   height: 30rpx;
 }
 
-.budget-footer {
-  display: flex;
-  justify-content: center;
-  padding: 18rpx 0 8rpx;
-}
-
-.budget-footer-text {
-  font-size: 22rpx;
-  color: rgba(138, 141, 167, 0.9);
-  letter-spacing: 0.5rpx;
-}
-
 .summary-overview {
   position: relative;
   z-index: 1;
@@ -1007,19 +995,6 @@ page {
   border-left: 8rpx solid transparent;
   border-right: 8rpx solid transparent;
   border-top: 10rpx solid #8a8da7;
-}
-
-.popup-copy-hint {
-  margin-top: 20rpx;
-  margin-bottom: 24rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.popup-copy-hint text {
-  font-size: 24rpx;
-  color: #8a8da7;
 }
 
 .popup-copy-btn {

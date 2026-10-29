@@ -51,7 +51,7 @@ const BASE_TOOL_LIST = [
 Page({
   data: {
     toolList: BASE_TOOL_LIST,
-    toolGroups: [{ id: 'life', title: '生活工具', desc: '课程、日程与日常小事', items: BASE_TOOL_LIST }],
+    toolGroups: [{ id: 'life', title: '生活工具', items: BASE_TOOL_LIST }],
   },
 
   async onShow() {
@@ -60,8 +60,8 @@ Page({
       ? [...PRIVILEGED_TOOL_LIST, ...BASE_TOOL_LIST]
       : BASE_TOOL_LIST
     const toolGroups = [
-      ...(privileged ? [{ id: 'feidee', title: '随手记', desc: '从每日消费到月度预算，一起看清收支', items: PRIVILEGED_TOOL_LIST }] : []),
-      { id: 'life', title: '生活工具', desc: '课程、日程与日常小事', items: BASE_TOOL_LIST },
+      ...(privileged ? [{ id: 'feidee', title: '随手记', items: PRIVILEGED_TOOL_LIST }] : []),
+      { id: 'life', title: '生活工具', items: BASE_TOOL_LIST },
     ]
     this.setData({ toolList, toolGroups })
   },

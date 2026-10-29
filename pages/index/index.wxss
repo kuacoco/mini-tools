@@ -246,58 +246,9 @@ page {
   background: #8c83d7;
 }
 
-.tool-group--feidee .tool-group-heading {
-  margin-bottom: 20rpx;
-}
-
-.tool-group--feidee .tool-group-desc {
-  margin-top: 0;
-}
-
-.tool-group--feidee .tool-group-count {
-  padding: 7rpx 12rpx;
-  border-radius: 12rpx;
-  background: #e6e0ff;
-  color: #30327b;
-}
-
 .tool-grid--feidee .tool-item {
   border-radius: 22rpx;
   box-shadow: 0 5rpx 0 rgba(255, 255, 255, 0.85), 0 10rpx 16rpx rgba(68, 55, 108, 0.05);
-}
-
-.tool-group-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 4rpx 24rpx;
-}
-
-.tool-group-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.tool-group-title {
-  display: block;
-  color: #30327b;
-  font-size: 32rpx;
-  font-weight: 700;
-}
-
-.tool-group-desc {
-  display: block;
-  margin-top: 8rpx;
-  color: #64657d;
-  font-size: 23rpx;
-  line-height: 1.6;
-}
-
-.tool-group-count {
-  flex: none;
-  margin-left: 18rpx;
-  color: #64657d;
-  font-size: 21rpx;
 }
 
 .tool-item {

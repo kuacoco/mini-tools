@@ -78,22 +78,6 @@
   font-size: 28rpx;
 }
 
-
-
-.config-textarea {
-  width: 100%;
-  min-height: 120rpx;
-  padding: 20rpx;
-  background: #f7f7f7;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  color: #333;
-  box-sizing: border-box;
-}
-
-
-
-
 /* 空状态 */
 .empty-tip {
   text-align: center;

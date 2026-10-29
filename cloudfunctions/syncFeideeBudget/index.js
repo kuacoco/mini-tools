@@ -6,7 +6,6 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const CONFIG_COLLECTION = 'budget_config'
 const BUDGET_COLLECTION = 'budget_items'
-const _ = db.command
 const ADMIN_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
 
 /**

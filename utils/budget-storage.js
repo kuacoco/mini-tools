@@ -75,14 +75,6 @@ async function deleteBudgetItem(monthKey, id) {
   })
 }
 
-async function mergeBudgetItemsFromOcr(monthKey, records) {
-  const data = await callBudgetCrud('mergeFromOcr', {
-    monthKey,
-    records,
-  })
-  return data || { created: 0, updated: 0, skipped: 0 }
-}
-
 async function syncBudgetFromFeidee(monthKey) {
   ensureCloudReady()
   const res = await wx.cloud.callFunction({
@@ -94,29 +86,6 @@ async function syncBudgetFromFeidee(monthKey) {
     throw new Error(result.message || '飞笛同步服务异常')
   }
   return result.data || { created: 0, updated: 0, skipped: 0 }
-}
-
-async function isAdmin() {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'adminCrud',
-    data: { action: 'checkPermission', payload: {} },
-  })
-  const result = res && res.result ? res.result : {}
-  return result.success && result.data && result.data.isAdmin === true
-}
-
-async function getFeideeConfig(userId) {
-  ensureCloudReady()
-  const res = await wx.cloud.callFunction({
-    name: 'adminCrud',
-    data: { action: 'getFeideeConfig', payload: { userId } },
-  })
-  const result = res && res.result ? res.result : {}
-  if (!result.success) {
-    throw new Error(result.message || '获取配置失败')
-  }
-  return result.data || {}
 }
 
 async function listFeideeConfig() {
@@ -156,11 +125,6 @@ async function deleteFeideeConfig(id) {
     throw new Error(result.message || '删除配置失败')
   }
   return result.data
-}
-
-async function getPublicBudgetConfig() {
-  const data = await callBudgetCrud('getPublicBudgetConfig', {})
-  return data || {}
 }
 
 async function fetchFeideeTransactions(startDate, endDate, categoryFilter) {
@@ -205,14 +169,10 @@ module.exports = {
   updateBudgetItem,
   renameParentCategory,
   deleteBudgetItem,
-  mergeBudgetItemsFromOcr,
   syncBudgetFromFeidee,
-  isAdmin,
-  getFeideeConfig,
   listFeideeConfig,
   updateFeideeConfig,
   deleteFeideeConfig,
-  getPublicBudgetConfig,
   fetchFeideeTransactions,
   fetchFeideeCategoryExpense,
   copyBudgetFromMonth,

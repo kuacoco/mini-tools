@@ -4,11 +4,6 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const COLLECTION = 'budget_items'
-const CONFIG_COLLECTION = 'budget_config'
-const _ = db.command
-const DAILY_FOOD_BUDGET_CONFIG_KEY = 'dailyFoodBudget'
-const DEFAULT_DAILY_FOOD_BUDGET = 50
-const OCR_PARENT_CATEGORY_NAME = '图片导入'
 
 function normalizeName(name) {
   return String(name || '')
@@ -221,105 +216,6 @@ async function deleteItem(payload, openid) {
   return { ok: true }
 }
 
-async function mergeFromOcr(payload, openid) {
-  const monthKey = payload.monthKey
-  ensureMonthKey(monthKey)
-  const records = Array.isArray(payload.records) ? payload.records : []
-  if (!records.length) {
-    return { created: 0, updated: 0, skipped: 0 }
-  }
-  const mergedMap = new Map()
-  for (const record of records) {
-    const category = String(record.category || '').trim()
-    const normalizedName = normalizeName(category)
-    const amount = normalizeAmount(record.amount)
-    if (!normalizedName || amount === null) continue
-    if (!mergedMap.has(normalizedName)) {
-      mergedMap.set(normalizedName, { category, amount })
-    } else {
-      const old = mergedMap.get(normalizedName)
-      old.amount = Number((old.amount + amount).toFixed(2))
-      mergedMap.set(normalizedName, old)
-    }
-  }
-
-  const cleanRecords = Array.from(mergedMap.values())
-  if (!cleanRecords.length) {
-    return { created: 0, updated: 0, skipped: records.length }
-  }
-
-  const existingRes = await db
-    .collection(COLLECTION)
-    .where({ openid, monthKey })
-    .get()
-  const existingList = existingRes.data || []
-  const existingMap = new Map()
-  for (const doc of existingList) {
-    const key = `${normalizeName(doc.parentCategoryName)}:${doc.nameNormalized || normalizeName(doc.name)}`
-    if (!key || existingMap.has(key)) continue
-    existingMap.set(key, doc)
-  }
-
-  let created = 0
-  let updated = 0
-  let skipped = 0
-  const now = Date.now()
-  const parentCategoryNameNormalized = normalizeName(OCR_PARENT_CATEGORY_NAME)
-  for (const item of cleanRecords) {
-    const normalizedName = normalizeName(item.category)
-    const existingDoc = existingMap.get(
-      `${parentCategoryNameNormalized}:${normalizedName}`
-    )
-    if (existingDoc) {
-      await db.collection(COLLECTION).doc(existingDoc._id).update({
-        data: {
-          usedAmount: item.amount,
-          updatedAt: now,
-        },
-      })
-      updated += 1
-      continue
-    }
-    if (item.amount < 0) {
-      skipped += 1
-      continue
-    }
-    await db.collection(COLLECTION).add({
-      data: {
-        openid,
-        monthKey,
-        name: item.category,
-        nameNormalized: normalizedName,
-        categoryId: '',
-        parentCategoryId: '',
-        parentCategoryName: OCR_PARENT_CATEGORY_NAME,
-        parentCategoryNameNormalized,
-        parentCategorySourceName: '',
-        totalAmount: item.amount,
-        usedAmount: item.amount,
-        createdAt: now,
-        updatedAt: now,
-      },
-    })
-    created += 1
-  }
-
-  skipped += Math.max(0, records.length - cleanRecords.length)
-  return { created, updated, skipped }
-}
-
-async function getPublicBudgetConfig() {
-  const res = await db
-    .collection(CONFIG_COLLECTION)
-    .where({ configKey: DAILY_FOOD_BUDGET_CONFIG_KEY })
-    .limit(1)
-    .get()
-  const doc = res.data && res.data.length > 0 ? res.data[0] : null
-  return {
-    dailyFoodBudget: doc ? Number(doc.value || 0) : DEFAULT_DAILY_FOOD_BUDGET,
-  }
-}
-
 async function copyFromMonth(payload, openid) {
   const { sourceMonthKey, targetMonthKey } = payload
   ensureMonthKey(sourceMonthKey)
@@ -414,14 +310,8 @@ exports.main = async (event) => {
       case 'deleteItem':
         data = await deleteItem(payload, OPENID)
         break
-      case 'mergeFromOcr':
-        data = await mergeFromOcr(payload, OPENID)
-        break
       case 'getOpenId':
         data = { openId: OPENID }
-        break
-      case 'getPublicBudgetConfig':
-        data = await getPublicBudgetConfig()
         break
       case 'copyFromMonth':
         data = await copyFromMonth(payload, OPENID)

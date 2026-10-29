@@ -5,28 +5,10 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const CONFIG_COLLECTION = 'budget_config'
 const ADMIN_OPENID = 'o5Qxn17JK9Rx0v22YCXWvhVF4zwg'
-const DAILY_FOOD_BUDGET_CONFIG_KEY = 'dailyFoodBudget'
 
 async function checkPermission(openid) {
   if (openid !== ADMIN_OPENID) {
     throw new Error('无管理权限')
-  }
-}
-
-async function getFeideeConfig(payload) {
-  const { userId } = payload || {}
-  if (!userId) {
-    return {}
-  }
-  try {
-    const res = await db.collection(CONFIG_COLLECTION)
-      .where({ userId })
-      .limit(1)
-      .get()
-    const list = res.data || []
-    return list.length > 0 ? list[0] : {}
-  } catch (err) {
-    return {}
   }
 }
 
@@ -91,10 +73,6 @@ async function deleteFeideeConfig(payload) {
   return { ok: true }
 }
 
-async function checkAdminPermission(openid) {
-  return { isAdmin: openid === ADMIN_OPENID }
-}
-
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const { action, payload } = event
@@ -102,13 +80,6 @@ exports.main = async (event) => {
   try {
     let data = null
     switch (action) {
-      case 'checkPermission':
-        data = await checkAdminPermission(OPENID)
-        break
-      case 'getFeideeConfig':
-        await checkPermission(OPENID)
-        data = await getFeideeConfig(payload || {})
-        break
       case 'listFeideeConfig':
         await checkPermission(OPENID)
         data = await listFeideeConfig()
