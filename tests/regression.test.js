@@ -30,7 +30,11 @@ function loadPage(relative, overrides = {}, wxOverrides = {}, DateClass = Octobe
 
 function budgetPage(storage, wxOverrides, DateClass) {
   return loadPage('pages/budget/budget.js', {
-    '../../utils/budget-storage': { getCurrentMonthKey: () => '2026-10', ...storage },
+    '../../utils/budget-storage': {
+      getCurrentMonthKey: () => '2026-10',
+      syncBudgetFromFeidee: async () => ({}),
+      ...storage,
+    },
   }, wxOverrides, DateClass)
 }
 
@@ -45,8 +49,7 @@ test('预算汇总和日均金额使用实际余额，历史月份不显示当�
       ] : []
     },
   })
-  page.data.monthKey = '2026-10'
-  await page.onShow()
+  await page.onLoad()
   assert.deepEqual(queried, ['2026-09', '2026-10', '2026-11'])
   assert.equal(page.data.summarySwipe[1].totalBudgetText, '1500')
   assert.equal(page.data.summarySwipe[1].totalUsedText, '900')
@@ -71,6 +74,65 @@ test('月末的从明日日均金额显示占位，超支金额保持负值', as
   await page.refreshBudgetList()
   assert.equal(page.data.foodCategoryAvgWithTodayText, '-20')
   assert.equal(page.data.foodCategoryAvgWithoutTodayText, '--')
+})
+
+test('预算看板初次加载先同步再读取，返回时不刷新，手动同步失败后仍读取已保存数据', async () => {
+  const calls = []
+  let finishSync
+  const page = budgetPage({
+    syncBudgetFromFeidee: (month) => {
+      calls.push(`同步 ${month}`)
+      return new Promise((resolve, reject) => { finishSync = { resolve, reject } })
+    },
+    getMonthBudgetList: async (month) => {
+      calls.push(`读取 ${month}`)
+      return []
+    },
+  }, { showToast: ({ title }) => calls.push(title) })
+  const firstLoad = page.onLoad()
+  assert.deepEqual(calls, ['同步 2026-10'])
+  assert.equal(page.data.pageReady, false)
+  finishSync.resolve({})
+  await firstLoad
+  const returnToPage = page.onShow?.()
+  assert.deepEqual(calls, ['同步 2026-10', '读取 2026-09', '读取 2026-10', '读取 2026-11'])
+  await returnToPage
+
+  page.data.monthKey = '2026-09'
+  const manualSync = page.startFeideeSync()
+  assert.equal(calls.at(-1), '同步 2026-09')
+  finishSync.reject(new Error('同步失败'))
+  await manualSync
+  assert.deepEqual(calls.slice(4), ['同步 2026-09', '读取 2026-08', '读取 2026-09', '读取 2026-10', '同步失败'])
+})
+
+test('点击预算项打开所选月份对应的二级账单，未关联分类时提示', async () => {
+  const urls = []
+  const messages = []
+  const page = budgetPage({
+    getMonthBudgetList: async (month) => month === '2024-02' ? [
+      { id: 'linked', categoryId: 'food+drink', name: '餐饮 & 饮品' },
+      { id: 'unlinked', name: '其他预算' },
+    ] : [],
+  }, {
+    navigateTo: ({ url }) => urls.push(url),
+    showToast: ({ title }) => messages.push(title),
+  })
+  page.data.monthKey = '2024-02'
+  await page.refreshBudgetList()
+  page.onBudgetTap({ currentTarget: { dataset: { id: 'unlinked' } } })
+  assert.deepEqual(messages, ['该预算项未关联账单分类'])
+  assert.equal(urls.length, 0)
+  page.onBudgetTap({ currentTarget: { dataset: { id: 'linked' } } })
+  const url = new URL(urls[0], 'https://example.test')
+  assert.equal(url.pathname, '/pages/feidee-bill/feidee-bill')
+  const params = Object.fromEntries(url.search.slice(1).split('&').map((pair) => pair.split('=')))
+  const bill = loadPage('pages/feidee-bill/feidee-bill.js')
+  bill.onLoad(params)
+  assert.equal(bill.data.startDate, '2024-02-01')
+  assert.equal(bill.data.endDate, '2024-02-29')
+  assert.equal(bill.data.categoryName, '餐饮 & 饮品')
+  assert.deepEqual(plain(bill.data.categoryFilter), { group_key: 'CATEGORY_SECOND', group_id: 'food+drink' })
 })
 
 test('删除预算：五项默认不选，手动选择生效，固定弹窗月份且不重复删除', async () => {
@@ -135,12 +197,12 @@ test('首页权限与随手记卡片顺序保持不变', async () => {
   assert.equal(page.data.toolGroups.length, 1)
 })
 
-function loadCloud(name, context, database) {
+function loadCloud(name, context, database, overrides = {}) {
   const file = path.join(root, 'cloudfunctions', name, 'index.js')
   const cloud = { init() {}, database: () => database, getWXContext: () => context }
   const exports = {}
   vm.runInNewContext(fs.readFileSync(file, 'utf8'), {
-    exports, require: (module) => module === 'wx-server-sdk' ? cloud : {},
+    exports, require: (module) => module === 'wx-server-sdk' ? cloud : overrides[module] || {},
     console: { log() {}, error() {} },
   }, { filename: file })
   return exports
@@ -158,12 +220,12 @@ test('云端权限仍有效：管理接口拒绝其他用户，废弃接口不�
     assert.match((await admin.main({ action })).message, /不支持/)
   }
   const budget = loadCloud('budgetCrud', context, database)
-  for (const action of ['mergeFromOcr', 'getPublicBudgetConfig', 'incrementSubscribe']) {
+  for (const action of ['mergeFromOcr', 'getPublicBudgetConfig', 'incrementSubscribe', 'updateUsedAmount']) {
     assert.match((await budget.main({ action })).message, /不支持/)
   }
 })
 
-test('同步仅允许固定账号手动调用，不接受定时或批量同步', async () => {
+test('同步仅允许固定账号从看板调用，不接受定时或批量同步', async () => {
   let reads = 0
   const context = { OPENID: owner, SOURCE: 'wx_trigger' }
   const database = { command: {}, collection() {
@@ -180,4 +242,47 @@ test('同步仅允许固定账号手动调用，不接受定时或批量同步',
   context.OPENID = owner
   assert.match((await sync.main({ monthKey: '2026-10' })).message, /未配置/)
   assert.equal(reads, 1)
+})
+
+test('同步为已有零支出预算补上分类 ID，只为有支出的分类新增预算', async () => {
+  const updated = []
+  const added = []
+  const database = {
+    collection(name) {
+      return {
+        where() { return this },
+        limit() { return this },
+        async get() {
+          return { data: name === 'budget_config' ? [{}] : [
+            { _id: 'budget', name: '公交', parentCategoryName: '交通', usedAmount: 15 },
+          ] }
+        },
+        doc(id) {
+          return { async update({ data }) { updated.push({ id, ...data }) } }
+        },
+        async add({ data }) { added.push(data) },
+      }
+    },
+  }
+  const request = {
+    post(options, callback) {
+      const child = (group_id, group_name, value) => ({
+        group_id, group_name, metric_data: [{ key: 'EXPENSE', value }],
+      })
+      callback(null, { statusCode: 200 }, {
+        data: [{
+          group_id: 'transport',
+          group_name: '交通',
+          children: [child('bus', '公交', 0), child('taxi', '打车', 0), child('metro', '地铁', 5)],
+        }],
+      })
+    },
+  }
+  const sync = loadCloud('syncFeideeBudget', { OPENID: owner }, database, { request })
+  const result = await sync.main({ monthKey: '2026-10' })
+  assert.equal(result.success, true)
+  assert.deepEqual(updated.map(({ id, categoryId, usedAmount }) => [id, categoryId, usedAmount]), [
+    ['budget', 'bus', 0],
+  ])
+  assert.deepEqual(added.map(({ categoryId }) => categoryId), ['metro'])
 })

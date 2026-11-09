@@ -97,8 +97,8 @@ function parseFeideeData(data) {
   for (const parent of data || []) {
     for (const child of parent.children || []) {
       const expense = child.metric_data?.find((m) => m.key === 'EXPENSE')
-      const amount = Number(expense?.value)
-      if (!expense || !Number.isFinite(amount) || amount <= 0) continue
+      const amount = Number(expense?.value ?? 0)
+      if (!Number.isFinite(amount) || amount < 0) continue
 
       records.push({
         category: child.group_name,
@@ -224,7 +224,8 @@ async function mergeBudgetItems(monthKey, openid, records) {
       continue
     }
 
-    if (item.amount < 0) {
+    // 零支出分类只用于同步已有预算项。
+    if (item.amount === 0) {
       skipped += 1
       continue
     }
@@ -276,7 +277,7 @@ async function syncUserMonth(openid, monthKey) {
 }
 
 /**
- * 用户手动触发：同步当前用户
+ * 预算看板触发：同步当前用户
  */
 async function handleUserTrigger(openid, monthKey) {
   if (openid !== ADMIN_OPENID) throw new Error('暂无使用权限')
@@ -296,10 +297,10 @@ exports.main = async (event = {}) => {
 
   try {
     if (SOURCE === 'wx_trigger' || event.action) {
-      throw new Error('仅支持预算看板手动同步')
+      throw new Error('仅支持预算看板同步')
     }
 
-    // 用户手动触发
+    // 看板进入页面或手动操作时触发
     const { monthKey } = event
     if (!OPENID) throw new Error('用户信息缺失')
     if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {

@@ -187,7 +187,7 @@
 					</view>
 					<view class="popup-item">
 						<text class="popup-label">预算金额</text>
-						<view class="used-input">¥ {{ addTotalAmount }}</view>
+						<view class="budget-amount-input">¥ {{ addTotalAmount }}</view>
 						<view wx:if="{{ addAmountFormula }}" class="calc-formula">{{ addAmountFormula }}</view>
 					</view>
 					<amount-keyboard
@@ -215,28 +215,6 @@
 				<view class="parent-edit-hint">保存后会同步修改该分类下全部二级预算项的一级分类名称</view>
 				<view class="popup-copy-btn" bindtap="onSaveParentCategory">保存修改</view>
 			</view>
-		</view>
-	</view>
-
-	<view wx:if="{{ showUsedPopup }}" class="popup-mask {{ usedPopupClosing ? 'is-leaving' : 'is-entering' }}" bindtap="onClosePopup">
-		<view class="popup-sheet" catchtap="noop">
-			<view class="popup-head">
-				<text class="popup-title">设置已使用额度</text>
-				<view class="popup-close" bindtap="onClosePopup"><image class="popup-close-icon" src="/pages/statics/close.svg" mode="aspectFit"/></view>
-			</view>
-			<view class="used-meta">
-				<text class="used-name">{{ usedItemName }}</text>
-				<text class="used-total">预算 ¥{{ usedItemTotalText }}</text>
-			</view>
-			<view class="used-input">¥ {{ usedInput }}</view>
-			<view wx:if="{{ usedAmountFormula }}" class="calc-formula">{{ usedAmountFormula }}</view>
-			<amount-keyboard
-				primaryButtonText="保存"
-				initialReset="{{ usedKeyboardReset }}"
-				initialExpression="{{ usedInitialExpression }}"
-				bindchange="onUsedKeyboardChange"
-				bindprimary="onSaveUsedAmount"
-			/>
 		</view>
 	</view>
 

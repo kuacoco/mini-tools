@@ -927,25 +927,7 @@ page {
   color: #30334f;
 }
 
-.used-meta {
-  margin-bottom: 14rpx;
-}
-
-.used-name {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #3a3d5e;
-}
-
-.used-total {
-  display: block;
-  margin-top: 4rpx;
-  font-size: 24rpx;
-  color: #8a8da7;
-}
-
-.used-input {
+.budget-amount-input {
   padding: 20rpx 22rpx;
   border: 1rpx solid rgba(111, 101, 163, 0.09);
   border-radius: 18rpx;

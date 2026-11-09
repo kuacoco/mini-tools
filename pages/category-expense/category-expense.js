@@ -208,7 +208,7 @@ Page({
     if (!groupid) return
 
     const { startDate, endDate } = this.data
-    const url = `/pages/feidee-bill/feidee-bill?startDate=${startDate}&endDate=${endDate}&categoryId=${groupid}&categoryName=${encodeURIComponent(groupname || '')}`
+    const url = `/pages/feidee-bill/feidee-bill?startDate=${startDate}&endDate=${endDate}&categoryId=${encodeURIComponent(groupid)}&categoryName=${encodeURIComponent(groupname || '')}`
     wx.navigateTo({ url })
   },
 })

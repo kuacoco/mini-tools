@@ -114,11 +114,11 @@ Page({
   onLoad(options) {
     const { startDate, endDate, categoryId, categoryName } = options || {}
 
-    // 如果从分类支出页跳转，使用传入的参数
+    // 从预算看板或分类支出页跳转时，使用传入的日期和二级分类。
     if (startDate && endDate && categoryId) {
       const filter = {
         group_key: 'CATEGORY_SECOND',
-        group_id: categoryId,
+        group_id: decodeURIComponent(categoryId),
       }
 
       this.setData({

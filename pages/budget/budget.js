@@ -2,7 +2,6 @@ const {
   getCurrentMonthKey,
   getMonthBudgetList,
   addBudgetItem,
-  updateUsedAmount,
   updateBudgetItem,
   renameParentCategory,
   deleteBudgetItem,
@@ -133,15 +132,6 @@ Page({
     parentPopupClosing: false,
     editingParentOldName: '',
     editingParentName: '',
-    showUsedPopup: false,
-    usedPopupClosing: false,
-    usedItemId: '',
-    usedItemName: '',
-    usedItemTotalText: '0',
-    usedInput: '0',
-    usedAmountFormula: '',
-    usedKeyboardReset: 0,
-    usedInitialExpression: '0',
     showCopyPopup: false,
     showDeletePopup: false,
     deleteBudgetItems: [],
@@ -153,7 +143,7 @@ Page({
     pageReady: false,
   },
 
-  onLoad() {
+  async onLoad() {
     const monthKey = getCurrentMonthKey()
     const monthPickerItems = generateMonthPickerItems(monthKey)
     let currentPickerIndex = findMonthPickerIndex(monthPickerItems, monthKey)
@@ -171,22 +161,18 @@ Page({
       summarySwiperKey: 0,
     })
     this._lastSummaryCenterMonthKey = monthKey
+    try {
+      await this.startFeideeSync({ automatic: true })
+    } finally {
+      this.setData({ pageReady: true })
+    }
   },
 
   onUnload() {
     if (this.addPopupTimer) clearTimeout(this.addPopupTimer)
-    if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
     if (this.fabMenuTimer) clearTimeout(this.fabMenuTimer)
     if (this.copyPopupTimer) clearTimeout(this.copyPopupTimer)
     if (this.parentPopupTimer) clearTimeout(this.parentPopupTimer)
-  },
-
-  async onShow() {
-    try {
-      await this.refreshBudgetList()
-    } finally {
-      if (!this.data.pageReady) this.setData({ pageReady: true })
-    }
   },
 
   async refreshBudgetList() {
@@ -206,6 +192,7 @@ Page({
       wx.showToast({ title: '预算数据加载失败', icon: 'none' })
       return
     }
+    if (this.data.monthKey !== monthKey) return
 
     const summarySwipe = [
       summarizeBudgetList(listPrev, prevKey),
@@ -342,39 +329,31 @@ Page({
 
   onBudgetTap(e) {
     const id = e.currentTarget.dataset.id
-    const { budgetList } = this.data
-    const target = budgetList.find((item) => item.id === id)
-    if (target && target.offsetX) {
-      this.resetAllOffsets()
-      return
-    }
-    const item = target || null
+    const { budgetList, monthKey } = this.data
+    if (monthKey !== this._lastSummaryCenterMonthKey) return
+    const item = budgetList.find((budget) => budget.id === id)
     if (!item) {
       wx.showToast({ title: '预算项不存在', icon: 'none' })
       return
     }
-    if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
-    const usedInitial = formatAmount(item.usedAmount)
-    this.setData({
-      showUsedPopup: true,
-      usedPopupClosing: false,
-      usedItemId: id,
-      usedItemName: item.name,
-      usedItemTotalText: formatAmount(item.totalAmount),
-      usedInput: usedInitial,
-      usedAmountFormula: '',
-      usedKeyboardReset: Date.now(),
-      usedInitialExpression: usedInitial,
+    if (item.offsetX) {
+      this.resetAllOffsets()
+      return
+    }
+    if (!item.categoryId) {
+      wx.showToast({ title: '该预算项未关联账单分类', icon: 'none' })
+      return
+    }
+    const [year, month] = monthKey.split('-').map(Number)
+    const lastDay = new Date(year, month, 0).getDate()
+    wx.navigateTo({
+      url: `/pages/feidee-bill/feidee-bill?startDate=${monthKey}-01&endDate=${monthKey}-${lastDay}&categoryId=${encodeURIComponent(item.categoryId)}&categoryName=${encodeURIComponent(item.name)}`,
     })
   },
 
   onClosePopup() {
     if (this.data.showFabMenu) {
       this.closeFabMenu()
-      return
-    }
-    if (this.data.showUsedPopup) {
-      this.closeUsedPopup()
       return
     }
     if (this.data.showParentPopup) {
@@ -449,36 +428,6 @@ Page({
       addTotalAmount: valueText,
       addAmountFormula: formulaText,
     })
-  },
-
-  onUsedKeyboardChange(e) {
-    const { valueText, formulaText } = e.detail
-    this.setData({
-      usedInput: valueText,
-      usedAmountFormula: formulaText,
-    })
-  },
-
-  async onSaveUsedAmount() {
-    vibrateLight()
-    const value = Number(this.data.usedInput)
-    if (Number.isNaN(value) || value < 0) {
-      wx.showToast({ title: '金额格式不正确', icon: 'none' })
-      return
-    }
-    try {
-      await updateUsedAmount(
-        this.data.monthKey,
-        this.data.usedItemId,
-        Number(value.toFixed(2))
-      )
-    } catch (err) {
-      wx.showToast({ title: '更新失败，请重试', icon: 'none' })
-      return
-    }
-    this.closeUsedPopup({ resetForm: true })
-    await this.refreshBudgetList()
-    wx.showToast({ title: '已更新', icon: 'success' })
   },
 
   onItemTouchStart(e) {
@@ -711,26 +660,37 @@ Page({
     })
   },
 
-  async startFeideeSync() {
-    if (!wx.cloud || !wx.cloud.callFunction) {
-      wx.showToast({ title: '请先启用云开发', icon: 'none' })
-      return false
+  startFeideeSync({ automatic = false } = {}) {
+    if (!this.feideeSyncTask) {
+      this.feideeSyncTask = this.syncAndRefreshBudget(automatic).finally(() => {
+        this.feideeSyncTask = null
+      })
     }
-    wx.showLoading({ title: '同步中...', mask: true })
+    return this.feideeSyncTask
+  },
+
+  async syncAndRefreshBudget(automatic) {
+    const showLoading = !automatic
+    if (showLoading) wx.showLoading({ title: '同步中...', mask: true })
+    let stats
+    let syncError
     try {
-      const stats = await syncBudgetFromFeidee(this.data.monthKey)
+      stats = await syncBudgetFromFeidee(this.data.monthKey)
+    } catch (err) {
+      syncError = err?.message || '同步失败，请重试'
+    }
+    try {
       await this.refreshBudgetList()
-      wx.hideLoading()
+    } finally {
+      if (showLoading) wx.hideLoading()
+    }
+    if (syncError) {
+      wx.showToast({ title: syncError, icon: 'none' })
+    } else if (!automatic) {
       wx.showToast({
         title: `更新${stats.updated || 0}项 新增${stats.created || 0}项`,
         icon: 'none',
       })
-      return true
-    } catch (err) {
-      wx.hideLoading()
-      const message = err && err.message ? err.message : '同步失败，请重试'
-      wx.showToast({ title: message, icon: 'none' })
-      return false
     }
   },
 
@@ -768,27 +728,6 @@ Page({
         editingParentOldName: '',
         editingParentName: '',
       })
-    }, POPUP_ANIMATION_MS)
-  },
-
-  closeUsedPopup(options = {}) {
-    const { resetForm = true } = options
-    if (!this.data.showUsedPopup) return
-    if (this.usedPopupTimer) clearTimeout(this.usedPopupTimer)
-    this.setData({ usedPopupClosing: true })
-    this.usedPopupTimer = setTimeout(() => {
-      const nextData = {
-        showUsedPopup: false,
-        usedPopupClosing: false,
-      }
-      if (resetForm) {
-        nextData.usedItemId = ''
-        nextData.usedItemName = ''
-        nextData.usedItemTotalText = '0'
-        nextData.usedInput = '0'
-        nextData.usedAmountFormula = ''
-      }
-      this.setData(nextData)
     }, POPUP_ANIMATION_MS)
   },
 

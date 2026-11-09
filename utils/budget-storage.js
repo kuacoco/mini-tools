@@ -37,17 +37,8 @@ async function addBudgetItem(monthKey, payload) {
     parentCategoryName: payload.parentCategoryName,
     name: payload.name,
     totalAmount: Number(payload.totalAmount),
-    usedAmount: Number(payload.usedAmount || 0),
   })
   return data ? data.item : null
-}
-
-async function updateUsedAmount(monthKey, id, usedAmount) {
-  await callBudgetCrud('updateUsedAmount', {
-    monthKey,
-    id,
-    usedAmount: Number(usedAmount),
-  })
 }
 
 async function updateBudgetItem(monthKey, id, payload) {
@@ -165,7 +156,6 @@ module.exports = {
   getCurrentMonthKey,
   getMonthBudgetList,
   addBudgetItem,
-  updateUsedAmount,
   updateBudgetItem,
   renameParentCategory,
   deleteBudgetItem,

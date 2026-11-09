@@ -74,7 +74,6 @@ async function upsertItem(payload, openid) {
     throw new Error('预算金额不合法')
   }
 
-  const used = normalizeAmount(payload.usedAmount)
   const now = Date.now()
   const monthRes = await db.collection(COLLECTION).where({ openid, monthKey }).get()
   const monthList = monthRes.data || []
@@ -129,7 +128,7 @@ async function upsertItem(payload, openid) {
     parentCategoryNameNormalized: parentNormalized,
     parentCategorySourceName,
     totalAmount,
-    usedAmount: used === null ? 0 : used,
+    usedAmount: 0,
     createdAt: now,
     updatedAt: now,
   }
@@ -184,25 +183,6 @@ async function renameParentCategory(payload, openid) {
     })
   }
   return { updated: matched.length }
-}
-
-async function updateUsedAmount(payload, openid) {
-  const monthKey = payload.monthKey
-  ensureMonthKey(monthKey)
-  const id = payload.id
-  const usedAmount = normalizeAmount(payload.usedAmount)
-  if (!id || usedAmount === null) {
-    throw new Error('已使用金额不合法')
-  }
-  const doc = await getOwnedDocById(id, openid)
-  if (!doc || doc.monthKey !== monthKey) throw new Error('预算项不存在')
-  await db.collection(COLLECTION).doc(id).update({
-    data: {
-      usedAmount,
-      updatedAt: Date.now(),
-    },
-  })
-  return { ok: true }
 }
 
 async function deleteItem(payload, openid) {
@@ -300,9 +280,6 @@ exports.main = async (event) => {
         break
       case 'upsertItem':
         data = await upsertItem(payload, OPENID)
-        break
-      case 'updateUsedAmount':
-        data = await updateUsedAmount(payload, OPENID)
         break
       case 'renameParentCategory':
         data = await renameParentCategory(payload, OPENID)
