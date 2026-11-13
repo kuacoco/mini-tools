@@ -78,6 +78,10 @@ jobs:
             *) echo "::error::未知操作: $ACTION"; exit 1 ;;
           esac
 
+      - name: 保存预览二维码备用下载数据
+        if: inputs.action == 'preview'
+        run: python3 scripts/preview-qrcode.py export preview-qrcode.jpg
+
       - name: 上传预览二维码
         if: inputs.action == 'preview'
         uses: actions/upload-artifact@v4
