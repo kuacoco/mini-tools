@@ -7,7 +7,7 @@
 				</view>
 				<view class="period-badge">
 					<view class="period-badge-dot"></view>
-					<text class="period-badge-text">{{ quickType === 'today' ? '当天' : (quickType === 'month' ? '当月' : (quickType === 'range' ? '自定义' : monthLabel)) }}</text>
+					<text class="period-badge-text">{{ quickType === 'today' ? '当天' : (quickType === 'month' ? '当月' : monthLabel) }}</text>
 				</view>
 			</view>
 
@@ -34,23 +34,6 @@
 						<image class="month-pager-arrow" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
 					</view>
 				</view>
-			</view>
-			<view class="date-range-row">
-				<picker class="date-range-picker" mode="date" value="{{ startDate }}" end="{{ endDate }}" bindchange="onStartDateChange" aria-label="选择开始日期">
-					<view class="date-range-trigger" hover-class="date-range-trigger--pressed">
-						<text class="date-range-label">起</text>
-						<text class="date-range-value">{{ startDate }}</text>
-						<text class="date-range-chevron">⌄</text>
-					</view>
-				</picker>
-				<text class="date-range-separator">—</text>
-				<picker class="date-range-picker" mode="date" value="{{ endDate }}" start="{{ startDate }}" bindchange="onEndDateChange" aria-label="选择结束日期">
-					<view class="date-range-trigger" hover-class="date-range-trigger--pressed">
-						<text class="date-range-label">止</text>
-						<text class="date-range-value">{{ endDate }}</text>
-						<text class="date-range-chevron">⌄</text>
-					</view>
-				</picker>
 			</view>
 		</view>
 

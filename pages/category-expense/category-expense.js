@@ -1,4 +1,3 @@
-const { createRangeHandlers } = require('../../utils/spending-range')
 const { fetchFeideeCategoryExpense } = require('../../utils/budget-storage')
 const { getCurrentDateString } = require('../../utils/course-storage')
 const { pickUniqueCategoryBg, categoryInitial } = require('../../utils/category-color')
@@ -51,7 +50,6 @@ function buildSections(rawSections, collapsedMap) {
 const { isPrivilegedUser } = require('../../utils/privileged-user')
 
 Page({
-  ...createRangeHandlers('loadCategoryExpense', (options) => wx.showToast(options)),
   data: {
     headerKicker: 'CATEGORY SPENDING',
     isPrivileged: false,
@@ -109,14 +107,13 @@ Page({
   },
 
   async loadCategoryExpense() {
+    if (this.data.isLoading) return
     const { startDate, endDate } = this.data
     if (!startDate || !endDate) return
 
-    const requestId = this._requestId = (this._requestId || 0) + 1
     this.setData({ isLoading: true, sections: [] })
     try {
       const res = await fetchFeideeCategoryExpense(startDate, endDate)
-      if (requestId !== this._requestId) return
       const rawSections = Array.isArray(res?.sections) ? res.sections : []
       const totalAmount = Number(res?.totalAmount || 0)
 
@@ -126,11 +123,10 @@ Page({
         totalAmountText: formatAmount(totalAmount),
       })
     } catch (err) {
-      if (requestId !== this._requestId) return
       wx.showToast({ title: err?.message || '查询失败', icon: 'none' })
       this.setData({ sections: [], totalAmount: 0, totalAmountText: '0' })
     } finally {
-      if (requestId === this._requestId) this.setData({ isLoading: false })
+      this.setData({ isLoading: false })
     }
   },
 
