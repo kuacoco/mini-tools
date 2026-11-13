@@ -1,0 +1,87 @@
+name: 小程序 CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '操作类型'
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - upload
+          - cloud
+      version:
+        description: '版本号（preview / upload 使用）'
+        required: false
+        default: '1.0.0'
+      desc:
+        description: '版本描述（upload 必填）'
+        required: false
+        default: 'GitHub Actions 上传'
+      robot:
+        description: '机器人编号 1-30'
+        required: false
+        default: '1'
+      function_name:
+        description: '云函数名（cloud 必填）'
+        required: false
+        default: ''
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MP_PROJECT_PATH: ${{ github.workspace }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 安装 miniprogram-ci
+        run: npm i -g miniprogram-ci@2
+
+      - name: 写入代码上传密钥
+        env:
+          MP_KEY: ${{ secrets.MP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MP_KEY:-}" ]; then
+            echo "::error::缺少 Secret MP_PRIVATE_KEY，请先在 Settings → Secrets 中添加"
+            exit 1
+          fi
+          mkdir -p key
+          printf '%s' "$MP_KEY" > key/private.wxe4a08baedb2fcf9d.key
+          chmod 600 key/private.wxe4a08baedb2fcf9d.key
+
+      - name: 执行 CI
+        env:
+          ACTION: ${{ inputs.action }}
+          VERSION: ${{ inputs.version }}
+          DESC: ${{ inputs.desc }}
+          ROBOT: ${{ inputs.robot }}
+          FUNCTION: ${{ inputs.function_name }}
+        run: |
+          set -euo pipefail
+          chmod +x .claude/skills/mp-ci/mp-ci.sh
+          case "$ACTION" in
+            preview) ./.claude/skills/mp-ci/mp-ci.sh preview "$VERSION" "$ROBOT" ;;
+            upload)  ./.claude/skills/mp-ci/mp-ci.sh upload "$VERSION" "$DESC" "$ROBOT" ;;
+            cloud)   ./.claude/skills/mp-ci/mp-ci.sh cloud "$FUNCTION" ;;
+            *) echo "::error::未知操作: $ACTION"; exit 1 ;;
+          esac
+
+      - name: 上传预览二维码
+        if: inputs.action == 'preview'
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-qrcode
+          path: preview-qrcode.jpg
+          if-no-files-found: error
