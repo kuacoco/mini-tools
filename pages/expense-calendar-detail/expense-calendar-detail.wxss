@@ -401,7 +401,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12rpx 20rpx;
+  padding: 20rpx 20rpx;
   background: #f2eff9;
 }
 

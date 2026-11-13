@@ -137,4 +137,4 @@ Both spending pages include `templates/spending-header.wxml` and import `styles/
 
 ### Daily ledger category groups
 
-`pages/expense-calendar-detail` groups the existing transaction `category` field (secondary category) with 未分类 as fallback. Each white ledger surface has a compact lilac (#F2EFF9) header with category name (27rpx, #48495F) and subtotal (28rpx, #675BA6), no per-group count, and 12rpx vertical padding; transaction rows retain time, remark, and amount without repeating the category label. Totals and counts in the day header retain their original meaning.
+`pages/expense-calendar-detail` groups the existing transaction `category` field (secondary category) with 未分类 as fallback. Each white ledger surface has a compact lilac (#F2EFF9) header with category name (27rpx, #48495F) and subtotal (28rpx, #675BA6), no per-group count, and 20rpx vertical padding; transaction rows retain time, remark, and amount without repeating the category label. Totals and counts in the day header retain their original meaning.
