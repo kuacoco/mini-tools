@@ -88,7 +88,7 @@ Every new page has one Skyline `scroll-view` owner below the shared navigation b
 
 ## Elevation & Depth
 
-The home 随手记 section is an open-folder variant: a top-left raised tab owns the section title, with a lilac-to-white folder body and individually colored receipt-like task cards. Runtime owner: `.tool-group--feidee`, `.folder-tab`, and `.tool-grid--feidee .tool-item` in `pages/index/index.wxss`. The tab and body share #F0ECFF at their seam, use home-lilac borders and home-ink text, and use home-violet for the tab dot. The body ends at #FAF8FF. Keep all cards upright for readable tap targets; the paper effect comes from a restrained lower-edge shadow. Other tools retain their unenclosed section.
+The home 随手记 section is an open-folder variant: a top-left raised tab owns the section title, with a lilac-to-white folder body and individually colored receipt-like task cards. Runtime owner: `.tool-group--feidee`, `.folder-tab`, and `.tool-grid--feidee .tool-item` in `pages/index/index.wxss`. The tab and body share #F0ECFF at their seam, use home-lilac borders and home-ink text, and use home-violet for the tab dot. The body ends at #FAF8FF. Keep all cards upright for readable tap targets; all task cards share the base `.tool-item` soft shadow, without a white lower-edge layer. Other tools retain their unenclosed section.
 
 Thin mint borders establish structure. Shadows are soft and only lift a summary or data surface from the pale canvas. The notched card corner identifies a ledger surface; it is not used on controls.
 
