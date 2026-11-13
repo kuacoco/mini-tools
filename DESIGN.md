@@ -126,11 +126,13 @@ Use natural Chinese labels. Show money as `¥` plus up to two decimals. The mont
 
 - **Do:** Keep every actual date tappable, including dates with `¥0`.
 - **Do:** Keep the day-detail sequence ungrouped and in interface order.
-- **Don't:** Add start/end date inputs to the spending headers.
+- **Do:** Keep editable start/end dates in one compact row under the shared spending shortcuts.
 - **Don't:** Treat the hidden client-side entry as server authorization.
 
 ### Category spending header
 
-The category spending header retains its lavender summary surface, amount, today/current-month shortcuts, and previous/next month buttons. Omit the total caption and date-range picker panel. The upper-right badge shows 当天 or 当月 for shortcuts and the selected Gregorian year and month (for example, 2026年9月) after month pagination. Runtime owners: `pages/category-expense/category-expense.wxml`, `.js`, and `.wxss`.
+The category spending header retains its lavender summary surface, amount, today/current-month shortcuts, and previous/next month buttons. Omit the total caption. Place native start/end date pickers in one compact row below the shortcuts, without a separate panel heading. The upper-right badge shows 当天 or 当月 for shortcuts and the selected Gregorian year and month (for example, 2026年9月) after month pagination; manually chosen ranges show 自定义. Runtime owners: `pages/category-expense/category-expense.wxml`, `.js`, and `.wxss`.
 
 Both spending pages include `templates/spending-header.wxml` and import `styles/spending-header.wxss` as the canonical header owners. Amount-to-controls spacing is `30rpx`. The bill keeps category filters when switching periods; its loading and empty copy refers to the selected period.
+
+The shared date row uses an existing lilac control surface, `64rpx` minimum trigger height, and `14rpx` top spacing; it has no heading or helper block. Native `mode="date"` pickers own the calendar popup. `utils/spending-range.js` owns shared range validation and changes; both pages ignore stale query responses.

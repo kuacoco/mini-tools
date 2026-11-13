@@ -1,3 +1,4 @@
+const { createRangeHandlers, isFullMonth } = require('../../utils/spending-range')
 const { fetchFeideeTransactions } = require('../../utils/budget-storage')
 const { getCurrentDateString } = require('../../utils/course-storage')
 const { formatAmount } = require('../../utils/amount-expression')
@@ -86,6 +87,7 @@ function buildCategorySections(list, collapsedMap) {
 const { isPrivilegedUser } = require('../../utils/privileged-user')
 
 Page({
+  ...createRangeHandlers('loadTransactions', (options) => wx.showToast(options)),
   data: {
     headerKicker: 'TRANSACTION BILL',
     quickType: 'month',
@@ -125,7 +127,7 @@ Page({
       }
 
       this.setData({
-        quickType: startDate === endDate && startDate === getCurrentDateString() ? 'today' : 'custom',
+        quickType: startDate === endDate && startDate === getCurrentDateString() ? 'today' : (isFullMonth(startDate, endDate) ? 'custom' : 'range'),
         monthValue: String(startDate).slice(0, 7),
         monthLabel: getMonthLabel(String(startDate).slice(0, 7)),
         startDate,
@@ -171,13 +173,14 @@ Page({
   },
 
   async loadTransactions() {
-    if (this.data.isLoading) return
     const { startDate, endDate, categoryFilter } = this.data
     if (!startDate || !endDate) return
 
+    const requestId = this._requestId = (this._requestId || 0) + 1
     this.setData({ isLoading: true, sections: [] })
     try {
       const res = await fetchFeideeTransactions(startDate, endDate, categoryFilter)
+      if (requestId !== this._requestId) return
       const rawList = Array.isArray(res?.list) ? res.list : []
 
       const decorated = rawList.map((item) => ({
@@ -205,10 +208,11 @@ Page({
         })
       }
     } catch (err) {
+      if (requestId !== this._requestId) return
       wx.showToast({ title: err?.message || '查询失败', icon: 'none' })
       this.setData({ sections: [], rawTransactions: [], totalAmount: 0, totalAmountText: '0' })
     } finally {
-      this.setData({ isLoading: false })
+      if (requestId === this._requestId) this.setData({ isLoading: false })
     }
   },
 

@@ -37,7 +37,7 @@
 |---|---|---|---|---|---|
 | Open privileged tool | Home 随手记 section: 消费日历 / 消费账单 / 分类支出 / 预算看板 | Section hidden until permission result | Corresponding tool, through shared `onToolTap` | Entire section remains hidden for non-privileged users; 生活工具 remains available | `utils/privileged-user.js`, `pages/index/index.js` |
 | Change month | Native month picker | Stable empty calendar grid | Same calendar, refreshed total and day amounts | Inline error | `feideeTransactions` query |
-| Change bill period | Shared header: 当天 / 当月 / 上月 / 下月 | Stable bill-list footprint | Same page, refreshed category groups and total | Toast and empty state | `fetchFeideeTransactions` |
+| Change bill period | Shared header: 当天 / 当月 / 上月 / 下月 / 起止日期 | Stable bill-list footprint | Same page, refreshed category groups and total | Toast and empty state | `fetchFeideeTransactions` |
 | Open day | Tap calendar date | None | Day ledger | Day ledger shows inline error | Existing transaction API |
 | Read day ledger | Page entry | Stable ledger state | Same page | Inline error or empty state | Existing transaction API |
 
@@ -58,3 +58,7 @@
 
 - Static: syntax checks, `git diff --check`, premium audit, and changed-file anti-pattern search.
 - Runtime pending: WeChat Developer Tools / device checks for native month picker, loading, empty, API failure, both permission states, and narrow viewport.
+
+## Spending date range
+
+Both spending headers expose native start/end date pickers in one compact row. Reject a start date after the end date without changing the active query. Manual changes show 自定义; month pagination shows year/month and uses the start month as its base. Quick selections replace both dates. Bill category filters persist. Only the newest query may update results, errors, or loading state. Source: user-requested shared header behavior and `utils/spending-range.js`.

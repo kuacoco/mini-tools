@@ -318,3 +318,41 @@ test('消费账单快捷时段、跨年翻月和分类筛选保持一致', async
   await new Promise(resolve => setImmediate(resolve))
   assert.equal(queries.at(-1)[2], null)
 })
+
+for (const [name, api, load] of [
+  ['category-expense', 'fetchFeideeCategoryExpense', 'loadCategoryExpense'],
+  ['feidee-bill', 'fetchFeideeTransactions', 'loadTransactions'],
+]) {
+  test(`${name} 自定义区间校验、翻月及连续选择时保留最新查询`, async () => {
+    const requests = []
+    const toasts = []
+    const page = loadPage(`pages/${name}/${name}.js`, {
+      '../../utils/budget-storage': { [api]: (...args) => new Promise((resolve, reject) => requests.push({ args, resolve, reject })) },
+    }, { showToast: ({ title }) => toasts.push(title) })
+    page.setData({ startDate: '2026-10-01', endDate: '2026-10-31', monthValue: '2026-10', collapsedMap: { food: true } })
+    if (name === 'feidee-bill') page.data.categoryFilter = { group_id: 'food' }
+    page.onStartDateChange({ detail: { value: '2026-09-15' } })
+    assert.equal(page.data.quickType, 'range')
+    assert.deepEqual(plain(page.data.collapsedMap), {})
+    page.onEndDateChange({ detail: { value: '2026-10-20' } })
+    assert.equal(requests.length, 2)
+    assert.deepEqual(plain(requests[1].args.slice(0, 2)), ['2026-09-15', '2026-10-20'])
+    if (name === 'feidee-bill') assert.equal(requests[1].args[2].group_id, 'food')
+    requests[1].resolve({ totalAmount: 20 })
+    await new Promise(resolve => setImmediate(resolve))
+    requests[0].resolve({ totalAmount: 999 })
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(page.data.totalAmount, 20)
+    assert.equal(page.data.isLoading, false)
+    page.onStartDateChange({ detail: { value: '2026-11-01' } })
+    assert.equal(page.data.startDate, '2026-09-15')
+    assert.equal(toasts.at(-1), '开始日期不能晚于结束日期')
+    assert.equal(requests.length, 2)
+    page.onPageNextMonth()
+    assert.equal(page.data.startDate, '2026-10-01')
+    assert.equal(page.data.endDate, '2026-10-31')
+    assert.equal(page.data.monthLabel, '2026年10月')
+    requests[2].resolve({ totalAmount: 30 })
+    await new Promise(resolve => setImmediate(resolve))
+  })
+}

@@ -174,3 +174,55 @@
   font-weight: 650;
 }
 
+.date-range-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  margin-top: 14rpx;
+  padding: 0 8rpx;
+  border: 1rpx solid rgba(113, 96, 174, 0.08);
+  border-radius: 18rpx;
+  background: #efedf5;
+}
+
+.date-range-picker { flex: 1; min-width: 0; }
+
+.date-range-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  padding: 0 8rpx;
+}
+
+.date-range-trigger--pressed { opacity: 0.6; }
+
+.date-range-label {
+  flex-shrink: 0;
+  margin-right: 10rpx;
+  color: #888798;
+  font-size: 20rpx;
+}
+
+.date-range-value {
+  color: #656579;
+  font-size: 23rpx;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.date-range-chevron {
+  flex-shrink: 0;
+  margin-left: 8rpx;
+  color: #7567aa;
+  font-size: 22rpx;
+}
+
+.date-range-separator {
+  flex-shrink: 0;
+  padding: 0 4rpx;
+  color: #aaa7b6;
+  font-size: 20rpx;
+}
