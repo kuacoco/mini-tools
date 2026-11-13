@@ -15,20 +15,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## CI Commands
 
-使用 `/mp-ci` skill 执行 CI 操作：
+使用 `/mp-ci` skill 通过 GitHub Actions 执行 CI 操作，先读取 `.agents/skills/mp-ci/SKILL.md`。默认执行远端 `main` 的代码，未推送的本地修改不包含在内：
 
 ```bash
 # 预览 - 生成二维码
-./.claude/skills/mp-ci/mp-ci.sh preview
+./.agents/skills/mp-ci/mp-ci.sh preview
 
 # 上传代码（自动压缩）
-./.claude/skills/mp-ci/mp-ci.sh upload <version> "<desc>"
+./.agents/skills/mp-ci/mp-ci.sh upload <version> "<desc>"
 
 # 上传云函数
-./.claude/skills/mp-ci/mp-ci.sh cloud <functionName>
+./.agents/skills/mp-ci/mp-ci.sh cloud <functionName>
 
-# 构建 npm
-./.claude/skills/mp-ci/mp-ci.sh npm
+# 查看工作流运行
+gh run list --repo kuacoco/mini-tools --workflow mp-ci.yml
 ```
 
 云函数列表：budgetCrud, calendarCrud, courseCrud, adminCrud, feideeTransactions, syncFeideeBudget, feideeCategoryExpense
