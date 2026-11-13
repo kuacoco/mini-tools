@@ -66,7 +66,6 @@
 					</view>
 					<view wx:for="{{ group.items }}" wx:key="rowKey" class="transaction-row {{ item.isLast ? 'is-last' : '' }}">
 						<view class="transaction-time">
-							<text class="transaction-time-label">时间</text>
 							<text class="transaction-clock">{{ item.timeText }}</text>
 						</view>
 						<view class="transaction-main">

@@ -286,13 +286,7 @@ page {
   box-sizing: border-box;
 }
 
-.transaction-time-label {
-  color: #aaa5b7;
-  font-size: 16rpx;
-}
-
 .transaction-clock {
-  margin-top: 4rpx;
   color: #7165a3;
   font-size: 22rpx;
   font-weight: 700;
