@@ -26,7 +26,7 @@ function groupTransactions(transactions) {
     group.total += Number(transaction.amount) || 0
     group.items.push(transaction)
   }
-  return Array.from(groups.values(), (group) => ({
+  return Array.from(groups.values()).sort((a, b) => b.total - a.total).map((group) => ({
     name: group.name,
     count: group.items.length,
     totalAmountText: formatAmount(group.total),

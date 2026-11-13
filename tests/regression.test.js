@@ -319,7 +319,7 @@ test('消费账单快捷时段、跨年翻月和分类筛选保持一致', async
   assert.equal(queries.at(-1)[2], null)
 })
 
-test('日消费明细按二级分类分组，组内保留顺序，笔数和小计正确', async () => {
+test('日消费明细按二级分类小计倒序，组内保留顺序，笔数和小计正确', async () => {
   let response = { totalAmount: 45.5, list: [
     { id: 'a', category: ' 早餐 ', amount: 10, remark: '豆浆' },
     { id: 'b', category: '地铁', amount: 5.5 },
@@ -335,7 +335,7 @@ test('日消费明细按二级分类分组，组内保留顺序，笔数和小�
   assert.equal(page.data.transactions.length, 5)
   assert.equal(page.data.totalAmountText, '45.50')
   assert.deepEqual(plain(page.data.categoryGroups.map(g => [g.name, g.count, g.totalAmountText])), [
-    ['早餐', 2, '30'], ['地铁', 1, '5.50'], ['未分类', 2, '10'],
+    ['早餐', 2, '30'], ['未分类', 2, '10'], ['地铁', 1, '5.50'],
   ])
   assert.deepEqual(plain(page.data.categoryGroups[0].items.map(t => [t.id, t.isLast])), [['a', false], ['c', true]])
   response = { list: [], totalAmount: 0 }

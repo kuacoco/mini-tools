@@ -125,7 +125,7 @@ Use natural Chinese labels. Show money as `¥` plus up to two decimals. The mont
 ## Do's and Don'ts
 
 - **Do:** Keep every actual date tappable, including dates with `¥0`.
-- **Do:** Group day-detail transactions by secondary category, preserving first-appearance group order and API order within groups.
+- **Do:** Group day-detail transactions by secondary category, sorting groups by numeric subtotal descending and preserving API order within groups.
 - **Don't:** Add start/end date inputs to the spending headers.
 - **Don't:** Treat the hidden client-side entry as server authorization.
 
