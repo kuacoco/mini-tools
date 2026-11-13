@@ -17,12 +17,30 @@ function formatTransactionTime(timestamp) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
+function groupTransactions(transactions) {
+  const groups = new Map()
+  for (const transaction of transactions) {
+    const name = transaction.categoryText
+    if (!groups.has(name)) groups.set(name, { name, total: 0, items: [] })
+    const group = groups.get(name)
+    group.total += Number(transaction.amount) || 0
+    group.items.push(transaction)
+  }
+  return Array.from(groups.values()).sort((a, b) => b.total - a.total).map((group) => ({
+    name: group.name,
+    count: group.items.length,
+    totalAmountText: formatAmount(group.total),
+    items: group.items.map((item, index) => ({ ...item, isLast: index === group.items.length - 1 })),
+  }))
+}
+
 Page({
   data: {
     date: '',
     dateTitle: '',
     totalAmountText: '0',
     transactions: [],
+    categoryGroups: [],
     isLoading: false,
     loadError: '',
     pageReady: false,
@@ -55,7 +73,7 @@ Page({
     const requestId = (this._requestId || 0) + 1
     this._requestId = requestId
     const { date } = this.data
-    this.setData({ isLoading: true, loadError: '', transactions: [], totalAmountText: '0' })
+    this.setData({ isLoading: true, loadError: '', transactions: [], categoryGroups: [], totalAmountText: '0' })
 
     try {
       const result = await fetchFeideeTransactions(date, date)
@@ -67,10 +85,10 @@ Page({
         amountText: formatAmount(item.amount),
         timeText: formatTransactionTime(item.transaction_time),
         categoryText: String(item.category || '').trim() || '未分类',
-        isLast: index === rawTransactions.length - 1,
       }))
       this.setData({
         transactions,
+        categoryGroups: groupTransactions(transactions),
         totalAmountText: formatAmount(result && result.totalAmount),
       })
     } catch (err) {

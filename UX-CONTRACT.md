@@ -37,7 +37,7 @@
 |---|---|---|---|---|---|
 | Open privileged tool | Home 随手记 section: 消费日历 / 消费账单 / 分类支出 / 预算看板 | Section hidden until permission result | Corresponding tool, through shared `onToolTap` | Entire section remains hidden for non-privileged users; 生活工具 remains available | `utils/privileged-user.js`, `pages/index/index.js` |
 | Change month | Native month picker | Stable empty calendar grid | Same calendar, refreshed total and day amounts | Inline error | `feideeTransactions` query |
-| Change bill month | Native month picker (`fields=month`) | Stable bill-list footprint | Same page, refreshed category groups and total | Toast and empty state | `fetchFeideeTransactions` |
+| Change bill period | Shared header: 当天 / 当月 / 上月 / 下月 | Stable bill-list footprint | Same page, refreshed category groups and total | Toast and empty state | `fetchFeideeTransactions` |
 | Open day | Tap calendar date | None | Day ledger | Day ledger shows inline error | Existing transaction API |
 | Read day ledger | Page entry | Stable ledger state | Same page | Inline error or empty state | Existing transaction API |
 
@@ -45,8 +45,8 @@
 
 - Direct route denial returns to the tool list; this is UX containment, while cloud-function fixed OpenID checks remain the data boundary. Whitelist administration and its API actions are removed. Only the budget page offers manual sync for the current month. Timer/bulk sync, notification subscriptions and counter APIs are removed; historical database records are untouched. Account configuration remains in admin, while budget configuration and sync controls are removed from admin. The obsolete daily-budget config read and OCR import have also been removed; actual remaining-budget averages are unchanged.
 - A calendar day is always tappable, including zero-spend dates.
-- The detail page uses a single chronological list and no category groups.
-- The monthly bill defaults to the current natural month, uses a single month picker, and keeps the existing category-grouped response presentation.
+- The detail page groups transactions by secondary category, sorts groups by numeric subtotal descending and preserves API order within groups, and shows a compact category header with subtotal and no per-group count. Missing categories belong to 未分类.
+- The monthly bill defaults to the current natural month, shares the category spending header with today/current-month shortcuts and month pagination, and keeps the existing category-grouped response presentation. Category filters persist when changing periods.
 
 ## Async and resilience
 

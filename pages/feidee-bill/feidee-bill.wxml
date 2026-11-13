@@ -5,33 +5,7 @@
 	<view class="page-glow page-glow--left"></view>
 	<view class="page-glow page-glow--right"></view>
 	<scroll-view class="bill-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" show-scrollbar="{{ false }}">
-		<view class="summary-card">
-			<view class="summary-decoration summary-decoration--one"></view>
-			<view class="summary-decoration summary-decoration--two"></view>
-			<view class="summary-topline">
-				<text class="summary-kicker">MONTHLY BILL</text>
-				<view class="month-shortcuts">
-					<view class="month-shortcut-btn" bindtap="onPrevMonth">
-						<image class="month-shortcut-arrow" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
-						<text class="month-shortcut-text">上月</text>
-					</view>
-					<view class="month-shortcut-btn" bindtap="onNextMonth">
-						<text class="month-shortcut-text">下月</text>
-						<image class="month-shortcut-arrow" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
-					</view>
-				</view>
-			</view>
-
-			<view class="summary-amount">
-				<text class="summary-label">{{ categoryFilter ? monthLabel + ' · 筛选分类支出' : monthLabel + '总支出' }}</text>
-				<text class="summary-value"><text class="summary-symbol">¥</text>{{ totalAmountText }}</text>
-			</view>
-
-			<view class="summary-footer">
-				<view class="summary-footer-dot"></view>
-				<text class="summary-footer-text">{{ categoryFilter ? '当前仅展示所选二级分类' : '账单已按消费分类整理' }}</text>
-			</view>
-		</view>
+		<include src="/templates/spending-header.wxml" />
 
 		<view wx:if="{{ categoryFilter && categoryName }}" class="filter-card">
 			<view class="filter-icon">筛</view>
@@ -60,7 +34,7 @@
 			<view class="bill-list">
 				<view class="bill-body-card">
 					<view class="loading-mark"></view>
-					<text class="placeholder-text">正在整理本月消费...</text>
+					<text class="placeholder-text">正在整理消费记录...</text>
 				</view>
 			</view>
 		</block>
@@ -80,8 +54,8 @@
 			<view wx:else class="bill-list">
 				<view class="bill-body-card empty-card">
 					<view class="empty-icon">¥</view>
-					<text class="empty-title">该分类本月暂无消费记录</text>
-					<text class="empty-desc">切换月份可查看其他账单</text>
+					<text class="empty-title">该分类在所选时段暂无消费记录</text>
+					<text class="empty-desc">切换月份或选择当天可查看其他账单</text>
 				</view>
 			</view>
 			<view class="bill-list-bottom-space"></view>
@@ -91,8 +65,8 @@
 			<view class="bill-list">
 				<view class="bill-body-card empty-card">
 					<view class="empty-icon">¥</view>
-					<text class="empty-title">本月暂无消费记录</text>
-					<text class="empty-desc">切换月份可查看其他账单</text>
+					<text class="empty-title">所选时段暂无消费记录</text>
+					<text class="empty-desc">切换月份或选择当天可查看其他账单</text>
 				</view>
 			</view>
 		</block>

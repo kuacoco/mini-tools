@@ -1,4 +1,5 @@
 const { fetchFeideeTransactions } = require('../../utils/budget-storage')
+const { getCurrentDateString } = require('../../utils/course-storage')
 const { formatAmount } = require('../../utils/amount-expression')
 const { pickUniqueCategoryBg, categoryInitial } = require('../../utils/category-color')
 
@@ -86,6 +87,8 @@ const { isPrivilegedUser } = require('../../utils/privileged-user')
 
 Page({
   data: {
+    headerKicker: 'TRANSACTION BILL',
+    quickType: 'month',
     isPrivileged: false,
     isLoading: false,
 
@@ -122,6 +125,7 @@ Page({
       }
 
       this.setData({
+        quickType: startDate === endDate && startDate === getCurrentDateString() ? 'today' : 'custom',
         monthValue: String(startDate).slice(0, 7),
         monthLabel: getMonthLabel(String(startDate).slice(0, 7)),
         startDate,
@@ -213,6 +217,7 @@ Page({
     const { startDate, endDate } = calcMonthRangeByValue(monthValue)
     this.resetCollapsed()
     this.setData({
+      quickType: 'custom',
       monthValue,
       monthLabel: getMonthLabel(monthValue),
       startDate,
@@ -221,12 +226,39 @@ Page({
     this.loadTransactions()
   },
 
-  onPrevMonth() {
+  onPagePrevMonth() {
     this.switchMonthByOffset(-1)
   },
 
-  onNextMonth() {
+  onPageNextMonth() {
     this.switchMonthByOffset(1)
+  },
+
+  onQuickToday() {
+    if (this.data.quickType === 'today') return
+    const today = getCurrentDateString()
+    this.resetCollapsed()
+    this.setData({
+      quickType: 'today',
+      monthValue: today.slice(0, 7),
+      monthLabel: getMonthLabel(today.slice(0, 7)),
+      startDate: today,
+      endDate: today,
+    })
+    this.loadTransactions()
+  },
+
+  onQuickMonth() {
+    if (this.data.quickType === 'month') return
+    const monthValue = getMonthValue()
+    this.resetCollapsed()
+    this.setData({
+      quickType: 'month',
+      monthValue,
+      monthLabel: getMonthLabel(monthValue),
+      ...calcMonthRangeByValue(monthValue),
+    })
+    this.loadTransactions()
   },
 
   onToggleCategory(e) {

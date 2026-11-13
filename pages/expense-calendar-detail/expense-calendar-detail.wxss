@@ -286,13 +286,7 @@ page {
   box-sizing: border-box;
 }
 
-.transaction-time-label {
-  color: #aaa5b7;
-  font-size: 16rpx;
-}
-
 .transaction-clock {
-  margin-top: 4rpx;
   color: #7165a3;
   font-size: 22rpx;
   font-weight: 700;
@@ -315,12 +309,6 @@ page {
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.transaction-status {
-  margin-top: 6rpx;
-  color: #aaa8b7;
-  font-size: 19rpx;
 }
 
 .transaction-amount {
@@ -404,4 +392,36 @@ page {
   margin-top: 9rpx;
   color: #9c9bac;
   font-size: 22rpx;
+}
+
+/* 保留分类标题的原有视觉样式，仅精简笔数与留白。 */
+.category-group + .category-group { margin-top: 14rpx; }
+
+.category-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 20rpx;
+  background: #f2eff9;
+}
+
+.category-group-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-group-name {
+  color: #48495f;
+  font-size: 27rpx;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.category-group-total {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  color: #675ba6;
+  font-size: 28rpx;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
