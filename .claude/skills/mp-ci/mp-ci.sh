@@ -2,12 +2,14 @@
 # 微信小程序 CI 工具脚本
 # 用法: ./mp-ci.sh <command> [args]
 
-PROJECT_PATH="${MP_PROJECT_PATH}"
+set -euo pipefail
+
+PROJECT_PATH="${MP_PROJECT_PATH:?请设置 MP_PROJECT_PATH 为仓库根目录}"
 APPID="wxe4a08baedb2fcf9d"
 KEY_PATH="$PROJECT_PATH/key/private.$APPID.key"
 ENV_ID="cloud2-1gytehldd551cd77"
 
-COMMAND=$1
+COMMAND=${1:-}
 
 case "$COMMAND" in
   preview)
@@ -30,8 +32,8 @@ case "$COMMAND" in
     ;;
 
   upload)
-    VERSION=$2
-    DESC=$3
+    VERSION=${2:-}
+    DESC=${3:-}
     ROBOT=${4:-1}
 
     if [ -z "$VERSION" ] || [ -z "$DESC" ]; then
@@ -55,12 +57,12 @@ case "$COMMAND" in
     ;;
 
   cloud)
-    FUNCTION_NAME=$2
+    FUNCTION_NAME=${2:-}
 
     if [ -z "$FUNCTION_NAME" ]; then
       echo "错误: cloud 需要指定云函数名称"
       echo "用法: ./mp-ci.sh cloud <functionName>"
-      echo "可用云函数: budgetCrud, calendarCrud, courseCrud, adminCrud, feideeTransactions, syncFeideeBudget, ocrBudgetImport, feideeCategoryExpense"
+      echo "可用云函数: budgetCrud, calendarCrud, courseCrud, adminCrud, feideeTransactions, syncFeideeBudget, feideeCategoryExpense"
       exit 1
     fi
 
