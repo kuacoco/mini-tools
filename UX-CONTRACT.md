@@ -45,7 +45,7 @@
 
 - Direct route denial returns to the tool list; this is UX containment, while cloud-function fixed OpenID checks remain the data boundary. Whitelist administration and its API actions are removed. Only the budget page offers manual sync for the current month. Timer/bulk sync, notification subscriptions and counter APIs are removed; historical database records are untouched. Account configuration remains in admin, while budget configuration and sync controls are removed from admin. The obsolete daily-budget config read and OCR import have also been removed; actual remaining-budget averages are unchanged.
 - A calendar day is always tappable, including zero-spend dates.
-- The detail page groups transactions by secondary category, preserves first-appearance group order and API order within groups, and shows per-group count and subtotal. Missing categories belong to 未分类.
+- The detail page groups transactions by secondary category, preserves first-appearance group order and API order within groups, and shows a compact category header with subtotal and no per-group count. Missing categories belong to 未分类.
 - The monthly bill defaults to the current natural month, shares the category spending header with today/current-month shortcuts and month pagination, and keeps the existing category-grouped response presentation. Category filters persist when changing periods.
 
 ## Async and resilience

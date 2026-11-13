@@ -400,41 +400,34 @@ page {
   font-size: 22rpx;
 }
 
-.category-group + .category-group { margin-top: 20rpx; }
+/* 分类只作为轻量分隔，流水金额仍是主要阅读内容。 */
+.category-group + .category-group { margin-top: 14rpx; }
 
 .category-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx;
-  background: #f2eff9;
+  padding: 12rpx 20rpx;
+  border-bottom: 1rpx solid rgba(71, 72, 95, 0.06);
 }
 
 .category-group-copy {
-  display: flex;
   flex: 1;
   min-width: 0;
-  flex-direction: column;
 }
 
 .category-group-name {
-  color: #48495f;
-  font-size: 27rpx;
-  font-weight: 700;
+  color: #7e7e91;
+  font-size: 23rpx;
+  font-weight: 600;
   word-break: break-all;
-}
-
-.category-group-count {
-  margin-top: 5rpx;
-  color: #7165a3;
-  font-size: 20rpx;
 }
 
 .category-group-total {
   flex-shrink: 0;
   margin-left: 16rpx;
-  color: #675ba6;
-  font-size: 28rpx;
-  font-weight: 750;
+  color: #7e7e91;
+  font-size: 23rpx;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }

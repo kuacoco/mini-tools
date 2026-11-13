@@ -61,7 +61,6 @@
 					<view class="category-group-header">
 						<view class="category-group-copy">
 							<text class="category-group-name">{{ group.name }}</text>
-							<text class="category-group-count">{{ group.count }} 笔消费</text>
 						</view>
 						<text class="category-group-total">¥{{ group.totalAmountText }}</text>
 					</view>
