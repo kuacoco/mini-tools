@@ -45,7 +45,9 @@ gh run view RUN_ID --repo kuacoco/mini-tools --log-failed
 预览成功后，下载**本次运行**的产物到独立目录：
 
 ```bash
-gh run download RUN_ID --repo kuacoco/mini-tools --name preview-qrcode --dir /tmp/mini-tools-preview-RUN_ID
+python3 scripts/preview-qrcode.py download RUN_ID /tmp/mini-tools-preview-RUN_ID
 ```
+
+下载脚本优先使用 Actions 产物；存储域名返回 403 时，自动读取本次运行的二维码日志备用数据，并校验大小和 SHA-256。旧工作流没有备用数据时会明确失败，不得使用其他运行的二维码。日志与产物均含预览二维码，沿用仓库 Actions 的访问范围；不要将私钥或其他凭据写入日志。需要 Python 3。
 
 检查 `preview-qrcode.jpg` 存在且有效，返回图片或文件链接及运行链接。不得使用旧二维码或仅凭触发成功声称预览成功；下载失败时返回运行链接与产物获取限制。仅在用户明确要求时向微信发送图片。
