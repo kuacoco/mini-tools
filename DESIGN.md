@@ -56,7 +56,7 @@ The consumption calendar is a pocket ledger: a month of small ink stamps where d
 
 The home route is a color-coded tool drawer: a light lavender workspace with separate tiles for each task. It intentionally avoids the calendar's deep green, ledger notch, heatmap cues, and financial-summary card grammar so opening the Mini Program feels like choosing a task, not reviewing a bill.
 
-The monthly spending bill is a paper-ledger index: a single native month selector anchors the upper left, a compact total stamp sits opposite it, and each category reads as a dark tab on a stack of receipt sheets. It deliberately avoids both the calendar heatmap and the old multi-control filter card.
+The monthly spending bill is a paper-ledger index: a shared lavender spending summary anchors the top, and each category reads as a dark tab on a stack of receipt sheets. It deliberately avoids both the calendar heatmap and the old multi-control filter card.
 
 ### Product context and register
 
@@ -84,7 +84,7 @@ Use the native Chinese system stack. Numeric amounts use bold, tabular-number st
 
 ## Layout
 
-Every new page has one Skyline `scroll-view` owner below the shared navigation bar. The calendar uses a stable seven-column flex layout with six weeks at most. The monthly bill has one platform-owned month picker in its top-left header; it does not expose shortcut dates, date ranges, or month-pagination controls. Page spacing is `24rpx`; all async states reserve the same calendar/list region.
+Every new page has one Skyline `scroll-view` owner below the shared navigation bar. The calendar uses a stable seven-column flex layout with six weeks at most. The monthly bill and category spending pages share a summary header with today/current-month shortcuts and previous/next month buttons. Page spacing is `24rpx`; all async states reserve the same calendar/list region.
 
 ## Elevation & Depth
 
@@ -116,7 +116,7 @@ The home route uses one Skyline scroll owner and two named sections: 随手记 f
 
 ### Monthly spending bill
 
-The bill uses the native `picker` with `fields="month"` as its only period control. The default query is the current natural month and remains grouped by category. A category header has a deliberate pressed state and collapses its own receipt rows; loading and empty states retain the list footprint.
+The bill uses the shared spending header for today/current-month shortcuts and month pagination. The default query is the current natural month and remains grouped by category. A category header has a deliberate pressed state and collapses its own receipt rows; loading and empty states retain the list footprint.
 
 ### Content and data visualization
 
@@ -126,9 +126,11 @@ Use natural Chinese labels. Show money as `¥` plus up to two decimals. The mont
 
 - **Do:** Keep every actual date tappable, including dates with `¥0`.
 - **Do:** Keep the day-detail sequence ungrouped and in interface order.
-- **Don't:** Add shortcut dates, start/end date inputs, or month pagination to the monthly bill.
+- **Don't:** Add start/end date inputs to the spending headers.
 - **Don't:** Treat the hidden client-side entry as server authorization.
 
 ### Category spending header
 
 The category spending header retains its lavender summary surface, amount, today/current-month shortcuts, and previous/next month buttons. Omit the total caption and date-range picker panel. The upper-right badge shows 当天 or 当月 for shortcuts and the selected Gregorian year and month (for example, 2026年9月) after month pagination. Runtime owners: `pages/category-expense/category-expense.wxml`, `.js`, and `.wxss`.
+
+Both spending pages include `templates/spending-header.wxml` and import `styles/spending-header.wxss` as the canonical header owners. Amount-to-controls spacing is `30rpx`. The bill keeps category filters when switching periods; its loading and empty copy refers to the selected period.

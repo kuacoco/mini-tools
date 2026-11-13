@@ -286,3 +286,35 @@ test('同步为已有零支出预算补上分类 ID，只为有支出的分类�
   ])
   assert.deepEqual(added.map(({ categoryId }) => categoryId), ['metro'])
 })
+
+test('消费账单快捷时段、跨年翻月和分类筛选保持一致', async () => {
+  const queries = []
+  const page = loadPage('pages/feidee-bill/feidee-bill.js', {
+    '../../utils/course-storage': { getCurrentDateString: () => '2026-10-29' },
+    '../../utils/budget-storage': { fetchFeideeTransactions: async (...args) => {
+      queries.push(plain(args))
+      return { list: [], totalAmount: 0 }
+    } },
+  })
+  page.onLoad({ startDate: '2026-10-29', endDate: '2026-10-29', categoryId: 'food', categoryName: '餐饮' })
+  assert.equal(page.data.quickType, 'today')
+  page.onQuickMonth()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.deepEqual(queries.at(-1), ['2026-10-01', '2026-10-31', { group_key: 'CATEGORY_SECOND', group_id: 'food' }])
+  assert.equal(page.data.quickType, 'month')
+  page.onQuickToday()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.deepEqual(queries.at(-1).slice(0, 2), ['2026-10-29', '2026-10-29'])
+  page.onLoad({ startDate: '2026-01-01', endDate: '2026-01-31', categoryId: 'food' })
+  page.onPagePrevMonth()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(page.data.monthLabel, '2025年12月')
+  assert.equal(page.data.quickType, 'custom')
+  assert.deepEqual(queries.at(-1).slice(0, 2), ['2025-12-01', '2025-12-31'])
+  page.onPageNextMonth()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(page.data.monthLabel, '2026年1月')
+  page.onClearCategoryFilter()
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(queries.at(-1)[2], null)
+})

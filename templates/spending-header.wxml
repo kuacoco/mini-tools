@@ -1,0 +1,39 @@
+		<view class="expense-top-card">
+			<view class="summary-decoration summary-decoration--one"></view>
+			<view class="summary-decoration summary-decoration--two"></view>
+			<view class="hero-row">
+				<view class="hero-copy">
+					<text class="hero-kicker">{{ headerKicker }}</text>
+				</view>
+				<view class="period-badge">
+					<view class="period-badge-dot"></view>
+					<text class="period-badge-text">{{ quickType === 'today' ? '当天' : (quickType === 'month' ? '当月' : monthLabel) }}</text>
+				</view>
+			</view>
+
+			<view class="amount-panel">
+				<text class="amount-value"><text class="amount-symbol">¥</text>{{ totalAmountText }}</text>
+			</view>
+
+			<view class="control-bar">
+				<view class="quick-seg" role="tablist" aria-label="快捷选择">
+					<view class="quick-seg-item {{ quickType === 'today' ? 'active' : '' }}" bindtap="onQuickToday" role="tab" aria-selected="{{ quickType === 'today' }}">
+						当天
+					</view>
+					<view class="quick-seg-item {{ quickType === 'month' ? 'active' : '' }}" bindtap="onQuickMonth" role="tab" aria-selected="{{ quickType === 'month' }}">
+						当月
+					</view>
+				</view>
+				<view class="month-pager">
+					<view class="month-pager-btn" bindtap="onPagePrevMonth">
+						<image class="month-pager-arrow" src="/pages/statics/arrow-left.svg" mode="aspectFit" />
+						<text class="month-pager-text">上月</text>
+					</view>
+					<view class="month-pager-btn" bindtap="onPageNextMonth">
+						<text class="month-pager-text">下月</text>
+						<image class="month-pager-arrow" src="/pages/statics/arrow-right.svg" mode="aspectFit" />
+					</view>
+				</view>
+			</view>
+		</view>
+

@@ -51,6 +51,7 @@ const { isPrivilegedUser } = require('../../utils/privileged-user')
 
 Page({
   data: {
+    headerKicker: 'CATEGORY SPENDING',
     isPrivileged: false,
     isLoading: false,
 
