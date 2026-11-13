@@ -52,7 +52,7 @@ components:
 
 ### Creative North Star
 
-The consumption calendar is a pocket ledger: a month of small ink stamps where deeper green means a more expensive day. It is for the one privileged owner reviewing personal spending on a phone, with a calendar-first route and a direct, chronological daily ledger.
+The consumption calendar is a pocket ledger: a month of small ink stamps where deeper green means a more expensive day. It is for the one privileged owner reviewing personal spending on a phone, with a calendar-first route and a daily ledger grouped by secondary category.
 
 The home route is a color-coded tool drawer: a light lavender workspace with separate tiles for each task. It intentionally avoids the calendar's deep green, ledger notch, heatmap cues, and financial-summary card grammar so opening the Mini Program feels like choosing a task, not reviewing a bill.
 
@@ -66,7 +66,7 @@ The monthly spending bill is a paper-ledger index: a shared lavender spending su
 - **Usage scene:** Short, touch-first phone sessions. The monthly total and every daily amount remain visible without a chart gesture.
 - **Register:** Product utility with one expressive data surface.
 - **Memorable signature:** The seven-column calendar is a discrete spend heatmap, rather than a generic card dashboard.
-- **Restraint:** Details use a quiet, ungrouped ledger so amount, note, account, and time remain scannable.
+- **Restraint:** Details use quiet category groups so amount, note, account, and time remain scannable.
 - **Anti-references:** No copied hero/card grammar from the existing tools; no decorative illustration, fake finance chart, or reliance on color alone.
 - **Token ownership/runtime mapping:** Existing app styles are runtime-canonical. New page-scoped WXSS classes use the exact values in this document; no global token change is introduced.
 
@@ -125,7 +125,7 @@ Use natural Chinese labels. Show money as `¥` plus up to two decimals. The mont
 ## Do's and Don'ts
 
 - **Do:** Keep every actual date tappable, including dates with `¥0`.
-- **Do:** Keep the day-detail sequence ungrouped and in interface order.
+- **Do:** Group day-detail transactions by secondary category, preserving first-appearance group order and API order within groups.
 - **Don't:** Add start/end date inputs to the spending headers.
 - **Don't:** Treat the hidden client-side entry as server authorization.
 
@@ -134,3 +134,7 @@ Use natural Chinese labels. Show money as `¥` plus up to two decimals. The mont
 The category spending header retains its lavender summary surface, amount, today/current-month shortcuts, and previous/next month buttons. Omit the total caption and date-range picker panel. The upper-right badge shows 当天 or 当月 for shortcuts and the selected Gregorian year and month (for example, 2026年9月) after month pagination. Runtime owners: `pages/category-expense/category-expense.wxml`, `.js`, and `.wxss`.
 
 Both spending pages include `templates/spending-header.wxml` and import `styles/spending-header.wxss` as the canonical header owners. Amount-to-controls spacing is `30rpx`. The bill keeps category filters when switching periods; its loading and empty copy refers to the selected period.
+
+### Daily ledger category groups
+
+`pages/expense-calendar-detail` groups the existing transaction `category` field (secondary category) with 未分类 as fallback. Each white ledger surface has a lilac header with category name, count, and subtotal; transaction rows retain time, remark, and amount without repeating the category label. Totals and counts in the day header retain their original meaning.

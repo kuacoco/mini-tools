@@ -318,3 +318,28 @@ test('消费账单快捷时段、跨年翻月和分类筛选保持一致', async
   await new Promise(resolve => setImmediate(resolve))
   assert.equal(queries.at(-1)[2], null)
 })
+
+test('日消费明细按二级分类分组，组内保留顺序，笔数和小计正确', async () => {
+  let response = { totalAmount: 45.5, list: [
+    { id: 'a', category: ' 早餐 ', amount: 10, remark: '豆浆' },
+    { id: 'b', category: '地铁', amount: 5.5 },
+    { id: 'c', category: '早餐', amount: 20 },
+    { id: 'd', category: ' ', amount: 4 },
+    { id: 'e', amount: 6 },
+  ] }
+  const page = loadPage('pages/expense-calendar-detail/expense-calendar-detail.js', {
+    '../../utils/budget-storage': { fetchFeideeTransactions: async () => response },
+  })
+  page.onLoad({ date: '2026-10-29' })
+  await page.loadDayTransactions()
+  assert.equal(page.data.transactions.length, 5)
+  assert.equal(page.data.totalAmountText, '45.50')
+  assert.deepEqual(plain(page.data.categoryGroups.map(g => [g.name, g.count, g.totalAmountText])), [
+    ['早餐', 2, '30'], ['地铁', 1, '5.50'], ['未分类', 2, '10'],
+  ])
+  assert.deepEqual(plain(page.data.categoryGroups[0].items.map(t => [t.id, t.isLast])), [['a', false], ['c', true]])
+  response = { list: [], totalAmount: 0 }
+  await page.loadDayTransactions()
+  assert.equal(page.data.categoryGroups.length, 0)
+  assert.equal(page.data.transactions.length, 0)
+})

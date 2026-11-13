@@ -56,17 +56,25 @@
 				<text class="detail-empty-title">这一天还没有消费记录</text>
 				<text class="detail-empty-copy">返回日历选择其他日期看看</text>
 			</view>
-			<view wx:else class="transaction-list">
-				<view wx:for="{{ transactions }}" wx:key="rowKey" class="transaction-row {{ item.isLast ? 'is-last' : '' }}">
-					<view class="transaction-time">
-						<text class="transaction-time-label">时间</text>
-						<text class="transaction-clock">{{ item.timeText }}</text>
+			<view wx:else class="category-groups">
+				<view wx:for="{{ categoryGroups }}" wx:for-item="group" wx:key="name" class="transaction-list category-group">
+					<view class="category-group-header">
+						<view class="category-group-copy">
+							<text class="category-group-name">{{ group.name }}</text>
+							<text class="category-group-count">{{ group.count }} 笔消费</text>
+						</view>
+						<text class="category-group-total">¥{{ group.totalAmountText }}</text>
 					</view>
-					<view class="transaction-main">
-						<text class="transaction-remark">{{ item.remark || '未填写备注' }}</text>
-						<text class="transaction-status">{{ item.categoryText }}</text>
+					<view wx:for="{{ group.items }}" wx:key="rowKey" class="transaction-row {{ item.isLast ? 'is-last' : '' }}">
+						<view class="transaction-time">
+							<text class="transaction-time-label">时间</text>
+							<text class="transaction-clock">{{ item.timeText }}</text>
+						</view>
+						<view class="transaction-main">
+							<text class="transaction-remark">{{ item.remark || '未填写备注' }}</text>
+						</view>
+						<text class="transaction-amount">-¥{{ item.amountText }}</text>
 					</view>
-					<text class="transaction-amount">-¥{{ item.amountText }}</text>
 				</view>
 			</view>
 		</view>
