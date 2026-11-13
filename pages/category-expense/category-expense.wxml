@@ -14,43 +14,12 @@
 				</view>
 				<view class="period-badge">
 					<view class="period-badge-dot"></view>
-					<text class="period-badge-text">{{ quickType === 'today' ? '当天' : (quickType === 'month' ? '当月' : '自定义') }}</text>
+					<text class="period-badge-text">{{ quickType === 'today' ? '当天' : (quickType === 'month' ? '当月' : monthLabel) }}</text>
 				</view>
 			</view>
 
 			<view class="amount-panel">
-				<text class="amount-label">区间总支出</text>
 				<text class="amount-value"><text class="amount-symbol">¥</text>{{ totalAmountText }}</text>
-			</view>
-
-			<view class="range-panel">
-				<view class="range-panel-head">
-					<text class="range-panel-title">统计区间</text>
-					<text class="range-panel-hint">点击日期调整</text>
-				</view>
-				<view class="range-row">
-					<view class="range-item">
-						<picker mode="date" value="{{ startDate }}" bindchange="onStartDateChange">
-							<view class="range-value">
-								<text class="range-value-text">{{ startDate }}</text>
-								<text class="range-value-arrow">›</text>
-							</view>
-						</picker>
-					</view>
-					<view class="range-sep">
-						<view class="range-sep-line"></view>
-						<text class="range-sep-text">至</text>
-						<view class="range-sep-line"></view>
-					</view>
-					<view class="range-item">
-						<picker mode="date" value="{{ endDate }}" bindchange="onEndDateChange">
-							<view class="range-value">
-								<text class="range-value-text">{{ endDate }}</text>
-								<text class="range-value-arrow">›</text>
-							</view>
-						</picker>
-					</view>
-				</view>
 			</view>
 
 			<view class="control-bar">
@@ -90,7 +59,7 @@
 				<view class="expense-body-card">
 					<view class="empty-card">
 						<text class="empty-title">该区间暂无支出记录</text>
-						<text class="empty-desc">可尝试调整日期区间</text>
+						<text class="empty-desc">可尝试切换月份或选择当天</text>
 					</view>
 				</view>
 			</view>

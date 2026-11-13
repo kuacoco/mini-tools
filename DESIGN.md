@@ -128,3 +128,7 @@ Use natural Chinese labels. Show money as `¥` plus up to two decimals. The mont
 - **Do:** Keep the day-detail sequence ungrouped and in interface order.
 - **Don't:** Add shortcut dates, start/end date inputs, or month pagination to the monthly bill.
 - **Don't:** Treat the hidden client-side entry as server authorization.
+
+### Category spending header
+
+The category spending header retains its lavender summary surface, amount, today/current-month shortcuts, and previous/next month buttons. Omit the total caption and date-range picker panel. The upper-right badge shows 当天 or 当月 for shortcuts and the selected Gregorian year and month (for example, 2026年9月) after month pagination. Runtime owners: `pages/category-expense/category-expense.wxml`, `.js`, and `.wxss`.

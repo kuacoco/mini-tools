@@ -55,6 +55,7 @@ Page({
     isLoading: false,
 
     quickType: 'month',
+    monthLabel: '',
     startDate: '',
     endDate: '',
 
@@ -150,7 +151,12 @@ Page({
       -1
     )
     this.resetCollapsed()
-    this.setData({ quickType: 'custom', startDate, endDate })
+    this.setData({
+      quickType: 'custom',
+      monthLabel: `${startDate.slice(0, 4)}年${Number(startDate.slice(5, 7))}月`,
+      startDate,
+      endDate,
+    })
     this.loadCategoryExpense()
   },
 
@@ -160,35 +166,12 @@ Page({
       1
     )
     this.resetCollapsed()
-    this.setData({ quickType: 'custom', startDate, endDate })
-    this.loadCategoryExpense()
-  },
-
-  onStartDateChange(e) {
-    const nextStart = e?.detail?.value
-    if (!nextStart || nextStart === this.data.startDate) return
-    const endDate = this.data.endDate
-    if (String(nextStart) > String(endDate)) {
-      wx.showToast({ title: '开始日期不能晚于结束日期', icon: 'none' })
-      return
-    }
-
-    this.resetCollapsed()
-    this.setData({ quickType: 'custom', startDate: nextStart })
-    this.loadCategoryExpense()
-  },
-
-  onEndDateChange(e) {
-    const nextEnd = e?.detail?.value
-    if (!nextEnd || nextEnd === this.data.endDate) return
-    const startDate = this.data.startDate
-    if (String(startDate) > String(nextEnd)) {
-      wx.showToast({ title: '结束日期不能早于开始日期', icon: 'none' })
-      return
-    }
-
-    this.resetCollapsed()
-    this.setData({ quickType: 'custom', endDate: nextEnd })
+    this.setData({
+      quickType: 'custom',
+      monthLabel: `${startDate.slice(0, 4)}年${Number(startDate.slice(5, 7))}月`,
+      startDate,
+      endDate,
+    })
     this.loadCategoryExpense()
   },
 

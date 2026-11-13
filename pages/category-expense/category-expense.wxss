@@ -131,11 +131,6 @@ page {
   flex-direction: column;
 }
 
-.amount-label {
-  color: #9696a9;
-  font-size: 22rpx;
-}
-
 .amount-value {
   margin-top: 5rpx;
   color: #2f3048;
@@ -151,99 +146,6 @@ page {
   color: #5f547f;
   font-size: 36rpx;
   font-weight: 700;
-}
-
-.range-panel {
-  position: relative;
-  z-index: 1;
-  margin-top: 13rpx;
-  padding: 17rpx;
-  border: 1rpx solid rgba(121, 105, 187, 0.08);
-  border-radius: 24rpx;
-  background: rgba(244, 242, 250, 0.84);
-}
-
-.range-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14rpx;
-}
-
-.range-panel-title {
-  color: #656679;
-  font-size: 22rpx;
-  font-weight: 650;
-}
-
-.range-panel-hint {
-  color: #aaa7b6;
-  font-size: 19rpx;
-}
-
-.range-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.range-item {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-}
-
-.range-value {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 64rpx;
-  padding: 0 13rpx 0 15rpx;
-  border: 1rpx solid rgba(113, 96, 174, 0.1);
-  border-radius: 18rpx;
-  background: #fff;
-  box-shadow: 0 5rpx 14rpx rgba(70, 58, 110, 0.05);
-  box-sizing: border-box;
-}
-
-.range-value-text {
-  overflow: hidden;
-  color: #4a4b61;
-  font-size: 23rpx;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.range-value-arrow {
-  flex-shrink: 0;
-  margin-left: 8rpx;
-  color: #968abc;
-  font-size: 29rpx;
-  line-height: 1;
-  transform: rotate(90deg);
-}
-
-.range-sep {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56rpx;
-  flex-shrink: 0;
-}
-
-.range-sep-line {
-  width: 8rpx;
-  height: 1rpx;
-  background: #ccc7da;
-}
-
-.range-sep-text {
-  margin: 0 5rpx;
-  color: #918fa1;
-  font-size: 18rpx;
 }
 
 .control-bar {
