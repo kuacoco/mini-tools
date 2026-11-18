@@ -1,0 +1,9 @@
+<view class="chart-shell">
+  <canvas type="2d" id="growth-canvas" class="growth-canvas" bindtouchstart="onTouch" aria-label="{{ model.metric === 'height' ? '身高' : '体重' }}成长曲线，详细数值可在下方时间线查看" />
+  <view wx:if="{{ selected }}" class="chart-readout" aria-live="polite">
+    <text>{{ selected.date }} · {{ selected.ageText }}</text>
+    <text class="readout-value">{{ selected.y }} {{ model.unit }}</text>
+  </view>
+  <view wx:else class="chart-readout"><text>{{ model.points.length ? '轻触记录点，查看当天数值' : '添加记录后，这里会连成孩子的成长曲线' }}</text></view>
+  <text wx:if="{{ error }}" class="chart-error">{{ error }}，具体数值可在时间线查看</text>
+</view>

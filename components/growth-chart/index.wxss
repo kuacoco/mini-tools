@@ -1,0 +1,5 @@
+.chart-shell { width: 100%; }
+.growth-canvas { display: block; width: 100%; height: 440rpx; }
+.chart-readout { display: flex; align-items: center; justify-content: space-between; min-height: 54rpx; margin-top: 8rpx; padding: 0 14rpx; border-radius: 12rpx; background: #f7f5fb; color: #6F6B80; font-size: 21rpx; }
+.readout-value { margin-left: 12rpx; color: #48435e; font-weight: 650; }
+.chart-error { display: block; padding-top: 10rpx; color: #a25c4a; font-size: 22rpx; }

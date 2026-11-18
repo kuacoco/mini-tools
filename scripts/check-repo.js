@@ -29,6 +29,7 @@ const crudActions = new Map([
   ['callBudgetCrud', 'budgetCrud'],
   ['callCourseCrud', 'courseCrud'],
   ['callCalendarCrud', 'calendarCrud'],
+  ['callGrowthCrud', 'growthCrud'],
 ].map(([wrapper, name]) => [wrapper, new Set(
   [...read(`cloudfunctions/${name}/index.js`).matchAll(/case ['"]([^'"]+)['"]/g)]
     .map((match) => match[1])

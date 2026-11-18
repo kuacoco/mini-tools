@@ -494,3 +494,5 @@ page {
     transform: translateY(0) scale(1);
   }
 }
+
+.tool-item--child-growth { background: linear-gradient(145deg, #e4eeda, #f3f8ed); }
