@@ -1,4 +1,4 @@
-const reference = require('./growth-reference.json')
+const reference = require('./growth-reference.js')
 
 function parseDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null

@@ -8,7 +8,7 @@ const bundle = {
   page: read('pages/child-growth/child-growth.js'),
   model: read('utils/growth-model.js'),
   drawing: read('utils/growth-chart-draw.js'),
-  reference: JSON.parse(read('utils/growth-reference.json')),
+  reference: require('../utils/growth-reference.js'),
   markup: read('pages/child-growth/child-growth.wxml'),
 }
 function css(source) { return source.replace(/(\d*\.?\d+)rpx/g, (_, n) => `${Number(n) / 2}px`).replace(/(^|\n)page(?=\s*\{)/g, '$1body').replace(/\btext(?=\s*\{)/g, 'span') }

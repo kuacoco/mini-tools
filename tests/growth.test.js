@@ -5,7 +5,7 @@ const path = require('node:path')
 const vm = require('node:vm')
 const { createRequire } = require('node:module')
 const model = require('../utils/growth-model')
-const reference = require('../utils/growth-reference.json')
+const reference = require('../utils/growth-reference.js')
 const { createService, dateValue, numberValue } = require('../cloudfunctions/growthCrud/service')
 const plain = value => JSON.parse(JSON.stringify(value))
 
@@ -144,4 +144,22 @@ test('快速切换孩子不串数据，记录保存失败保留输入，重复�
   page.data.recordForm.date = '2026-11-01'
   await page.onSaveRecord()
   assert.match(page.data.formError, /当天已有记录/)
+})
+
+test('成长模型及参考数据可由仅加载JS模块的小程序式加载器导入', () => {
+  const cache = new Map()
+  function miniRequire(file) {
+    const resolved = file.endsWith('.js') ? file : `${file}.js`
+    if (cache.has(resolved)) return cache.get(resolved).exports
+    const module = { exports: {} }
+    cache.set(resolved, module)
+    vm.runInNewContext(fs.readFileSync(resolved, 'utf8'), {
+      module, exports: module.exports, Date,
+      require: request => miniRequire(path.resolve(path.dirname(resolved), request)),
+    }, { filename: resolved })
+    return module.exports
+  }
+  const miniModel = miniRequire(path.resolve(__dirname, '../utils/growth-model.js'))
+  const band = miniModel.referenceAt('girl', 'height', 48)
+  assert.ok(band && band[0] < band[1] && band[1] < band[2])
 })
