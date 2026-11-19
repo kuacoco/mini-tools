@@ -1,44 +1,42 @@
 <navigation-bar title="成长手记" background="#F7F5FF" color="#393A52" />
 <page-loader label="成长手记" ready="{{ pageReady }}" />
 <view class="growth-page">
-  <scroll-view class="growth-scroll" scroll-y enhanced bounces="{{ false }}" aria-hidden="{{ !!sheet }}">
+  <scroll-view class="growth-scroll" type="custom" scroll-y enhanced bounces="{{ false }}" aria-hidden="{{ !!sheet }}">
     <view class="growth-content">
       <view class="opening-line"><text class="page-eyebrow">GROWING, DAY BY DAY</text><text class="opening-note">把每一点成长，好好收藏。</text></view>
       <view class="child-bar">
-        <scroll-view class="child-scroll" scroll-x>
-          <view class="child-tabs">
-            <button wx:for="{{ profiles }}" wx:key="id" class="child-tab {{ activeChild.id === item.id ? 'is-selected' : '' }}" data-id="{{ item.id }}" bindtap="onSelectChild" hover-class="is-pressed" aria-label="切换到{{ item.name }}的成长档案">{{ item.name }}</button>
-          </view>
+        <scroll-view class="child-scroll" type="list" scroll-x enable-flex>
+            <button wx:for="{{ profiles }}" wx:key="id" class="child-tab {{ activeChild.id === item.id ? 'is-selected' : '' }}" data-id="{{ item.id }}" bindtap="onSelectChild" hover-class="is-pressed" aria-label="切换到{{ item.name }}的成长档案"><text>{{ item.name }}</text></button>
         </scroll-view>
-        <button class="add-child" bindtap="onAddChild" hover-class="is-pressed" disabled="{{ loading }}" aria-label="添加孩子档案">＋</button>
+        <button class="add-child {{ (loading) ? 'is-disabled' : '' }}" bindtap="onAddChild" hover-class="is-pressed" disabled="{{ loading }}" aria-label="添加孩子档案"><text>＋</text></button>
       </view>
 
       <view wx:if="{{ loading }}" class="growth-state"><view class="growth-spinner"></view><text>正在翻开成长手记…</text></view>
-      <view wx:elif="{{ error }}" class="growth-state"><text class="state-title">暂时没有读到记录</text><text class="state-note">{{ error }}</text><button class="secondary-button" bindtap="onRetry" hover-class="is-pressed">重新读取</button></view>
+      <view wx:elif="{{ error }}" class="growth-state"><text class="state-title">暂时没有读到记录</text><text class="state-note">{{ error }}</text><button class="secondary-button" bindtap="onRetry" hover-class="is-pressed"><text>重新读取</text></button></view>
       <view wx:elif="{{ !activeChild }}" class="welcome-card">
         <view class="welcome-ruler" aria-hidden="true"><view></view><view></view><view></view><view></view><view></view><view></view><view></view></view>
         <text class="welcome-kicker">第一笔，从今天开始</text>
-        <text class="welcome-title">小时候的每一厘米，<text class="welcome-title-line">都值得被记住。</text></text>
-        <text class="welcome-copy">为孩子建立独立档案，收藏身高、体重，<text class="welcome-title-line">在时间线和曲线里看见慢慢长大。</text></text>
-        <button class="primary-button" bindtap="onAddChild" hover-class="is-pressed">建立孩子档案 <text>＋</text></button>
+        <view class="welcome-title"><text class="welcome-title-line">小时候的每一厘米，</text><text class="welcome-title-line">都值得被记住。</text></view>
+        <view class="welcome-copy"><text class="welcome-title-line">为孩子建立独立档案，收藏身高、体重，</text><text class="welcome-title-line">在时间线和曲线里看见慢慢长大。</text></view>
+        <button class="primary-button" bindtap="onAddChild" hover-class="is-pressed"><text>建立孩子档案 </text><text>＋</text></button>
         <text class="privacy-note">每个孩子独立记录，仅当前微信账号可见</text>
       </view>
       <block wx:else>
         <view class="child-overview">
-          <view class="child-identity"><view class="child-avatar">{{ activeChild.initial }}<view class="avatar-spark">✦</view></view><view class="child-description"><text class="child-name">{{ activeChild.name }}的成长手记</text><text class="child-age">{{ activeChild.ageText }} · {{ activeChild.sexText }} · {{ activeChild.birthday }} 出生</text></view><button class="text-button" bindtap="onEditChild" hover-class="is-pressed" aria-label="编辑孩子档案">档案 ›</button></view>
+          <view class="child-identity"><view class="child-avatar"><text>{{ activeChild.initial }}</text><view class="avatar-spark"><text>✦</text></view></view><view class="child-description"><text class="child-name">{{ activeChild.name }}的成长手记</text><text class="child-age">{{ activeChild.ageText }} · {{ activeChild.sexText }} · {{ activeChild.birthday }} 出生</text></view><button class="text-button" bindtap="onEditChild" hover-class="is-pressed" aria-label="编辑孩子档案"><text>档案 ›</text></button></view>
           <view class="latest-heading"><text>{{ latest ? '最近一次测量' : '等待第一笔记录' }}</text><text>{{ latest ? latest.date : '从今天的身高体重开始' }}</text></view>
           <view class="latest-metrics">
-            <view class="latest-metric height-tone"><text class="metric-caption">{{ latest && latest.ageText === '未满1个月' ? '身长' : '身高 / 身长' }}</text><view class="latest-number">{{ latest ? latest.heightText : '—' }}<text class="number-unit">cm</text></view><text class="metric-position">{{ latest ? latest.heightPosition : '每一厘米，都有意义' }}</text></view>
-            <view class="latest-metric weight-tone"><text class="metric-caption">体重</text><view class="latest-number">{{ latest ? latest.weightText : '—' }}<text class="number-unit">kg</text></view><text class="metric-position">{{ latest ? latest.weightPosition : '收藏成长的分量' }}</text></view>
+            <view class="latest-metric height-tone"><text class="metric-caption">{{ latest && latest.ageText === '未满1个月' ? '身长' : '身高 / 身长' }}</text><text class="latest-number">{{ latest ? latest.heightText : '—' }}<text class="number-unit">cm</text></text><text class="metric-position">{{ latest ? latest.heightPosition : '每一厘米，都有意义' }}</text></view>
+            <view class="latest-metric weight-tone"><text class="metric-caption">体重</text><text class="latest-number">{{ latest ? latest.weightText : '—' }}<text class="number-unit">kg</text></text><text class="metric-position">{{ latest ? latest.weightPosition : '收藏成长的分量' }}</text></view>
           </view>
           <button class="primary-button record-button" bindtap="onAddRecord" hover-class="is-pressed"><text>＋ 记录一次成长</text><text class="button-detail">日期 · 身高 · 体重</text></button>
         </view>
 
         <view class="chart-card">
-          <view class="section-heading"><view><text class="section-kicker">THE GROWTH CURVE</text><text class="section-title">一点点，长成自己</text></view><button class="source-link" bindtap="onSource" hover-class="is-pressed">参考说明 ⓘ</button></view>
+          <view class="section-heading"><view><text class="section-kicker">THE GROWTH CURVE</text><text class="section-title">一点点，长成自己</text></view><button class="source-link" bindtap="onSource" hover-class="is-pressed"><text>参考说明 ⓘ</text></button></view>
           <view class="chart-controls">
-            <view class="metric-switch"><button class="metric-option {{ metric === 'height' ? 'active height-active' : '' }}" data-metric="height" bindtap="onMetric" hover-class="is-pressed">身高</button><button class="metric-option {{ metric === 'weight' ? 'active weight-active' : '' }}" data-metric="weight" bindtap="onMetric" hover-class="is-pressed">体重</button></view>
-            <view class="range-switch"><button class="range-option {{ range === 'recent' ? 'range-active' : '' }}" data-range="recent" bindtap="onRange" hover-class="is-pressed">{{ chart.rangeText === '0–18岁' ? '当前阶段' : (range === 'recent' ? chart.rangeText : '当前阶段') }}</button><button class="range-option {{ range === 'all' ? 'range-active' : '' }}" data-range="all" bindtap="onRange" hover-class="is-pressed">0–18岁</button></view>
+            <view class="metric-switch"><button class="metric-option {{ metric === 'height' ? 'active height-active' : '' }}" data-metric="height" bindtap="onMetric" hover-class="is-pressed"><text>身高</text></button><button class="metric-option {{ metric === 'weight' ? 'active weight-active' : '' }}" data-metric="weight" bindtap="onMetric" hover-class="is-pressed"><text>体重</text></button></view>
+            <view class="range-switch"><button class="range-option {{ range === 'recent' ? 'range-active' : '' }}" data-range="recent" bindtap="onRange" hover-class="is-pressed"><text>{{ chart.rangeText === '0–18岁' ? '当前阶段' : (range === 'recent' ? chart.rangeText : '当前阶段') }}</text></button><button class="range-option {{ range === 'all' ? 'range-active' : '' }}" data-range="all" bindtap="onRange" hover-class="is-pressed"><text>0–18岁</text></button></view>
           </view>
           <view class="chart-legend"><view class="legend-item"><view class="legend-band {{ metric === 'weight' ? 'legend-band--weight' : '' }}"></view><text>同龄同性别 P3–P97</text></view><view class="legend-item"><view class="legend-line"></view><text>中位线</text></view><view class="legend-item"><view class="legend-dot {{ metric === 'weight' ? 'legend-dot--weight' : '' }}"></view><text>实际记录</text></view></view>
           <growth-chart wx:if="{{ chart }}" model="{{ chart }}" />
@@ -47,7 +45,7 @@
         </view>
 
         <view class="timeline-heading"><view><text class="section-kicker">LITTLE MOMENTS, BIG GROWTH</text><text class="section-title">长大的足迹</text></view><text class="record-count">{{ records.length }} 次记录</text></view>
-        <view wx:if="{{ !timeline.length }}" class="timeline-empty"><view class="empty-seed">✦</view><text class="state-title">第一笔成长，等你来记录</text><text class="state-note">测量一次，就能在这里留下一枚时间印记。</text><button class="text-button" bindtap="onAddRecord" hover-class="is-pressed">记录今天的成长 →</button></view>
+        <view wx:if="{{ !timeline.length }}" class="timeline-empty"><view class="empty-seed"><text>✦</text></view><text class="state-title">第一笔成长，等你来记录</text><text class="state-note">测量一次，就能在这里留下一枚时间印记。</text><button class="text-button" bindtap="onAddRecord" hover-class="is-pressed"><text>记录今天的成长 →</text></button></view>
         <view wx:else class="timeline">
           <block wx:for="{{ timeline }}" wx:key="id">
             <block wx:if="{{ index < visibleCount }}">
@@ -61,7 +59,7 @@
               </view>
             </block>
           </block>
-          <button wx:if="{{ timeline.length > visibleCount }}" class="load-more" bindtap="onMore" hover-class="is-pressed">展开更早的记录 ↓</button>
+          <button wx:if="{{ timeline.length > visibleCount }}" class="load-more" bindtap="onMore" hover-class="is-pressed"><text>展开更早的记录 ↓</text></button>
           <view wx:else class="timeline-end"><view></view><text>每一笔，都是长大的证据</text></view>
         </view>
       </block>
@@ -72,20 +70,20 @@
   <view wx:if="{{ sheet }}" class="sheet-backdrop" bindtap="onCloseSheet">
     <view class="growth-sheet" catchtap="stopTap" role="dialog" aria-modal="true" aria-label="{{ sheet === 'profile' ? '孩子档案' : (sheet === 'record' ? '记录成长' : '生长参考说明') }}">
       <view class="sheet-grip"></view>
-      <view class="sheet-heading"><view><text class="section-kicker">{{ sheet === 'source' ? 'ABOUT THE REFERENCE' : 'A LITTLE MOMENT TO KEEP' }}</text><text class="sheet-title">{{ sheet === 'profile' ? (editingProfile ? '孩子的档案' : '认识一下小主角') : (sheet === 'record' ? (recordForm.id ? '编辑这次成长' : '记下今天的成长') : '读懂这片参考色带') }}</text></view><button class="sheet-close" bindtap="onCloseSheet" disabled="{{ saving }}" hover-class="is-pressed" aria-label="关闭">×</button></view>
+      <view class="sheet-heading"><view><text class="section-kicker">{{ sheet === 'source' ? 'ABOUT THE REFERENCE' : 'A LITTLE MOMENT TO KEEP' }}</text><text class="sheet-title">{{ sheet === 'profile' ? (editingProfile ? '孩子的档案' : '认识一下小主角') : (sheet === 'record' ? (recordForm.id ? '编辑这次成长' : '记下今天的成长') : '读懂这片参考色带') }}</text></view><button class="sheet-close {{ (saving) ? 'is-disabled' : '' }}" bindtap="onCloseSheet" disabled="{{ saving }}" hover-class="is-pressed" aria-label="关闭"><text>×</text></button></view>
       <scroll-view class="sheet-body" type="custom" scroll-y enhanced bounces="{{ false }}">
         <block wx:if="{{ sheet === 'profile' }}">
           <text class="field-label">孩子的昵称</text><input class="profile-name-input" value="{{ profileForm.name }}" placeholder="平时怎么称呼TA？" maxlength="20" bindinput="onProfileInput" disabled="{{ saving }}" aria-label="孩子的昵称" />
           <text class="field-label">出生日期</text><picker mode="date" value="{{ profileForm.birthday }}" end="{{ today }}" disabled="{{ saving || profileLocked }}" bindchange="onBirthday" aria-label="选择出生日期"><view class="date-field"><text>{{ profileForm.birthday || '选择出生日期' }}</text><text>›</text></view></picker>
-          <text class="field-label">参考曲线使用的性别</text><view class="sex-options"><button class="sex-option {{ profileForm.sex === 'boy' ? 'sex-selected' : '' }}" data-sex="boy" bindtap="onSex" disabled="{{ saving || profileLocked }}" hover-class="is-pressed">男孩</button><button class="sex-option {{ profileForm.sex === 'girl' ? 'sex-selected' : '' }}" data-sex="girl" bindtap="onSex" disabled="{{ saving || profileLocked }}" hover-class="is-pressed">女孩</button></view>
+          <text class="field-label">参考曲线使用的性别</text><view class="sex-options"><button class="sex-option {{ profileForm.sex === 'boy' ? 'sex-selected' : '' }} {{ (saving || profileLocked) ? 'is-disabled' : '' }}" data-sex="boy" bindtap="onSex" disabled="{{ saving || profileLocked }}" hover-class="is-pressed"><text>男孩</text></button><button class="sex-option {{ profileForm.sex === 'girl' ? 'sex-selected' : '' }} {{ (saving || profileLocked) ? 'is-disabled' : '' }}" data-sex="girl" bindtap="onSex" disabled="{{ saving || profileLocked }}" hover-class="is-pressed"><text>女孩</text></button></view>
           <text class="form-hint">{{ profileLocked ? '已有成长记录，出生日期和性别已锁定，昵称仍可修改。' : '出生日期用于计算月龄，性别用于匹配参考曲线。已有记录后这两项将锁定，请核对后保存。' }}</text>
         </block>
         <block wx:elif="{{ sheet === 'record' }}">
           <view class="record-for"><text>为 {{ activeChild.name }} 收藏这一刻</text><text>cm / kg</text></view>
           <picker mode="date" value="{{ recordForm.date }}" start="{{ activeChild.birthday }}" end="{{ today }}" bindchange="onRecordDate" disabled="{{ saving }}" aria-label="选择测量日期"><view class="date-field"><view><text class="date-field-label">测量日期</text><text>{{ recordForm.date }}</text></view><text>更改 ›</text></view></picker>
           <view class="measurement-fields">
-            <view class="measurement-field height-tone"><text class="field-label">身高 / 身长</text><view class="measure-input-row"><input type="digit" value="{{ recordForm.height }}" data-field="height" bindinput="onRecordInput" placeholder="0.0" maxlength="5" disabled="{{ saving }}" aria-label="身高或身长，单位厘米" /><text>cm</text></view><view class="measurement-steps"><button data-field="height" data-step="-0.1" bindtap="onStep" disabled="{{ saving || !recordForm.height }}" hover-class="is-pressed" aria-label="身高减少0.1厘米">− 0.1</button><button data-field="height" data-step="0.1" bindtap="onStep" disabled="{{ saving || !recordForm.height }}" hover-class="is-pressed" aria-label="身高增加0.1厘米">＋ 0.1</button></view></view>
-            <view class="measurement-field weight-tone"><text class="field-label">体重</text><view class="measure-input-row"><input type="digit" value="{{ recordForm.weight }}" data-field="weight" bindinput="onRecordInput" placeholder="0.0" maxlength="5" disabled="{{ saving }}" aria-label="体重，单位千克" /><text>kg</text></view><view class="measurement-steps"><button data-field="weight" data-step="-0.1" bindtap="onStep" disabled="{{ saving || !recordForm.weight }}" hover-class="is-pressed" aria-label="体重减少0.1千克">− 0.1</button><button data-field="weight" data-step="0.1" bindtap="onStep" disabled="{{ saving || !recordForm.weight }}" hover-class="is-pressed" aria-label="体重增加0.1千克">＋ 0.1</button></view></view>
+            <view class="measurement-field height-tone"><text class="field-label">身高 / 身长</text><view class="measure-input-row"><input type="digit" value="{{ recordForm.height }}" data-field="height" bindinput="onRecordInput" placeholder="0.0" maxlength="5" disabled="{{ saving }}" aria-label="身高或身长，单位厘米" /><text>cm</text></view><view class="measurement-steps"><button data-field="height" data-step="-0.1" bindtap="onStep" disabled="{{ saving || !recordForm.height }}" hover-class="is-pressed {{ (saving || !recordForm.height) ? 'is-disabled' : '' }}" aria-label="身高减少0.1厘米"><text>− 0.1</text></button><button data-field="height" data-step="0.1" bindtap="onStep" disabled="{{ saving || !recordForm.height }}" hover-class="is-pressed {{ (saving || !recordForm.height) ? 'is-disabled' : '' }}" aria-label="身高增加0.1厘米"><text>＋ 0.1</text></button></view></view>
+            <view class="measurement-field weight-tone"><text class="field-label">体重</text><view class="measure-input-row"><input type="digit" value="{{ recordForm.weight }}" data-field="weight" bindinput="onRecordInput" placeholder="0.0" maxlength="5" disabled="{{ saving }}" aria-label="体重，单位千克" /><text>kg</text></view><view class="measurement-steps"><button data-field="weight" data-step="-0.1" bindtap="onStep" disabled="{{ saving || !recordForm.weight }}" hover-class="is-pressed {{ (saving || !recordForm.weight) ? 'is-disabled' : '' }}" aria-label="体重减少0.1千克"><text>− 0.1</text></button><button data-field="weight" data-step="0.1" bindtap="onStep" disabled="{{ saving || !recordForm.weight }}" hover-class="is-pressed {{ (saving || !recordForm.weight) ? 'is-disabled' : '' }}" aria-label="体重增加0.1千克"><text>＋ 0.1</text></button></view></view>
           </view>
           <text class="form-hint">建议两岁前测卧位身长，两岁起测站立身高。可填写一位小数。</text>
           <text class="field-label">留一句小记 <text class="optional-label">选填</text></text><input class="note-input" value="{{ recordForm.note }}" data-field="note" bindinput="onRecordInput" placeholder="例如：今天的体检，长高了一点点" maxlength="100" disabled="{{ saving }}" aria-label="成长小记，选填" />
@@ -96,10 +94,10 @@
           <text class="source-paragraph">采用 CDC 美国儿童历史样本，供0–18岁趋势对照，并非中国儿童专用标准，也不等于“正常/异常”的界线。两岁前为卧位身长，两岁后为站立身高，参考线在两岁处分段。</text>
           <text class="source-paragraph">婴幼儿临床评估通常优先使用 WHO 标准。青春期体重还受身高与发育阶段影响，不能仅凭体重落在色带内外判断胖瘦。有疑问请结合连续变化咨询儿科医生。</text>
           <text class="source-paragraph">月龄按出生日期与测量日期计算；参考值按官方月龄节点线性插值，不预测未来。记录点之间的连线只帮助观察趋势。</text>
-          <button class="secondary-button" bindtap="onCopySource" hover-class="is-pressed">复制 CDC 官方数据网址</button>
+          <button class="secondary-button" bindtap="onCopySource" hover-class="is-pressed"><text>复制 CDC 官方数据网址</text></button>
         </block>
         <text wx:if="{{ formError }}" class="form-error" aria-live="assertive">{{ formError }}</text>
-        <view wx:if="{{ sheet !== 'source' }}" class="sheet-actions"><button wx:if="{{ sheet === 'profile' }}" class="primary-button" bindtap="onSaveProfile" loading="{{ saving }}" disabled="{{ saving }}" hover-class="is-pressed">保存孩子档案</button><button wx:else class="primary-button" bindtap="onSaveRecord" loading="{{ saving }}" disabled="{{ saving }}" hover-class="is-pressed">{{ recordForm.id ? '保存这次修改' : '保存这次成长' }}</button><button wx:if="{{ sheet === 'record' && recordForm.id }}" class="delete-button" bindtap="onDeleteRecord" disabled="{{ saving }}" hover-class="is-pressed">删除这次记录</button></view>
+        <view wx:if="{{ sheet !== 'source' }}" class="sheet-actions"><button wx:if="{{ sheet === 'profile' }}" class="primary-button {{ (saving) ? 'is-disabled' : '' }}" bindtap="onSaveProfile" loading="{{ saving }}" disabled="{{ saving }}" hover-class="is-pressed"><text>保存孩子档案</text></button><button wx:else class="primary-button {{ (saving) ? 'is-disabled' : '' }}" bindtap="onSaveRecord" loading="{{ saving }}" disabled="{{ saving }}" hover-class="is-pressed"><text>{{ recordForm.id ? '保存这次修改' : '保存这次成长' }}</text></button><button wx:if="{{ sheet === 'record' && recordForm.id }}" class="delete-button {{ (saving) ? 'is-disabled' : '' }}" bindtap="onDeleteRecord" disabled="{{ saving }}" hover-class="is-pressed"><text>删除这次记录</text></button></view>
       </scroll-view>
     </view>
   </view>
