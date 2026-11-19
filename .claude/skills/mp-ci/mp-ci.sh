@@ -62,7 +62,7 @@ case "$COMMAND" in
     if [ -z "$FUNCTION_NAME" ]; then
       echo "错误: cloud 需要指定云函数名称"
       echo "用法: ./mp-ci.sh cloud <functionName>"
-      echo "可用云函数: budgetCrud, calendarCrud, courseCrud, adminCrud, feideeTransactions, syncFeideeBudget, feideeCategoryExpense"
+      echo "可用云函数: budgetCrud, calendarCrud, courseCrud, adminCrud, feideeTransactions, syncFeideeBudget, feideeCategoryExpense, growthCrud"
       exit 1
     fi
 

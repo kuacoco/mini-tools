@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/child-growth/child-growth",
     "pages/expense-calendar/expense-calendar",
     "pages/expense-calendar-detail/expense-calendar-detail",
     "pages/budget/budget",
@@ -38,5 +39,7 @@
   "componentFramework": "glass-easel",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
-  "requiredPrivateInfos": ["getLocation"]
+  "requiredPrivateInfos": [
+    "getLocation"
+  ]
 }

@@ -29,6 +29,12 @@ const PRIVILEGED_TOOL_LIST = [
 
 const BASE_TOOL_LIST = [
   {
+    id: 'child-growth',
+    title: '成长手记',
+    desc: '记录孩子身高体重，在时间线与曲线里看见长大',
+    path: '/pages/child-growth/child-growth',
+  },
+  {
     id: 'course',
     title: '消课记录',
     desc: '记录兴趣班上课打卡，查看剩余课时',

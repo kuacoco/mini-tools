@@ -22,7 +22,7 @@ GitHub 仓库需配置 Secret `MP_PRIVATE_KEY`。本地私钥不需要上传到�
 ```
 
 默认 ref 为 `main`，preview 版本默认 `1.0.0`，robot 默认 `1`。执行的是 GitHub 上该 ref 的代码，未提交或未推送的本地改动不会包含。触发前明确告知目标 ref；用户要求包含本地改动时，先检查是否已提交推送，不能静默推送代码。
-支持 budgetCrud、calendarCrud、courseCrud、adminCrud、feideeTransactions、syncFeideeBudget、feideeCategoryExpense。
+支持 budgetCrud、calendarCrud、courseCrud、adminCrud、feideeTransactions、syncFeideeBudget、feideeCategoryExpense、growthCrud。
 `npm` 不在当前工作流支持范围内，不要将其映射为其他操作。
 
 ## 等待与结果

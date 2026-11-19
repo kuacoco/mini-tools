@@ -2,7 +2,24 @@
   "compileType": "miniprogram",
   "libVersion": "3.14.2",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "data"
+      },
+      {
+        "type": "folder",
+        "value": "docs"
+      },
+      {
+        "type": "folder",
+        "value": "scripts"
+      },
+      {
+        "type": "folder",
+        "value": "tests"
+      }
+    ],
     "include": []
   },
   "setting": {

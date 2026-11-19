@@ -18,7 +18,7 @@ case "$action" in
   cloud)
     function_name=${2:?需要云函数名}; ref=${3:-main}
     case "$function_name" in
-      budgetCrud|calendarCrud|courseCrud|adminCrud|feideeTransactions|syncFeideeBudget|feideeCategoryExpense) ;;
+      budgetCrud|calendarCrud|courseCrud|adminCrud|feideeTransactions|syncFeideeBudget|feideeCategoryExpense|growthCrud) ;;
       *) echo '未知云函数名' >&2; exit 2 ;;
     esac
     inputs=(-f action=cloud -f "function_name=$function_name") ;;

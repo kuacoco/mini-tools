@@ -27,6 +27,14 @@ colors:
   home-sun: "#FFD96A"
   home-aqua: "#8AE3F1"
   home-peach: "#FF9B8C"
+  growth-canvas: "#F7F5FF"
+  growth-primary: "#7C6A9D"
+  growth-ink: "#393A52"
+  growth-muted: "#6F6B80"
+  growth-height-ink: "#3E6F64"
+  growth-height-surface: "#EDF5F0"
+  growth-weight-ink: "#A55D48"
+  growth-weight-surface: "#FBF0E8"
 typography:
   sans:
     fontFamily: "-apple-system, BlinkMacSystemFont, PingFang SC, Microsoft YaHei, sans-serif"
@@ -138,3 +146,15 @@ Both spending pages include `templates/spending-header.wxml` and import `styles/
 ### Daily ledger category groups
 
 `pages/expense-calendar-detail` groups the existing transaction `category` field (secondary category) with 未分类 as fallback. Each white ledger surface has a compact lilac (#F2EFF9) header with category name (27rpx, #48495F) and subtotal (28rpx, #675BA6), no per-group count, and 20rpx vertical padding; transaction rows retain time, remark, and amount without repeating the category label. Totals and counts in the day header retain their original meaning.
+
+### Growth journal / 成长手记
+
+An intimate family measurement notebook, not a clinical dashboard. Audience: parents recording multiple children's growth on a phone in short sessions. The home tool is public-discoverable like course/calendar tools; each family's stored data is private to the current WeChat OPENID. Simplified Chinese, Gregorian date-only measurements, cm and kg. Explicit user brief (2026-11-18) requires multiple profiles, an elegant measurement form, a chronological timeline, and a sourced 0–18-year reference band.
+
+Visual signature: a dated lavender thread down the timeline, with small measurement notes attached to each age. The curve is the second reading path: a pale sage or peach reference ribbon behind the child's real points. The form echoes the two metric colors, with large decimal inputs, fixed units, and restrained 0.1 steppers. Do not use clinical red/green diagnostic labels, gender-color stereotypes, illustrations, white lower-edge stacks, or a dense dashboard grid.
+
+Tokens above map directly to `pages/child-growth/child-growth.wxss`. Existing native Chinese system fonts remain canonical: section titles 30rpx/650, measurement figures 55rpx/650, form figures 53rpx/600, timeline measurements 37rpx/600 with tabular numbers, muted utility captions 19–23rpx. Height text uses #3E6F64 on #EDF5F0; weight text #A55D48 on #FBF0E8. Plot ink uses #4D8278 / #C57C66, translucent bands rgba(139,194,177,.25) / rgba(230,171,143,.24), no diagnostic meaning. Source: CDC 2000, P3/P50/P97; limitations and links live in `docs/CHILD_GROWTH.md` and the source sheet.
+
+Layout: one Skyline scroll owner, 28rpx page spacing, white 30rpx cards with 1rpx #ECE8F1 borders and very soft shadows. Child switching is a horizontal scroll strip. Profile, measurement, and reference sheets use an explicit 80vh height with a flex:1 / height:0 / min-height:0 custom Skyline scroll-view body (an auto-height/max-height-only parent can collapse its body). Measurement entry uses this bounded sheet and a native date picker; keyboard-facing content remains scrollable. Timeline has a 108rpx date rail, thread at 128rpx, and 22rpx entry cards; newest first, year markers, 20-entry progressive expansion. Blank/loading/error states use the same shell and real actions, never synthetic records. Buttons use opacity press feedback, visible focus, and disabled/busy states. Canvas has an accessible label and complete text alternatives in the timeline. No animation is required.
+
+Canonical owners: `pages/child-growth`, `components/growth-chart`, `utils/growth-model.js`, `utils/growth-chart-draw.js`, and `utils/growth-storage.js`. Color/font/radius ownership stays page scoped; the new tool tile alone adds a sage gradient #E4EEDA → #F3F8ED in `pages/index/index.wxss`. The home base tool count is now four, preserving the four privileged spending tools and their order.

@@ -4,10 +4,10 @@
 
 ## 目录
 
-- `pages/`：11 个页面，注册入口见 `app.json`。
+- `pages/`：12 个页面，注册入口见 `app.json`。
 - `components/`：导航栏、统一加载页、金额键盘、签到日历。
 - `utils/`：金额/日期计算、颜色与云函数调用封装。
-- `cloudfunctions/`：7 个可独立部署的云函数。
+- `cloudfunctions/`：8 个可独立部署的云函数。
 - `scripts/`、`tests/`：仓库引用检查和离线回归测试。
 
 ## 本地检查
@@ -16,7 +16,7 @@
 
 ```bash
 node scripts/check-repo.js
-node --test tests/regression.test.js
+node --test tests/regression.test.js tests/growth.test.js
 git diff --check
 ```
 
@@ -47,3 +47,5 @@ git diff --check
 - [预算看板开发文档](BUDGET_DEV_DOC.md)
 - [设计约定](DESIGN.md)
 - [交互与权限约定](UX-CONTRACT.md)
+
+- [成长手记设计、参考数据与云开发配置](docs/CHILD_GROWTH.md)

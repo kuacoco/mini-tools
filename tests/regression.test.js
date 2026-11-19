@@ -184,7 +184,7 @@ test('首页权限与随手记卡片顺序保持不变', async () => {
     '../../utils/privileged-user': { isPrivilegedUser: async () => allowed },
   }, { navigateTo: ({ url }) => { destination = url } })
   await page.onShow()
-  assert.equal(page.data.toolList.length, 3)
+  assert.equal(page.data.toolList.length, 4)
   allowed = true
   await page.onShow()
   assert.deepEqual(plain(page.data.toolGroups[0].items.map((item) => item.title)), ['预算看板', '消费账单', '分类支出', '消费日历'])
