@@ -73,7 +73,7 @@
     <view class="growth-sheet" catchtap="stopTap" role="dialog" aria-modal="true" aria-label="{{ sheet === 'profile' ? '孩子档案' : (sheet === 'record' ? '记录成长' : '生长参考说明') }}">
       <view class="sheet-grip"></view>
       <view class="sheet-heading"><view><text class="section-kicker">{{ sheet === 'source' ? 'ABOUT THE REFERENCE' : 'A LITTLE MOMENT TO KEEP' }}</text><text class="sheet-title">{{ sheet === 'profile' ? (editingProfile ? '孩子的档案' : '认识一下小主角') : (sheet === 'record' ? (recordForm.id ? '编辑这次成长' : '记下今天的成长') : '读懂这片参考色带') }}</text></view><button class="sheet-close" bindtap="onCloseSheet" disabled="{{ saving }}" hover-class="is-pressed" aria-label="关闭">×</button></view>
-      <scroll-view class="sheet-body" scroll-y>
+      <scroll-view class="sheet-body" type="custom" scroll-y enhanced bounces="{{ false }}">
         <block wx:if="{{ sheet === 'profile' }}">
           <text class="field-label">孩子的昵称</text><input class="profile-name-input" value="{{ profileForm.name }}" placeholder="平时怎么称呼TA？" maxlength="20" bindinput="onProfileInput" disabled="{{ saving }}" aria-label="孩子的昵称" />
           <text class="field-label">出生日期</text><picker mode="date" value="{{ profileForm.birthday }}" end="{{ today }}" disabled="{{ saving || profileLocked }}" bindchange="onBirthday" aria-label="选择出生日期"><view class="date-field"><text>{{ profileForm.birthday || '选择出生日期' }}</text><text>›</text></view></picker>
