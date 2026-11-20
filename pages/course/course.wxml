@@ -168,15 +168,4 @@
 		</view>
 	</view>
 
-	<view wx:if="{{ showShareNickPopup }}" class="share-nick-mask" bindtap="onCancelShareNick">
-		<view class="share-nick-dialog" catchtap="noop">
-			<text class="share-nick-title">分享展示名称</text>
-			<text class="share-nick-hint">仅用于生成分享链接，不会写入账号资料</text>
-			<input class="share-nick-input" placeholder="选填，留空则不展示昵称" maxlength="16" value="{{ shareNickInputValue }}" bindinput="onShareNickInput" type="nickname" />
-			<view class="share-nick-actions">
-				<view class="share-nick-btn share-nick-btn--ghost" bindtap="onCancelShareNick">取消</view>
-				<view class="share-nick-btn share-nick-btn--primary" bindtap="onConfirmShareNick">确定</view>
-			</view>
-		</view>
-	</view>
 </view>

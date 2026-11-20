@@ -30,30 +30,22 @@ const SWIPE_DELETE_WIDTH = 82
 const SWIPE_OPEN_THRESHOLD = 38
 const POPUP_ANIMATION_MS = 240
 const MAX_RECENT_SHARE_RECORDS = 8
-/** 仅本地：是否已设置过「分享展示名称」（含留空确认） */
-const SHARE_DISPLAY_STORAGE_KEY = 'course_share_display_v1'
+const SHARE_DISPLAY_STORAGE_KEY = 'course_random_share_name_v1'
 
-function readShareDisplayFromStorage() {
+function getRandomShareName() {
   try {
     const raw = wx.getStorageSync(SHARE_DISPLAY_STORAGE_KEY)
-    if (raw && typeof raw === 'object' && raw.configured === true) {
-      return { configured: true, nick: String(raw.nick || '').trim() }
-    }
+    if (typeof raw === 'string' && /^学友\d{6}$/.test(raw)) return raw
   } catch (err) {
     // ignore
   }
-  return { configured: false, nick: '' }
-}
-
-function writeShareDisplayToStorage(nick) {
+  const nick = `学友${Math.floor(100000 + Math.random() * 900000)}`
   try {
-    wx.setStorageSync(SHARE_DISPLAY_STORAGE_KEY, {
-      configured: true,
-      nick: String(nick || '').trim(),
-    })
+    wx.setStorageSync(SHARE_DISPLAY_STORAGE_KEY, nick)
   } catch (err) {
     // ignore
   }
+  return nick
 }
 
 function vibrateLight() {
@@ -119,9 +111,6 @@ Page({
     navTitle: '消课记录',
     showRecordDropdown: false,
     recentShareRecords: [],
-    /** 进入页时未配置过分享展示名则弹窗；已写入 SHARE_DISPLAY_STORAGE_KEY 则不再弹 */
-    showShareNickPopup: false,
-    shareNickInputValue: '',
     pageReady: false,
   },
 
@@ -161,15 +150,7 @@ Page({
     this.setData({ pageReady: true })
 
     if (!isViewerMode) {
-      const saved = readShareDisplayFromStorage()
-      if (saved.configured) {
-        this.setData({ thisShareNickName: saved.nick })
-      } else {
-        this.setData({
-          showShareNickPopup: true,
-          shareNickInputValue: '',
-        })
-      }
+      this.setData({ thisShareNickName: getRandomShareName() })
     }
   },
 
@@ -760,25 +741,7 @@ Page({
 
   noop() { },
 
-  onShareNickInput(e) {
-    this.setData({ shareNickInputValue: e.detail.value })
-  },
-
-  /** 仅写入本地，供分享链接使用；取消则下次进入仍会弹窗 */
-  onConfirmShareNick() {
-    const v = String(this.data.shareNickInputValue || '').trim()
-    writeShareDisplayToStorage(v)
-    this.setData({
-      thisShareNickName: v,
-      showShareNickPopup: false,
-    })
-  },
-
-  onCancelShareNick() {
-    this.setData({ showShareNickPopup: false })
-  },
-
-  // 分享展示名已在进入页时配置；此处仅用 data 拼路径，promise 仅用于异步 createShareToken（勿再弹窗）
+  // 自动生成名称，同时用于分享标题、链接和最近查看记录。
   onShareAppMessage() {
     if (this.data.isViewerMode) {
       return { title: '消课记录', path: '/pages/course/course' }
@@ -792,23 +755,25 @@ Page({
         : `shareToken=${encodeURIComponent(token)}`
       return `/pages/course/course?${q}`
     }
-    const myNickName = String(that.data.thisShareNickName || '').trim()
+    const myNickName = that.data.thisShareNickName || getRandomShareName()
+    that.setData({ thisShareNickName: myNickName })
+    const title = formatViewerTitle(myNickName)
     const promise = (async () => {
       let token = that.data.thisShareToken
       if (!token) {
         try {
           token = await createShareToken(myNickName)
           if (token) that.setData({ thisShareToken: token })
-          return { title: '我的消课记录', path: getPath(token, myNickName) }
+          return { title, path: getPath(token, myNickName) }
         } catch (err) {
           wx.showToast({ title: '分享生成失败', icon: 'none' })
-          return { title: '我的消课记录', path: '/pages/course/course' }
+          return { title, path: '/pages/course/course' }
         }
       }
-      return { title: '我的消课记录', path: getPath(token, myNickName) }
+      return { title, path: getPath(token, myNickName) }
     })()
     return {
-      title: '我的消课记录',
+      title,
       path: '/pages/course/course',
       promise,
     }
