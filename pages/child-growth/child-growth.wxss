@@ -73,10 +73,9 @@ page { height: 100vh; display: flex; flex-direction: column; background: #F7F5FF
 .timeline-node { position: absolute; left: 122rpx; top: 28rpx; width: 10rpx; height: 10rpx; border: 2rpx solid #B6A8CC; border-radius: 50%; background: #F7F5FF; }
 .timeline-node--latest { background: #7C6A9D; border-color: #7C6A9D; box-shadow: 0 0 0 6rpx #EBE4F4; }
 .growth-page .timeline-entry { display: flex; flex-direction: column; align-items: stretch; flex: 1; min-width: 0; margin-left: 40rpx; padding: 20rpx; border: 1rpx solid #ECE8F1; border-radius: 22rpx; background: #FFFFFF; box-shadow: 0 4rpx 12rpx rgba(68,55,108,.025); }
-.entry-pressed { background: #F4F0FA !important; }
 .entry-top { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
 .entry-caption { color: #75668C; font-size: 18rpx; letter-spacing: 1rpx; }
-.entry-edit { color: #6F6B80; font-size: 18rpx; }
+.growth-page .entry-edit { color: #6F6B80; font-size: 18rpx; flex-shrink: 0; }
 .entry-measurements { display: flex; flex-direction: row; align-items: center; margin: 16rpx 0; }
 .entry-measurement { flex: 1; min-width: 0; }
 .entry-label { display: block; font-size: 19rpx; }

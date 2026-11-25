@@ -51,11 +51,11 @@
             <block wx:if="{{ index < visibleCount }}">
               <view wx:if="{{ item.showYear }}" class="timeline-year"><view class="year-dot"></view><text>{{ item.year }}</text><text class="year-caption">成长记忆</text></view>
               <view class="timeline-row"><view class="timeline-date"><text class="timeline-day">{{ item.shortDate }}</text><text class="timeline-age">{{ item.ageText }}</text></view><view class="timeline-node {{ index === 0 ? 'timeline-node--latest' : '' }}"></view>
-                <button class="timeline-entry" data-id="{{ item.id }}" bindtap="onEditRecord" hover-class="entry-pressed" aria-label="编辑{{ item.date }}成长记录">
-                  <view class="entry-top"><text class="entry-caption">{{ index === 0 ? '最近记录' : '成长记录' }}</text><text class="entry-edit">编辑 ›</text></view>
+                <view class="timeline-entry">
+                  <view class="entry-top"><text class="entry-caption">{{ index === 0 ? '最近记录' : '成长记录' }}</text><button class="entry-edit" data-id="{{ item.id }}" bindtap="onEditRecord" hover-class="is-pressed" aria-label="编辑{{ item.date }}成长记录"><text>编辑 ›</text></button></view>
                   <view class="entry-measurements"><view class="entry-measurement"><text class="entry-label height-ink">身高</text><text class="entry-value">{{ item.heightText }}<text class="entry-unit">cm</text></text></view><view class="entry-divider"></view><view class="entry-measurement"><text class="entry-label weight-ink">体重</text><text class="entry-value">{{ item.weightText }}<text class="entry-unit">kg</text></text></view></view>
                   <text class="entry-change">{{ item.changeText }}</text><text wx:if="{{ item.note }}" class="entry-note">{{ item.note }}</text>
-                </button>
+                </view>
               </view>
             </block>
           </block>
