@@ -343,3 +343,54 @@ test('日消费明细按二级分类小计倒序，组内保留顺序，笔数�
   assert.equal(page.data.categoryGroups.length, 0)
   assert.equal(page.data.transactions.length, 0)
 })
+
+test('copy budget reloads unchecked categories and discards stale month responses', async () => {
+  let resolveOld
+  const page = budgetPage({ getMonthBudgetList: month => month === '2026-09'
+    ? new Promise(resolve => { resolveOld = resolve })
+    : Promise.resolve([{ id: 'new', name: '水果' }]) })
+  page.setData({ monthKey: '2026-10', monthPickerItems: [
+    { monthKey: '2026-09' }, { monthKey: '2026-08' },
+  ] })
+  const old = page.openCopyPopup()
+  await page.onSelectCopySourceMonth({ detail: { value: 1 } })
+  page.onCopyBudgetSelectionChange({ detail: { value: ['new'] } })
+  assert.equal(page.data.copySelectedCount, 1)
+  resolveOld([{ id: 'old' }])
+  await old
+  assert.equal(page.data.copyBudgetItems[0].id, 'new')
+  assert.equal(page.data.copyTargetMonthKey, '2026-10')
+  await page.onSelectCopySourceMonth({ detail: { value: 1 } })
+  assert.equal(page.data.copySelectedCount, 0)
+})
+
+test('cloud copy only inserts selected missing categories and preserves existing amounts', async () => {
+  const rows = [
+    { _id: 'a', openid: owner, monthKey: '2026-09', categoryId: 'fruit', name: '水果', totalAmount: 100 },
+    { _id: 'b', openid: owner, monthKey: '2026-09', categoryId: 'food', name: '餐饮', totalAmount: 200 },
+    { _id: 'c', openid: owner, monthKey: '2026-09', categoryId: 'other', name: '其他', totalAmount: 300 },
+    { _id: 'existing', openid: owner, monthKey: '2026-10', categoryId: 'fruit', totalAmount: 50, usedAmount: 20 },
+  ]
+  const database = { collection() { return {
+    where(filter) { let offset = 0, count = 100; const query = {
+      orderBy() { return query }, skip(value) { offset = value; return query },
+      limit(value) { count = value; return query },
+      async get() { return { data: rows.filter(row => Object.entries(filter).every(([key, value]) => row[key] === value)).slice(offset, offset + count) } },
+    }; return query },
+    async add({ data }) { rows.push(data) },
+  } } }
+  const cloud = loadCloud('budgetCrud', { OPENID: owner }, database)
+  const payload = { sourceMonthKey: '2026-09', targetMonthKey: '2026-10', sourceItemIds: ['a', 'b'] }
+  const result = await cloud.main({ action: 'copyFromMonth', payload })
+  assert.equal(result.success, true)
+  assert.deepEqual(plain(result.data), { created: 1, skipped: 1 })
+  assert.equal(rows.length, 5)
+  assert.equal(rows[3].totalAmount, 50)
+  assert.equal(rows[3].usedAmount, 20)
+  assert.equal(rows[4].usedAmount, 0)
+  const retry = await cloud.main({ action: 'copyFromMonth', payload })
+  assert.deepEqual(plain(retry.data), { created: 0, skipped: 2 })
+  const invalid = await cloud.main({ action: 'copyFromMonth', payload: { ...payload, sourceItemIds: ['foreign'] } })
+  assert.equal(invalid.success, false)
+  assert.equal(rows.length, 5)
+})

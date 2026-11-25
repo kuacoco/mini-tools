@@ -73,3 +73,9 @@
 - Native Mini Program pickers own date popup behavior, consistent with existing project controls. App-owned sheet has scroll ownership, backdrop dismissal with dirty guard, close affordance, accessible names; native `wx.showModal` is the maintained platform confirmation primitive.
 - Reference: CDC 2000 P3–P97, sex- and age-specific, interpolated at official month knots; under2years length and 2+ standing-height reference segments are separate. Graph supports height/weight, current age stage/all0–18years, and tapping record points. Values outside the band remain in the plot's axis bounds. The source/limitations sheet is always reachable; neither inside nor outside band is labelled healthy/unhealthy.
 - Verification adapters: `scripts/preview-growth.js` renders actual WXML/WXSS/page handlers with explicitly mocked platform/cloud APIs for browser review. It is not WeChat runtime evidence; actual Skyline/canvas/native keyboard, cloud collections/indexes/transactions still need Developer Tools/device verification after deployment.
+
+## Budget copy selection
+
+- 源月份预算默认未选，切换月份清空勾选；显示加载、空数据和失败重试状态。
+- 仅复制勾选的二级分类到打开弹窗时的目标月份，已有分类跳过，保留目标金额和已消费金额。
+- 提交期间禁止重复提交、切换月份和关闭；失败保留选择以便重试。

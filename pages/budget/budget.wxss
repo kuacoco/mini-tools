@@ -1001,3 +1001,6 @@ page {
   font-size: 23rpx;
   line-height: 1.6;
 }
+
+.copy-budget-list { height: 34vh; }
+.copy-budget-confirm { background: #625394; color: #fff; }

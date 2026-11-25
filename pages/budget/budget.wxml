@@ -252,14 +252,32 @@
 			<view class="popup-content">
 				<view class="popup-item">
 					<text class="popup-label">源月份</text>
-					<picker mode="selector" range="{{ monthPickerItems }}" range-key="label" value="{{ copySourceMonthIndex }}" bindchange="onSelectCopySourceMonth">
+					<picker disabled="{{copyingBudget}}" mode="selector" range="{{ monthPickerItems }}" range-key="label" value="{{ copySourceMonthIndex }}" bindchange="onSelectCopySourceMonth">
 						<view class="popup-picker-trigger">
 							<text class="popup-picker-value">{{ monthPickerItems[copySourceMonthIndex].label }}</text>
 							<view class="popup-picker-arrow"></view>
 						</view>
 					</picker>
 				</view>
-				<view class="popup-copy-btn" bindtap="onConfirmCopy">确认复制</view>
+				<view class="delete-budget-hint">复制到 {{copyTargetMonthKey}} · 已选 {{copySelectedCount}} 项，已存在的二级分类自动忽略</view>
+                <scroll-view type="custom" scroll-y class="delete-budget-list copy-budget-list">
+                    <text wx:if="{{copyLoading}}" class="delete-budget-hint">正在加载预算项…</text>
+                    <button wx:elif="{{copyError}}" bindtap="loadCopyBudgetItems">加载失败，点击重试</button>
+                    <text wx:elif="{{!copyBudgetItems.length}}" class="delete-budget-hint">该月份没有可复制的预算项，请选择其他月份</text>
+                    <checkbox-group wx:else bindchange="onCopyBudgetSelectionChange">
+                        <label wx:for="{{copyBudgetItems}}" wx:key="id" class="delete-budget-row">
+                            <checkbox value="{{item.id}}" checked="{{item.checked}}" disabled="{{copyingBudget}}" color="#625394" />
+                            <view class="delete-budget-copy">
+                                <text class="delete-budget-name">{{item.name}}</text>
+                                <text class="delete-budget-parent">{{item.parentCategoryName}}</text>
+                            </view>
+                        </label>
+                    </checkbox-group>
+                </scroll-view>
+                <view class="delete-budget-actions">
+                    <button class="delete-budget-cancel" disabled="{{copyingBudget}}" bindtap="onClosePopup">取消</button>
+                    <button class="copy-budget-confirm" disabled="{{!copySelectedCount || copyLoading || copyingBudget}}" loading="{{copyingBudget}}" bindtap="onConfirmCopy">确认复制（{{copySelectedCount}}）</button>
+                </view>
 			</view>
 		</view>
 	</view>

@@ -133,6 +133,12 @@ Page({
     editingParentOldName: '',
     editingParentName: '',
     showCopyPopup: false,
+    copyBudgetItems: [],
+    copySelectedCount: 0,
+    copyLoading: false,
+    copyError: false,
+    copyingBudget: false,
+    copyTargetMonthKey: '',
     showDeletePopup: false,
     deleteBudgetItems: [],
     deleteSelectedCount: 0,
@@ -747,15 +753,43 @@ Page({
       showCopyPopup: true,
       copyPopupClosing: false,
       copySourceMonthIndex: sourceIndex,
+      copyTargetMonthKey: this.data.monthKey,
     })
+    return this.loadCopyBudgetItems()
+  },
+
+  async loadCopyBudgetItems() {
+    const request = this.copyListRequest = (this.copyListRequest || 0) + 1
+    const source = this.data.monthPickerItems[this.data.copySourceMonthIndex]
+    this.setData({ copyBudgetItems: [], copySelectedCount: 0, copyLoading: true, copyError: false })
+    try {
+      const list = source && source.monthKey !== this.data.copyTargetMonthKey
+        ? await getMonthBudgetList(source.monthKey) : []
+      if (request !== this.copyListRequest) return
+      this.setData({ copyBudgetItems: list.map(item => ({ ...item, checked: false })) })
+    } catch (err) {
+      if (request === this.copyListRequest) this.setData({ copyError: true })
+    } finally {
+      if (request === this.copyListRequest) this.setData({ copyLoading: false })
+    }
+  },
+
+  onCopyBudgetSelectionChange(e) {
+    if (this.data.copyingBudget || this.data.copyLoading) return
+    const selected = new Set(e.detail.value)
+    const items = this.data.copyBudgetItems.map(item => ({ ...item, checked: selected.has(item.id) }))
+    this.setData({ copyBudgetItems: items, copySelectedCount: items.filter(item => item.checked).length })
   },
 
   onSelectCopySourceMonth(e) {
+    if (this.data.copyingBudget) return
     const idx = Number(e.detail.value)
     this.setData({ copySourceMonthIndex: idx })
+    return this.loadCopyBudgetItems()
   },
 
   async onConfirmCopy() {
+    if (this.data.copyingBudget || this.data.copyLoading || !this.data.copySelectedCount) return
     vibrateLight()
     const sourceItem = this.data.monthPickerItems[this.data.copySourceMonthIndex]
     if (!sourceItem) {
@@ -763,14 +797,15 @@ Page({
       return
     }
     const sourceMonthKey = sourceItem.monthKey
-    const targetMonthKey = this.data.monthKey
+    const targetMonthKey = this.data.copyTargetMonthKey
     if (sourceMonthKey === targetMonthKey) {
       wx.showToast({ title: '不能复制到同月份', icon: 'none' })
       return
     }
+    this.setData({ copyingBudget: true })
     wx.showLoading({ title: '复制中...', mask: true })
     try {
-      const stats = await copyBudgetFromMonth(sourceMonthKey, targetMonthKey)
+      const stats = await copyBudgetFromMonth(sourceMonthKey, targetMonthKey, this.data.copyBudgetItems.filter(item => item.checked).map(item => item.id))
       await this.refreshBudgetList()
       wx.hideLoading()
       wx.showToast({
@@ -782,12 +817,15 @@ Page({
       console.error('复制预算失败:', err)
       wx.showToast({ title: err.message || '复制失败，请重试', icon: 'none' })
       return
+    } finally {
+      this.setData({ copyingBudget: false })
     }
     this.closeCopyPopup()
   },
 
   closeCopyPopup(options = {}) {
-    if (!this.data.showCopyPopup) return
+    if (!this.data.showCopyPopup || this.data.copyingBudget) return
+    this.copyListRequest = (this.copyListRequest || 0) + 1
     if (this.copyPopupTimer) clearTimeout(this.copyPopupTimer)
     this.setData({ copyPopupClosing: true })
     this.copyPopupTimer = setTimeout(() => {

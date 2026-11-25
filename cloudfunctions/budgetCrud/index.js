@@ -36,12 +36,8 @@ async function getOwnedDocById(id, openid) {
 
 async function listByMonth({ monthKey }, openid) {
   ensureMonthKey(monthKey)
-  const res = await db
-    .collection(COLLECTION)
-    .where({ openid, monthKey })
-    .orderBy('createdAt', 'asc')
-    .get()
-  const list = (res.data || []).map((item) => ({
+  const rows = await readCopyMonth(monthKey, openid)
+  const list = rows.map((item) => ({
     id: item._id,
     name: item.name,
     categoryId: item.categoryId || '',
@@ -196,30 +192,36 @@ async function deleteItem(payload, openid) {
   return { ok: true }
 }
 
+async function readCopyMonth(monthKey, openid) {
+  const list = []
+  while (true) {
+    const result = await db.collection(COLLECTION).where({ openid, monthKey })
+      .orderBy('createdAt', 'asc').skip(list.length).limit(100).get()
+    const page = result.data || []
+    list.push(...page)
+    if (page.length < 100) return list
+  }
+}
+
 async function copyFromMonth(payload, openid) {
   const { sourceMonthKey, targetMonthKey } = payload
   ensureMonthKey(sourceMonthKey)
   ensureMonthKey(targetMonthKey)
 
-  // 1. 获取源月份预算项（按 createdAt asc 排序，与列表显示顺序一致）
-  const sourceRes = await db
-    .collection(COLLECTION)
-    .where({ openid, monthKey: sourceMonthKey })
-    .orderBy('createdAt', 'asc')
-    .get()
-  const sourceList = sourceRes.data || []
-
-  if (!sourceList.length) {
-    return { created: 0, skipped: 0 }
+  if (sourceMonthKey === targetMonthKey) throw new Error('不能复制到同月份')
+  let sourceList = await readCopyMonth(sourceMonthKey, openid)
+  if (payload.sourceItemIds !== undefined) {
+    if (!Array.isArray(payload.sourceItemIds)) throw new Error('请选择要复制的预算项')
+    const selected = new Set(payload.sourceItemIds)
+    if ([...selected].some(id => !sourceList.some(item => item._id === id))) {
+      throw new Error('源预算项已变更，请重新选择')
+    }
+    sourceList = sourceList.filter(item => selected.has(item._id))
   }
-
-  // 2. 获取目标月份已有预算项（用于排重）
-  const targetRes = await db
-    .collection(COLLECTION)
-    .where({ openid, monthKey: targetMonthKey })
-    .get()
+  if (!sourceList.length) return { created: 0, skipped: 0 }
+  const targetList = await readCopyMonth(targetMonthKey, openid)
   const targetMap = new Map()
-  for (const doc of targetRes.data || []) {
+  for (const doc of targetList) {
     const key = doc.categoryId
       ? `id:${doc.categoryId}`
       : `name:${normalizeName(doc.parentCategoryName)}:${doc.nameNormalized || normalizeName(doc.name)}`
@@ -236,7 +238,11 @@ async function copyFromMonth(payload, openid) {
     const sourceKey = src.categoryId
       ? `id:${src.categoryId}`
       : `name:${normalizeName(src.parentCategoryName)}:${normalizedName}`
-    if (targetMap.has(sourceKey)) {
+    const existsByName = targetList.some(target =>
+      (!src.categoryId || !target.categoryId) &&
+      normalizeName(target.parentCategoryName) === normalizeName(src.parentCategoryName) &&
+      normalizeName(target.name) === normalizeName(src.name))
+    if (targetMap.has(sourceKey) || existsByName) {
       skipped += 1
       continue
     }
@@ -260,6 +266,8 @@ async function copyFromMonth(payload, openid) {
         updatedAt: createdAt,
       },
     })
+    targetMap.set(sourceKey, src)
+    targetList.push(src)
     created += 1
   }
 

@@ -144,10 +144,11 @@ async function fetchFeideeCategoryExpense(startDate, endDate) {
   return result.data || { totalAmount: 0, sections: [] }
 }
 
-async function copyBudgetFromMonth(sourceMonthKey, targetMonthKey) {
+async function copyBudgetFromMonth(sourceMonthKey, targetMonthKey, sourceItemIds) {
   const data = await callBudgetCrud('copyFromMonth', {
     sourceMonthKey,
     targetMonthKey,
+    sourceItemIds,
   })
   return data || { created: 0, skipped: 0 }
 }
